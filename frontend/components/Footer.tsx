@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { ArrowRight, Facebook, Twitter, Instagram, Linkedin, Youtube, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import Link from 'next/link'
 
 export default function Footer() {
   const [openAccordion, setOpenAccordion] = useState<string | null>(null)
@@ -121,12 +122,14 @@ export default function Footer() {
         {/* Ready to Grow Section */}
         <div className="text-center mb-12">
           <h3 className="text-xl lg:text-2xl font-bold mb-6">Ready to Grow Your Business?</h3>
-          <Button 
-            className="bg-[#e94e1b] hover:bg-[#d13f16] text-white px-8 py-3 text-lg font-semibold"
-          >
-            Get Started Today
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
+          <Link href="/business/auth/signin">
+            <Button 
+              className="bg-[#e94e1b] hover:bg-[#d13f16] text-white px-8 py-3 text-lg font-semibold"
+            >
+              Get Started Today
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </Link>
         </div>
 
         <Separator className="mb-8 bg-[#2a4d6e]" />

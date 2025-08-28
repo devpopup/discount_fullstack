@@ -4,6 +4,7 @@ import React from 'react'
 import { Search, Rocket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function HeroBanner() {
   return (
@@ -21,21 +22,25 @@ export default function HeroBanner() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Button 
-                size="lg" 
-                className="bg-[#e94e1b] hover:bg-[#d13f16] text-white px-8 py-4 text-lg font-semibold"
-              >
-                <Search className="w-5 h-5 mr-2" />
-                Explore Deals Nearby
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-2 border-[#1e3a5f] text-white hover:bg-[#617180] bg-transparent px-8 py-4 text-lg font-semibold"
-              >
-                <Rocket className="w-5 h-5 mr-2" />
-                Promote My Business
-              </Button>
+              <Link href="/shoppers">
+                <Button 
+                  size="lg" 
+                  className="bg-[#e94e1b] hover:bg-[#d13f16] text-white px-8 py-4 text-lg font-semibold w-full"
+                >
+                  <Search className="w-5 h-5 mr-2" />
+                  Explore Deals Nearby
+                </Button>
+              </Link>
+              <Link href="/business/auth/signin">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-2 border-[#1e3a5f] text-white hover:bg-[#617180] bg-transparent px-8 py-4 text-lg font-semibold w-full"
+                >
+                  <Rocket className="w-5 h-5 mr-2" />
+                  Promote My Business
+                </Button>
+              </Link>
             </div>
           </div>
           <div className="relative lg:pl-8">
