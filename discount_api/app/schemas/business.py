@@ -95,6 +95,8 @@ class ProductBase(BaseModel):
     price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
     image_url: Optional[str] = None
     category_id: Optional[int] = None  # Changed from UUID to int
+    stock_quantity: Optional[int] = Field(None, ge=0)
+    tags: Optional[str] = Field(None, max_length=500)
     is_active: bool = True
 
 
@@ -108,6 +110,8 @@ class ProductUpdate(BaseModel):
     price: Optional[Decimal] = Field(None, ge=0)
     image_url: Optional[str] = None
     category_id: Optional[int] = None  # Changed from UUID to int
+    stock_quantity: Optional[int] = Field(None, ge=0)
+    tags: Optional[str] = Field(None, max_length=500)
     is_active: Optional[bool] = None
 
 
