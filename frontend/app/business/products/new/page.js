@@ -43,7 +43,6 @@ export default function CreateProductPage() {
     price: '',
     category_id: '',
     stock_quantity: '',
-    sku: '',
     tags: '',
     image_url: '',
     is_active: true
@@ -188,7 +187,6 @@ export default function CreateProductPage() {
         price: formData.price ? parseFloat(formData.price) : null,
         category_id: formData.category_id && formData.category_id !== 'none' ? formData.category_id : null,
         stock_quantity: formData.stock_quantity ? parseInt(formData.stock_quantity) : null,
-        sku: formData.sku.trim() || null,
         tags: formData.tags.trim() || null,
         image_url: imagePath || null,
         is_active: formData.is_active
@@ -329,8 +327,8 @@ export default function CreateProductPage() {
                 </div>
               </div>
 
-              {/* Second Row: Price, Stock, Category, SKU */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Second Row: Price, Stock, Category */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label className="text-white font-medium text-sm">Price</Label>
                   <div className="relative mt-1">
@@ -381,16 +379,6 @@ export default function CreateProductPage() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-white font-medium text-sm">SKU</Label>
-                  <Input
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleInputChange}
-                    placeholder="Product SKU"
-                    className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 mt-1 h-10"
-                  />
-                </div>
               </div>
 
               {/* Third Row: Tags */}
@@ -400,10 +388,10 @@ export default function CreateProductPage() {
                   name="tags"
                   value={formData.tags}
                   onChange={handleInputChange}
-                  placeholder="tag1, tag2, tag3"
+                  placeholder="organic, premium, bestseller"
                   className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 mt-1 h-10"
                 />
-                <p className="text-xs text-blue-300 mt-1">Separate tags with commas</p>
+                <p className="text-xs text-blue-300 mt-1">Add searchable keywords separated by commas (e.g., organic, premium, bestseller)</p>
               </div>
 
               {/* Submit Buttons */}

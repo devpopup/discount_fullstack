@@ -46,7 +46,6 @@ export default function EditProductPage() {
     price: '',
     category_id: '',
     stock_quantity: '',
-    sku: '',
     tags: '',
     image_url: '',
     is_active: true
@@ -82,10 +81,9 @@ export default function EditProductPage() {
         setFormData({
           name: product.name || '',
           description: product.description || '',
-          price: product.price ? product.price.toString() : '',
+          price: product.price ? parseFloat(product.price).toFixed(2) : '',
           category_id: product.category_id || product.categories?.id || '',
           stock_quantity: product.stock_quantity ? product.stock_quantity.toString() : '',
-          sku: product.sku || '',
           tags: product.tags || '',
           image_url: product.image_url || '',
           is_active: product.is_active !== false
@@ -220,7 +218,6 @@ export default function EditProductPage() {
         price: formData.price ? parseFloat(formData.price) : null,
         category_id: formData.category_id && formData.category_id !== 'none' ? formData.category_id : null,
         stock_quantity: formData.stock_quantity ? parseInt(formData.stock_quantity) : null,
-        sku: formData.sku.trim() || null,
         tags: formData.tags.trim() || null,
         image_url: finalImagePath || null,
         is_active: formData.is_active
@@ -459,32 +456,19 @@ export default function EditProductPage() {
                 </div>
               </div>
 
-              {/* Bottom Row: SKU and Tags */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-white font-medium text-sm">SKU</Label>
-                  <Input
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleInputChange}
-                    placeholder="Stock Keeping Unit (optional)"
-                    className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 mt-1 h-10"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-white font-medium text-sm">Tags</Label>
-                  <Input
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleInputChange}
-                    placeholder="Separate tags with commas"
-                    className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 mt-1 h-10"
-                  />
-                  <p className="text-xs text-blue-300 mt-1">
-                    Separate multiple tags with a comma
-                  </p>
-                </div>
+              {/* Bottom Row: Tags */}
+              <div>
+                <Label className="text-white font-medium text-sm">Tags</Label>
+                <Input
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleInputChange}
+                  placeholder="organic, premium, bestseller"
+                  className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 mt-1 h-10"
+                />
+                <p className="text-xs text-blue-300 mt-1">
+                  Add searchable keywords separated by commas (e.g., organic, premium, bestseller)
+                </p>
               </div>
 
               {/* Action Buttons */}
