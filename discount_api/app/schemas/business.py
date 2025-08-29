@@ -32,12 +32,12 @@ class CategoryResponse(CategoryBase):
 class BusinessBase(BaseModel):
     business_name: str = Field(..., min_length=2, max_length=200)
     business_description: Optional[str] = Field(None, max_length=1000)
-    business_address: Optional[str] = Field(None, max_length=500)
-    phone_number: Optional[str] = Field(None, min_length=10, max_length=20)
+    business_address: str = Field(..., min_length=5, max_length=500)
+    phone_number: str = Field(..., min_length=10, max_length=20)
     business_website: Optional[str] = None
     avatar_url: Optional[str] = None
     business_hours: Optional[Dict[str, Any]] = None
-    category_id: Optional[int] = None  # Changed from UUID to int
+    category_id: int = Field(..., description="Business category is required")
 
 
 
@@ -59,7 +59,7 @@ class BusinessCreate(BusinessBase):
 class BusinessUpdate(BaseModel):
     business_name: Optional[str] = Field(None, min_length=2, max_length=200)
     business_description: Optional[str] = Field(None, max_length=1000)
-    business_address: Optional[str] = Field(None, max_length=500)
+    business_address: Optional[str] = Field(None, min_length=5, max_length=500)
     phone_number: Optional[str] = Field(None, min_length=10, max_length=20)
     business_website: Optional[str] = None
     avatar_url: Optional[str] = None
@@ -257,12 +257,12 @@ class BusinessUserRegistration(BaseModel):
     # Business fields
     business_name: str = Field(..., min_length=2, max_length=200)
     business_description: Optional[str] = Field(None, max_length=1000)
-    business_address: Optional[str] = Field(None, max_length=500)
-    business_phone: Optional[str] = Field(None, min_length=10, max_length=20)
+    business_address: str = Field(..., min_length=5, max_length=500)
+    business_phone: str = Field(..., min_length=10, max_length=20)
     business_website: Optional[str] = None
     avatar_url: Optional[str] = None
     business_hours: Optional[Dict[str, Any]] = None
-    category_id: Optional[int] = None
+    category_id: int = Field(..., description="Business category is required")
     
     # Location fields - SIMPLIFIED
     latitude: Optional[float] = None

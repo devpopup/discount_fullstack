@@ -91,6 +91,8 @@ export default function BusinessSignup() {
     password: false,
     confirmPassword: false,
   });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   // Load categories on component mount
   useEffect(() => {
@@ -113,11 +115,114 @@ export default function BusinessSignup() {
     loadCategories();
   }, []);
 
+  const validateField = (name, value) => {
+    const errors = {};
+
+    switch (name) {
+      case 'email':
+        if (!value) {
+          errors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email = 'Please enter a valid email address';
+        }
+        break;
+      
+      case 'password':
+        if (!value) {
+          errors.password = 'Password is required';
+        } else if (value.length < 6) {
+          errors.password = 'Password must be at least 6 characters long';
+        }
+        break;
+      
+      case 'confirmPassword':
+        if (!value) {
+          errors.confirmPassword = 'Please confirm your password';
+        } else if (value !== formData.password) {
+          errors.confirmPassword = 'Passwords do not match';
+        }
+        break;
+      
+      case 'business_name':
+        if (!value || value.trim().length < 2) {
+          errors.business_name = 'Business name must be at least 2 characters';
+        } else if (value.trim().length > 200) {
+          errors.business_name = 'Business name must be less than 200 characters';
+        }
+        break;
+      
+      case 'business_address':
+        if (!value || value.trim().length < 5) {
+          errors.business_address = 'Business address is required (minimum 5 characters)';
+        } else if (value.trim().length > 500) {
+          errors.business_address = 'Address must be less than 500 characters';
+        }
+        break;
+      
+      case 'business_phone':
+        if (!value || value.trim().length < 10) {
+          errors.business_phone = 'Business phone is required (minimum 10 characters)';
+        } else if (value.trim().length > 20) {
+          errors.business_phone = 'Phone number must be less than 20 characters';
+        }
+        break;
+      
+      case 'category_id':
+        if (!value) {
+          errors.category_id = 'Business category is required';
+        }
+        break;
+      
+      case 'business_website':
+        if (value && !value.startsWith('http://') && !value.startsWith('https://') && !value.includes('.')) {
+          errors.business_website = 'Please enter a valid website URL';
+        }
+        break;
+    }
+
+    return errors;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+
+    // Mark field as touched
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    // Validate field and update errors
+    const fieldValidationErrors = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      ...fieldValidationErrors,
+      [name]: fieldValidationErrors[name] || null
+    }));
+
+    // Clear general error if field becomes valid
+    if (!fieldValidationErrors[name] && error) {
+      setError("");
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    // Validate on blur
+    const fieldValidationErrors = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      ...fieldValidationErrors,
+      [name]: fieldValidationErrors[name] || null
     }));
   };
 
@@ -125,6 +230,18 @@ export default function BusinessSignup() {
     setFormData((prev) => ({
       ...prev,
       category_id: value ? parseInt(value) : null,
+    }));
+
+    // Mark field as touched and validate
+    setTouched(prev => ({
+      ...prev,
+      category_id: true
+    }));
+
+    const fieldValidationErrors = validateField('category_id', value);
+    setFieldErrors(prev => ({
+      ...prev,
+      category_id: fieldValidationErrors.category_id || null
     }));
   };
 
@@ -156,24 +273,59 @@ export default function BusinessSignup() {
         place_id: locationData.place_id,
         address_components: locationData.address_components,
       }));
+
+      // Mark address as touched and validate
+      setTouched(prev => ({
+        ...prev,
+        business_address: true
+      }));
+
+      const fieldValidationErrors = validateField('business_address', locationData.address);
+      setFieldErrors(prev => ({
+        ...prev,
+        business_address: fieldValidationErrors.business_address || null
+      }));
     }
   };
 
+  const getFieldClassName = (fieldName, baseClassName) => {
+    const hasError = touched[fieldName] && fieldErrors[fieldName];
+    const isValid = touched[fieldName] && !fieldErrors[fieldName] && formData[fieldName];
+    
+    if (hasError) {
+      return `${baseClassName} border-red-500 focus:border-red-500 focus:ring-red-500`;
+    } else if (isValid) {
+      return `${baseClassName} border-green-500 focus:border-green-500 focus:ring-green-500`;
+    }
+    return baseClassName;
+  };
+
   const validateForm = () => {
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      setActiveTab("account");
-      return false;
-    }
+    // Validate all required fields
+    const requiredFields = ['email', 'password', 'confirmPassword', 'business_name', 'business_address', 'business_phone', 'category_id'];
+    let hasErrors = false;
+    const newFieldErrors = {};
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      setActiveTab("account");
-      return false;
-    }
+    requiredFields.forEach(field => {
+      const value = field === 'category_id' ? formData[field] : formData[field];
+      const fieldValidationErrors = validateField(field, value);
+      if (fieldValidationErrors[field]) {
+        newFieldErrors[field] = fieldValidationErrors[field];
+        hasErrors = true;
+      }
+    });
 
-    if (!formData.email || !formData.business_name) {
-      setError("Email and business name are required");
+    // Mark all required fields as touched
+    const newTouched = {};
+    requiredFields.forEach(field => {
+      newTouched[field] = true;
+    });
+
+    setFieldErrors(prev => ({ ...prev, ...newFieldErrors }));
+    setTouched(prev => ({ ...prev, ...newTouched }));
+
+    if (hasErrors) {
+      setError("Please fix the errors below before continuing");
       return false;
     }
 
@@ -187,8 +339,9 @@ export default function BusinessSignup() {
 
     try {
       // Validate required fields
-      if (!formData.email || !formData.password || !formData.business_name) {
-        setError("Please fill in all required fields");
+      if (!formData.email || !formData.password || !formData.business_name || 
+          !formData.business_address || !formData.business_phone || !formData.category_id) {
+        setError("Please fill in all required fields: email, password, business name, address, phone, and category");
         setIsLoading(false);
         return;
       }
@@ -551,10 +704,14 @@ export default function BusinessSignup() {
                         required
                         value={formData.email}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="business@example.com"
-                        className="pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                        className={getFieldClassName("email", "pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg")}
                       />
                     </div>
+                    {touched.email && fieldErrors.email && (
+                      <p className="text-sm text-red-600 mt-1">{fieldErrors.email}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -595,8 +752,9 @@ export default function BusinessSignup() {
                           required
                           value={formData.password}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="At least 6 characters"
-                          className="pl-10 pr-12 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                          className={getFieldClassName("password", "pl-10 pr-12 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg")}
                         />
                         <button
                           type="button"
@@ -610,6 +768,9 @@ export default function BusinessSignup() {
                           )}
                         </button>
                       </div>
+                      {touched.password && fieldErrors.password && (
+                        <p className="text-sm text-red-600 mt-1">{fieldErrors.password}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -630,8 +791,9 @@ export default function BusinessSignup() {
                           required
                           value={formData.confirmPassword}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="Confirm your password"
-                          className="pl-10 pr-12 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                          className={getFieldClassName("confirmPassword", "pl-10 pr-12 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg")}
                         />
                         <button
                           type="button"
@@ -647,6 +809,9 @@ export default function BusinessSignup() {
                           )}
                         </button>
                       </div>
+                      {touched.confirmPassword && fieldErrors.confirmPassword && (
+                        <p className="text-sm text-red-600 mt-1">{fieldErrors.confirmPassword}</p>
+                      )}
                     </div>
                   </div>
 
@@ -679,10 +844,14 @@ export default function BusinessSignup() {
                         required
                         value={formData.business_name}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Your Business Name"
-                        className="pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                        className={getFieldClassName("business_name", "pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg")}
                       />
                     </div>
+                    {touched.business_name && fieldErrors.business_name && (
+                      <p className="text-sm text-red-600 mt-1">{fieldErrors.business_name}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -708,7 +877,7 @@ export default function BusinessSignup() {
                       htmlFor="category_id"
                       className="text-gray-700 font-medium"
                     >
-                      Business Category
+                      Business Category *
                     </Label>
                     <Select
                       value={
@@ -718,7 +887,7 @@ export default function BusinessSignup() {
                       }
                       onValueChange={handleCategoryChange}
                     >
-                      <SelectTrigger className="h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg">
+                      <SelectTrigger className={getFieldClassName("category_id", "h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg")}>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -732,6 +901,9 @@ export default function BusinessSignup() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {touched.category_id && fieldErrors.category_id && (
+                      <p className="text-sm text-red-600 mt-1">{fieldErrors.category_id}</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -740,7 +912,7 @@ export default function BusinessSignup() {
                         htmlFor="business_phone"
                         className="text-gray-700 font-medium"
                       >
-                        Business Phone
+                        Business Phone *
                       </Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -748,12 +920,17 @@ export default function BusinessSignup() {
                           id="business_phone"
                           name="business_phone"
                           type="tel"
+                          required
                           value={formData.business_phone}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder="(555) 123-4567"
-                          className="pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                          className={getFieldClassName("business_phone", "pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg")}
                         />
                       </div>
+                      {touched.business_phone && fieldErrors.business_phone && (
+                        <p className="text-sm text-red-600 mt-1">{fieldErrors.business_phone}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -772,9 +949,13 @@ export default function BusinessSignup() {
                           placeholder="https://yourbusiness.com"
                           value={formData.business_website}
                           onChange={handleChange}
-                          className="pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                          onBlur={handleBlur}
+                          className={getFieldClassName("business_website", "pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg")}
                         />
                       </div>
+                      {touched.business_website && fieldErrors.business_website && (
+                        <p className="text-sm text-red-600 mt-1">{fieldErrors.business_website}</p>
+                      )}
                     </div>
                   </div>
 
@@ -805,14 +986,20 @@ export default function BusinessSignup() {
                       htmlFor="business_address"
                       className="text-gray-700 font-medium"
                     >
-                      Business Address
+                      Business Address *
                     </Label>
-                    <AddressAutocomplete
-                      value={formData.business_address}
-                      onChange={(value) => setFormData(prev => ({ ...prev, business_address: value }))}
-                      onLocationSelect={handleLocationSelect}
-                      placeholder="Search for your business address..."
-                    />
+                    <div className={`${touched.business_address && fieldErrors.business_address ? 'border-red-500 rounded-lg' : ''}`}>
+                      <AddressAutocomplete
+                        value={formData.business_address}
+                        onChange={(value) => setFormData(prev => ({ ...prev, business_address: value }))}
+                        onLocationSelect={handleLocationSelect}
+                        placeholder="Search for your business address..."
+                        className={touched.business_address && fieldErrors.business_address ? 'border-red-500' : ''}
+                      />
+                    </div>
+                    {touched.business_address && fieldErrors.business_address && (
+                      <p className="text-sm text-red-600 mt-1">{fieldErrors.business_address}</p>
+                    )}
                     <p className="text-sm text-gray-500">
                       Add your business address to help customers find you
                     </p>
