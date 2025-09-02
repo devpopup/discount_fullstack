@@ -2654,5 +2654,325 @@ async def get_redemption_stats(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get redemption stats: {str(e)}"
         )
-    
+
+
+# ============================================================================
+# ANALYTICS ENDPOINTS
+# ============================================================================
+
+@router.get("/analytics", response_model=dict)
+async def get_business_analytics(
+    current_user: UserProfile = Depends(get_current_business_user),
+    time_range: str = Query("30", regex="^(1|7|30)$")  # 1 day, 7 days, 30 days
+):
+    """Get analytics overview for the business"""
+    try:
+        # Get user's business
+        business_result = supabase_admin.table("businesses").select("id, business_name").eq("user_id", str(current_user.id)).execute()
+        
+        if not business_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business not found"
+            )
+        
+        business_id = business_result.data[0]["id"]
+        
+        # Calculate date range
+        now = datetime.now(timezone.utc)
+        if time_range == "1":
+            start_date = now - timedelta(days=1)
+        elif time_range == "7":
+            start_date = now - timedelta(days=7)
+        else:  # 30 days
+            start_date = now - timedelta(days=30)
+        
+        start_date_str = start_date.isoformat()
+        
+        # Get total offers for this business (all offers, not just active ones)
+        offers_result = supabase_admin.table("offers").select("id", count="exact").eq("business_id", business_id).execute()
+        total_offers = offers_result.count or 0
+        
+        # Get total views in date range
+        views_result = supabase_admin.table("offer_views").select(
+            "id", count="exact"
+        ).in_(
+            "offer_id", 
+            [offer["id"] for offer in (supabase_admin.table("offers").select("id").eq("business_id", business_id).execute().data or [])]
+        ).gte("viewed_at", start_date_str).execute()
+        total_views = views_result.count or 0
+        
+        # Get total clicks in date range
+        clicks_result = supabase_admin.table("offer_clicks").select(
+            "id", count="exact"
+        ).in_(
+            "offer_id", 
+            [offer["id"] for offer in (supabase_admin.table("offers").select("id").eq("business_id", business_id).execute().data or [])]
+        ).gte("clicked_at", start_date_str).execute()
+        total_clicks = clicks_result.count or 0
+        
+        # Get total claims in date range
+        claims_result = supabase_admin.table("claimed_offers").select(
+            "id", count="exact"
+        ).in_(
+            "offer_id", 
+            [offer["id"] for offer in (supabase_admin.table("offers").select("id").eq("business_id", business_id).execute().data or [])]
+        ).gte("claimed_at", start_date_str).execute()
+        total_claims = claims_result.count or 0
+        
+        return {
+            "success": True,
+            "data": {
+                "time_range": f"Last {time_range} day{'s' if time_range != '1' else ''}",
+                "period": {
+                    "start": start_date.strftime("%Y-%m-%d"),
+                    "end": now.strftime("%Y-%m-%d")
+                },
+                "summary": {
+                    "total_offers": total_offers,
+                    "total_views": total_views,
+                    "total_clicks": total_clicks,
+                    "total_claims": total_claims
+                }
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting business analytics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get business analytics: {str(e)}"
+        )
+
+
+@router.get("/offers/{offer_id}/analytics", response_model=dict)
+async def get_offer_analytics(
+    offer_id: str,
+    current_user: UserProfile = Depends(get_current_business_user),
+    time_range: str = Query("30", regex="^(1|7|30)$")  # 1 day, 7 days, 30 days
+):
+    """Get analytics for a specific offer"""
+    try:
+        # Get user's business
+        business_result = supabase_admin.table("businesses").select("id, business_name").eq("user_id", str(current_user.id)).execute()
+        
+        if not business_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business not found"
+            )
+        
+        business_id = business_result.data[0]["id"]
+        
+        # Verify offer belongs to this business
+        offer_result = supabase_admin.table("offers").select("*").eq("id", offer_id).eq("business_id", business_id).execute()
+        
+        if not offer_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Offer not found or does not belong to your business"
+            )
+        
+        offer = offer_result.data[0]
+        
+        # Calculate date range
+        now = datetime.now(timezone.utc)
+        if time_range == "1":
+            start_date = now - timedelta(days=1)
+        elif time_range == "7":
+            start_date = now - timedelta(days=7)
+        else:  # 30 days
+            start_date = now - timedelta(days=30)
+        
+        start_date_str = start_date.isoformat()
+        
+        # Get views for this offer in date range
+        views_result = supabase_admin.table("offer_views").select(
+            "id", count="exact"
+        ).eq("offer_id", offer_id).gte("viewed_at", start_date_str).execute()
+        total_views = views_result.count or 0
+        
+        # Get clicks for this offer in date range
+        clicks_result = supabase_admin.table("offer_clicks").select(
+            "id", count="exact"
+        ).eq("offer_id", offer_id).gte("clicked_at", start_date_str).execute()
+        total_clicks = clicks_result.count or 0
+        
+        # Get claims for this offer in date range
+        claims_result = supabase_admin.table("claimed_offers").select(
+            "id", count="exact"
+        ).eq("offer_id", offer_id).gte("claimed_at", start_date_str).execute()
+        total_claims = claims_result.count or 0
+        
+        return {
+            "success": True,
+            "data": {
+                "offer_id": offer_id,
+                "offer_title": offer["title"],
+                "time_range": f"Last {time_range} day{'s' if time_range != '1' else ''}",
+                "period": {
+                    "start": start_date.strftime("%Y-%m-%d"),
+                    "end": now.strftime("%Y-%m-%d")
+                },
+                "metrics": {
+                    "views": total_views,
+                    "clicks": total_clicks,
+                    "claims": total_claims,
+                    "click_through_rate": round((total_clicks / total_views * 100) if total_views > 0 else 0, 2),
+                    "claim_rate": round((total_claims / total_views * 100) if total_views > 0 else 0, 2)
+                }
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting offer analytics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get offer analytics: {str(e)}"
+        )
+
+
+@router.get("/analytics/offers", response_model=dict)
+async def get_offers_analytics_list(
+    current_user: UserProfile = Depends(get_current_business_user),
+    time_range: str = Query("30", regex="^(1|7|30)$"),  # 1 day, 7 days, 30 days
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100)
+):
+    """Get analytics for all offers with pagination"""
+    try:
+        # Get user's business
+        business_result = supabase_admin.table("businesses").select("id, business_name").eq("user_id", str(current_user.id)).execute()
+        
+        if not business_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business not found"
+            )
+        
+        business_id = business_result.data[0]["id"]
+        
+        # Calculate date range
+        now = datetime.now(timezone.utc)
+        if time_range == "1":
+            start_date = now - timedelta(days=1)
+        elif time_range == "7":
+            start_date = now - timedelta(days=7)
+        else:  # 30 days
+            start_date = now - timedelta(days=30)
+        
+        start_date_str = start_date.isoformat()
+        
+        # Get offers with pagination
+        offset = (page - 1) * limit
+        offers_result = supabase_admin.table("offers").select(
+            "id, title, description, discount_type, discount_value, start_date, expiry_date, max_claims, current_claims, is_active, created_at, products(*)",
+            count="exact"
+        ).eq("business_id", business_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        
+        if not offers_result.data:
+            return {
+                "success": True,
+                "data": {
+                    "offers": [],
+                    "pagination": {
+                        "page": page,
+                        "limit": limit,
+                        "total": 0,
+                        "pages": 0
+                    },
+                    "time_range": f"Last {time_range} day{'s' if time_range != '1' else ''}"
+                }
+            }
+        
+        offers = []
+        for offer in offers_result.data:
+            offer_id = offer["id"]
+            
+            # Get analytics for each offer
+            views_result = supabase_admin.table("offer_views").select(
+                "id", count="exact"
+            ).eq("offer_id", offer_id).gte("viewed_at", start_date_str).execute()
+            
+            clicks_result = supabase_admin.table("offer_clicks").select(
+                "id", count="exact"
+            ).eq("offer_id", offer_id).gte("clicked_at", start_date_str).execute()
+            
+            claims_result = supabase_admin.table("claimed_offers").select(
+                "id", count="exact"
+            ).eq("offer_id", offer_id).gte("claimed_at", start_date_str).execute()
+            
+            total_views = views_result.count or 0
+            total_clicks = clicks_result.count or 0
+            total_claims = claims_result.count or 0
+            
+            # Calculate time left
+            now = datetime.now(timezone.utc)
+            expiry_date = datetime.fromisoformat(offer["expiry_date"].replace('Z', '+00:00'))
+            time_left = expiry_date - now
+            
+            if time_left.total_seconds() <= 0:
+                time_left_str = "Expired"
+            else:
+                days = time_left.days
+                hours = time_left.seconds // 3600
+                if days > 0:
+                    time_left_str = f"{days}d {hours}hr left"
+                else:
+                    time_left_str = f"{hours}hr left"
+            
+            offers.append({
+                "id": offer_id,
+                "title": offer["title"],
+                "description": offer["description"],
+                "discount_type": offer["discount_type"],
+                "discount_value": float(offer["discount_value"]) if offer["discount_value"] else 0,
+                "time_left": time_left_str,
+                "is_active": offer["is_active"],
+                "max_claims": offer["max_claims"],
+                "current_claims": offer["current_claims"] or 0,
+                "product": offer["products"],
+                "metrics": {
+                    "views": total_views,
+                    "clicks": total_clicks,
+                    "claims": total_claims,
+                    "click_through_rate": round((total_clicks / total_views * 100) if total_views > 0 else 0, 2),
+                    "claim_rate": round((total_claims / total_views * 100) if total_views > 0 else 0, 2)
+                }
+            })
+        
+        # Calculate pagination
+        total_items = offers_result.count
+        total_pages = (total_items + limit - 1) // limit
+        
+        return {
+            "success": True,
+            "data": {
+                "offers": offers,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": total_items,
+                    "pages": total_pages
+                },
+                "time_range": f"Last {time_range} day{'s' if time_range != '1' else ''}",
+                "period": {
+                    "start": start_date.strftime("%Y-%m-%d"),
+                    "end": now.strftime("%Y-%m-%d")
+                }
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting offers analytics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get offers analytics: {str(e)}"
+        )
 

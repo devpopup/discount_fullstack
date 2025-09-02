@@ -109,3 +109,36 @@ class Category(Base):
 
     def __repr__(self):
         return f"<Category(id={self.id}, name={self.name})>"
+
+
+class OfferView(Base):
+    __tablename__ = "offer_views"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    offer_id = Column(UUID(as_uuid=True), ForeignKey("offers.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)  # Nullable for anonymous views
+    ip_address = Column(String, nullable=True)  # For tracking anonymous views
+    user_agent = Column(String, nullable=True)
+    
+    # Timestamps
+    viewed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<OfferView(offer_id={self.offer_id}, viewed_at={self.viewed_at})>"
+
+
+class OfferClick(Base):
+    __tablename__ = "offer_clicks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    offer_id = Column(UUID(as_uuid=True), ForeignKey("offers.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)  # Nullable for anonymous clicks
+    ip_address = Column(String, nullable=True)  # For tracking anonymous clicks
+    user_agent = Column(String, nullable=True)
+    click_type = Column(String, default='view_details')  # 'view_details', 'claim', 'website', etc.
+    
+    # Timestamps
+    clicked_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<OfferClick(offer_id={self.offer_id}, type={self.click_type}, clicked_at={self.clicked_at})>"
