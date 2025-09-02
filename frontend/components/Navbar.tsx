@@ -26,18 +26,18 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
+  // Optional: Prevent body scroll when mobile menu is open (commented out to avoid black background)
+  // useEffect(() => {
+  //   if (mobileMenuOpen) {
+  //     document.body.style.overflow = "hidden";
+  //   } else {
+  //     document.body.style.overflow = "";
+  //   }
 
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [mobileMenuOpen]);
+  //   return () => {
+  //     document.body.style.overflow = "";
+  //   };
+  // }, [mobileMenuOpen]);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -53,7 +53,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 z-50">
+            <Link href="/" className="flex items-center space-x-2 z-50 relative">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#e94e1b] to-red-600">
                 <MapPin className="h-5 w-5 text-white" />
               </div>
@@ -153,7 +153,7 @@ export default function Navbar() {
             {/* Mobile menu button */}
             <button
               onClick={toggleMobileMenu}
-              className="md:hidden relative z-50 p-2 text-white hover:bg-[#2a4d6e] rounded-md transition-colors"
+              className="md:hidden relative z-[60] p-2 text-white hover:bg-[#2a4d6e] rounded-md transition-colors"
               aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? (
@@ -166,21 +166,32 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
+      {/* Invisible overlay for clicking outside to close menu */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 z-[40] md:hidden"
           onClick={closeMobileMenu}
         />
       )}
 
       {/* Mobile Menu */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-[#1e3a5f] text-white transform transition-transform duration-300 ease-in-out z-40 md:hidden ${
+        className={`fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-[#1e3a5f] text-white transform transition-transform duration-300 ease-in-out z-[50] md:hidden shadow-2xl ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="pt-20 px-6">
+        {/* Close button inside menu */}
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={closeMobileMenu}
+            className="p-2 text-white hover:bg-[#2a4d6e] rounded-md transition-colors"
+            aria-label="Close mobile menu"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="pt-20 px-6 overflow-y-auto h-full">
           {/* Navigation Links */}
           <div className="space-y-6 mb-8">
             <Link
@@ -198,7 +209,7 @@ export default function Navbar() {
               For Shoppers
             </Link>
             <Link
-              href="/business"
+              href="/business/auth/signin"
               onClick={closeMobileMenu}
               className="block text-white py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-[#2a4d6e]"
             >

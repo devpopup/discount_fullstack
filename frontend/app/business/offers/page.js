@@ -279,10 +279,11 @@ export default function OffersPage() {
       )}
 
       {/* Header with Search and Filters */}
-      <div className="mb-6">
-        <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+      <div className="mb-6 space-y-4">
+        {/* Search and Create Button Row */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search offers..."
@@ -292,68 +293,69 @@ export default function OffersPage() {
             />
           </div>
 
-          {/* Filters and Actions */}
-          <div className="flex gap-3 w-full lg:w-auto">
-            {/* Product Filter */}
-            <Select value={selectedProduct || 'all'} onValueChange={handleProductFilter}>
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="All Products" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Products</SelectItem>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Create Offer Button */}
+          <Button 
+            onClick={handleCreateOffer}
+            className="bg-[#e94e1b] hover:bg-[#d13f16] text-white w-full sm:w-auto shrink-0"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Create Offer</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
+        </div>
 
-            {/* Status Filter */}
-            <Select value={selectedStatus} onValueChange={handleStatusFilter}>
-              <SelectTrigger className="w-full lg:w-[140px]">
-                <Tag className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="upcoming">Scheduled</SelectItem>
-                <SelectItem value="inactive">Paused</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Filters Row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Product Filter */}
+          <Select value={selectedProduct || 'all'} onValueChange={handleProductFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="All Products" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Products</SelectItem>
+              {products.map((product) => (
+                <SelectItem key={product.id} value={product.id}>
+                  {product.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            {/* Sort */}
-            <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-              const [field, order] = value.split('-')
-              setSortBy(field)
-              setSortOrder(order)
-              setCurrentPage(1)
-            }}>
-              <SelectTrigger className="w-full lg:w-[140px]">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at-desc">Newest First</SelectItem>
-                <SelectItem value="created_at-asc">Oldest First</SelectItem>
-                <SelectItem value="expiry_date-desc">Expiry Date (New)</SelectItem>
-                <SelectItem value="expiry_date-asc">Expiring Soon</SelectItem>
-                <SelectItem value="current_claims-desc">Most Claims</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Status Filter */}
+          <Select value={selectedStatus} onValueChange={handleStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <Tag className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="upcoming">Scheduled</SelectItem>
+              <SelectItem value="inactive">Paused</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
 
-            {/* Create Offer Button */}
-            <Button 
-              onClick={handleCreateOffer}
-              className="bg-[#e94e1b] hover:bg-[#d13f16] text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Offer
-            </Button>
-          </div>
+          {/* Sort */}
+          <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+            const [field, order] = value.split('-')
+            setSortBy(field)
+            setSortOrder(order)
+            setCurrentPage(1)
+          }}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at-desc">Newest First</SelectItem>
+              <SelectItem value="created_at-asc">Oldest First</SelectItem>
+              <SelectItem value="expiry_date-desc">Expiry Date (New)</SelectItem>
+              <SelectItem value="expiry_date-asc">Expiring Soon</SelectItem>
+              <SelectItem value="current_claims-desc">Most Claims</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

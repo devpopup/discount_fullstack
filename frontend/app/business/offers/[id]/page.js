@@ -444,26 +444,6 @@ export default function OfferDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Offer Image */}
-          {(offer.image_url || offer.product?.image_url) && (
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-[#e94e1b]" />
-                  Offer Image
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={offer.image_url || offer.product?.image_url}
-                    alt={offer.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Product Information */}
           {offer.product && (

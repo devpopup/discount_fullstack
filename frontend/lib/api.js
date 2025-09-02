@@ -14,6 +14,7 @@ export const endpoints = {
   // Business Profile
   businessProfile: '/business/profile',
   businessLocation: '/business/location',
+  uploadBusinessLogo: '/business/upload-logo',
 
   // Products
   products: '/business/products',

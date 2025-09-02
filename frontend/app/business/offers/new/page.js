@@ -291,7 +291,7 @@ function CreateOfferForm() {
         <Button 
           variant="outline" 
           onClick={() => router.back()}
-          className="mb-4 hover:bg-gray-50"
+          className="mb-4 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
@@ -622,19 +622,19 @@ function CreateOfferForm() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4 border-t border-white/10">
+                  <div className="flex gap-3 pt-4 border-t border-slate-700">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => router.back()}
-                      className="flex-1 border-white/20 text-white hover:bg-white/10 h-11"
+                      className="flex-1 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 h-11"
                       disabled={loading}
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
-                      className="flex-1 bg-[#e94e1b] hover:bg-[#d13f16] text-white h-11"
+                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white h-11"
                       disabled={loading || !formData.product_id}
                     >
                       {loading ? (

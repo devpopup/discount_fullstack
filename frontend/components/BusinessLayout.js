@@ -1,9 +1,10 @@
 // components/BusinessLayout.js
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
+import { apiRequest, endpoints } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { 
   BarChart3,
@@ -14,11 +15,13 @@ import {
   LogOut,
   Bell,
   RefreshCw,
-  User
+  User,
+  Menu,
+  X
 } from 'lucide-react'
 
 // Sidebar Navigation Component
-function Sidebar({ activeTab, setActiveTab, onLogout, userInfo }) {
+function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose }) {
   const router = useRouter()
   
   const menuItems = [
@@ -35,103 +38,136 @@ function Sidebar({ activeTab, setActiveTab, onLogout, userInfo }) {
     } else {
       router.push(item.path)
     }
+    // Close mobile menu after navigation
+    if (onClose) {
+      onClose()
+    }
   }
 
   return (
-    <div className="w-64 bg-[#1e3a5f] text-white h-screen fixed left-0 top-0 z-40">
-      {/* Logo */}
-      <div className="flex items-center justify-center p-6 border-b border-[#2a4d6e]">
-        <img
-          src="/logo.svg"
-          alt="PopupReach Logo"
-          width={160}
-          height={160}
-          className="rounded-lg"
+    <>
+      {/* Mobile Overlay - Invisible for click-to-close */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-30 lg:hidden"
+          onClick={onClose}
         />
-      </div>
+      )}
 
-      {/* User Info */}
-      <div className="p-6 border-b border-[#2a4d6e]">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-[#2a4d6e] rounded-full flex items-center justify-center">
-            <User className="h-5 w-5 text-blue-200" />
+      {/* Sidebar */}
+      <div className={`
+        w-64 bg-slate-800 text-white h-screen fixed left-0 top-0 z-40 transform transition-transform duration-300 ease-in-out border-r border-slate-700
+        lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        {/* Close Button (Mobile) */}
+        <div className="lg:hidden absolute top-4 right-4 z-50">
+          <button
+            onClick={onClose}
+            className="p-2 text-white hover:bg-slate-700 rounded-md"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Logo */}
+        <div className="flex items-center gap-3 p-4 lg:p-6 border-b border-slate-700">
+          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+            <div className="w-4 h-4 bg-white rounded-sm transform rotate-45"></div>
           </div>
-          <div>
-            <h2 className="text-sm font-semibold text-white">
-              {userInfo?.business_name || `${userInfo?.first_name}'s Business` || 'Business Account'}
-            </h2>
-            <p className="text-xs text-blue-200">Business Portal</p>
+          <span className="text-lg lg:text-xl font-semibold">PopupReach</span>
+        </div>
+
+        {/* Navigation */}
+        <nav className="p-4 flex-1 overflow-y-auto">
+          <div className="space-y-2">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                  activeTab === item.id
+                    ? 'bg-slate-700 text-white'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span className="font-medium text-sm lg:text-base">{item.label}</span>
+              </button>
+            ))}
           </div>
+        </nav>
+
+        {/* User Info & Logout */}
+        <div className="p-4 border-t border-slate-700 space-y-4">
+          {/* User Info */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-white truncate">
+                {userInfo?.business?.business_name || userInfo?.business_name || `${userInfo?.first_name}'s Business` || 'Business Account'}
+              </h2>
+              <p className="text-xs text-slate-400">Business Portal</p>
+            </div>
+          </div>
+          
+          {/* Logout Button */}
+          <Button
+            onClick={onLogout}
+            variant="ghost"
+            className="w-full text-slate-400 hover:bg-slate-700 hover:text-white justify-start"
+          >
+            <LogOut className="h-4 w-4 mr-3" />
+            Logout
+          </Button>
         </div>
       </div>
-
-      {/* Navigation */}
-      <nav className="p-4">
-        <div className="space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                activeTab === item.id
-                  ? 'bg-[#e94e1b] text-white'
-                  : 'text-blue-200 hover:bg-[#2a4d6e] hover:text-white'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {/* Bottom Actions */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#2a4d6e]">
-        <Button
-          onClick={onLogout}
-          variant="ghost"
-          className="w-full text-blue-200 hover:bg-[#2a4d6e] hover:text-white justify-start"
-        >
-          <LogOut className="h-5 w-5 mr-3" />
-          Logout
-        </Button>
-      </div>
-    </div>
+    </>
   )
 }
 
 // Top Header Component
-function TopHeader({ title, subtitle, onRefresh, refreshing, showRefresh = false, children }) {
+function TopHeader({ title, subtitle, onRefresh, refreshing, showRefresh = false, children, onMenuToggle }) {
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="bg-slate-900 border-b border-slate-700 px-4 lg:px-6 py-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          {subtitle && (
-            <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
-          )}
+        <div className="flex items-center space-x-3">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={onMenuToggle}
+            className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          
+          <div className="min-w-0">
+            <h1 className="text-lg lg:text-3xl font-bold text-white truncate">{title}</h1>
+            {subtitle && (
+              <p className="text-xs lg:text-sm text-slate-400 mt-1 truncate">{subtitle}</p>
+            )}
+          </div>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 lg:space-x-4">
           {showRefresh && onRefresh && (
             <Button
               variant="outline"
               size="sm"
               onClick={onRefresh}
               disabled={refreshing}
-              className="flex items-center space-x-2"
+              className="hidden sm:flex items-center space-x-2 border-slate-600 text-slate-400 hover:text-white hover:bg-slate-700"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
+              <span className="hidden lg:inline">Refresh</span>
             </Button>
           )}
           
           {children}
           
-          <Button className="relative" size="sm">
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-          </Button>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-orange-500 rounded-full flex items-center justify-center">
+            <User className="h-4 w-4 lg:h-5 lg:w-5 text-white" />
+          </div>
         </div>
       </div>
     </div>
@@ -152,22 +188,64 @@ export default function BusinessLayout({
 }) {
   const { user, logout } = useAuth()
   const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [businessProfile, setBusinessProfile] = useState(null)
 
   const handleLogout = async () => {
     await logout()
     router.push('/')
   }
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen)
+  }
+
+  const closeSidebar = () => {
+    setSidebarOpen(false)
+  }
+
+  // Fetch business profile data
+  useEffect(() => {
+    const fetchBusinessProfile = async () => {
+      if (user && user.is_business) {
+        try {
+          const result = await apiRequest(endpoints.businessProfile, {
+            method: 'GET'
+          })
+          if (result.success && result.data) {
+            setBusinessProfile(result.data)
+          }
+        } catch (error) {
+          // Silently handle error - user data fallback will be used
+        }
+      }
+    }
+
+    fetchBusinessProfile()
+  }, [user])
+
+  // Close sidebar on screen resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   // Redirect if not business user
   if (!user || !user.is_business) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Business account required to access this page.</p>
+          <p className="text-gray-600 mb-4">Business account required to access this page.</p>
           <Button 
             onClick={() => router.push('/business/auth/signin')} 
-            className="mt-4 bg-[#e94e1b] hover:bg-[#d13f16]"
+            className="bg-[#e94e1b] hover:bg-[#d13f16]"
           >
             Login
           </Button>
@@ -177,28 +255,31 @@ export default function BusinessLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-900 text-white">
       {/* Sidebar */}
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab}
         onLogout={handleLogout}
-        userInfo={user}
+        userInfo={{...user, ...businessProfile}}
+        isOpen={sidebarOpen}
+        onClose={closeSidebar}
       />
 
       {/* Main Content */}
-      <div className="ml-64">
+      <div className="lg:ml-64 min-h-screen flex flex-col">
         <TopHeader 
           title={title}
           subtitle={subtitle}
           onRefresh={onRefresh}
           refreshing={refreshing}
           showRefresh={showRefresh}
+          onMenuToggle={toggleSidebar}
         >
           {headerActions}
         </TopHeader>
         
-        <main className="p-6">
+        <main className="flex-1 p-4 lg:p-6 overflow-x-auto bg-slate-900">
           {children}
         </main>
       </div>

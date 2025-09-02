@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import BusinessLayout from '@/components/BusinessLayout'
+import { apiRequest, endpoints } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,7 +27,8 @@ import {
   Eye,
   MoreHorizontal,
   Edit,
-  Trash
+  Trash,
+  Building2
 } from 'lucide-react'
 
 // Import API functions
@@ -436,6 +438,7 @@ export default function Dashboard() {
   const [offers, setOffers] = useState([])
   const [products, setProducts] = useState([])
   const [businessName, setBusinessName] = useState('')
+  const [businessProfile, setBusinessProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -445,6 +448,15 @@ export default function Dashboard() {
     try {
       setError(null)
       console.log('Fetching dashboard data...')
+      
+      // Fetch business profile for business name
+      const profileResult = await apiRequest(endpoints.businessProfile, {
+        method: 'GET'
+      })
+      if (profileResult.success && profileResult.data) {
+        setBusinessProfile(profileResult.data)
+        setBusinessName(profileResult.data.business?.business_name || profileResult.data.business_name || '')
+      }
       
       // Fetch products with category data
       const productsResult = await getProducts({ page: 1, limit: 100 })
@@ -572,6 +584,25 @@ export default function Dashboard() {
         <>
           {/* Stats Cards */}
           <StatsCards stats={stats} />
+
+          {/* Welcome Section */}
+          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20 mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-white mb-2">
+                    Welcome back{businessProfile?.business?.business_name ? `, ${businessProfile.business.business_name}!` : businessName ? `, ${businessName}!` : '!'}
+                  </h2>
+                  <p className="text-slate-400">
+                    Here's what's happening with your business today.
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Main Content Grid */}
           <div className="space-y-8">

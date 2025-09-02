@@ -265,10 +265,11 @@ export default function ProductsPage() {
       )}
 
       {/* Header with Search and Filters */}
-      <div className="mb-6">
-        <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+      <div className="mb-6 space-y-4">
+        {/* Search and New Product Button Row */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search products..."
@@ -278,61 +279,62 @@ export default function ProductsPage() {
             />
           </div>
 
-          {/* Filters and Actions */}
-          <div className="flex gap-2">
-            {/* Category Filter */}
-            <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
-              <SelectTrigger className="w-[180px] bg-white border-gray-200">
-                <Filter className="h-4 w-4 mr-2 text-gray-400" />
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* New Product Button */}
-            <Button
-              onClick={handleNewProduct}
-              className="bg-[#e94e1b] hover:bg-[#d13f16] text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Product
-            </Button>
-          </div>
+          {/* New Product Button */}
+          <Button
+            onClick={handleNewProduct}
+            className="bg-[#e94e1b] hover:bg-[#d13f16] text-white w-full sm:w-auto shrink-0"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">New Product</span>
+            <span className="sm:hidden">New</span>
+          </Button>
         </div>
 
-        {/* Sort Controls */}
-        <div className="flex gap-2 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleSort('name')}
-            className="text-sm"
-          >
-            Name {getSortIcon('name')}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleSort('price')}
-            className="text-sm"
-          >
-            Price {getSortIcon('price')}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleSort('created_at')}
-            className="text-sm"
-          >
-            Date {getSortIcon('created_at')}
-          </Button>
+        {/* Filters and Sort Controls Row */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-between">
+          {/* Category Filter */}
+          <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-[180px] bg-white border-gray-200">
+              <Filter className="h-4 w-4 mr-2 text-gray-400" />
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Sort Controls */}
+          <div className="flex gap-2 overflow-x-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSort('name')}
+              className="text-sm whitespace-nowrap border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+            >
+              Name {getSortIcon('name')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSort('price')}
+              className="text-sm whitespace-nowrap border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+            >
+              Price {getSortIcon('price')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSort('created_at')}
+              className="text-sm whitespace-nowrap border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+            >
+              Date {getSortIcon('created_at')}
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -434,7 +434,8 @@ async def upload_product_image(
             max_size = 2 * 1024 * 1024  # 2MB
             
             # Compress image if necessary
-            if len(original_data) > max_size or original_info.get('width', 0) > 1920:
+            width = original_info.get('width') or 0
+            if len(original_data) > max_size or width > 1920:
                 print(f"Compressing image from {len(original_data)} bytes...")
                 file_content, compression_info = compress_image(
                     original_data, 
@@ -572,6 +573,308 @@ async def get_business_profile(
             detail=f"Failed to retrieve business profile: {str(e)}"
         )
 
+
+@router.post("/upload-logo", response_model=dict)
+async def upload_business_logo(
+    image: UploadFile = File(...),
+    current_user: UserProfile = Depends(get_current_business_user)
+):
+    """Upload business logo with automatic compression and validation"""
+    
+    try:
+        print(f"Starting business logo upload for user: {current_user.id}")
+        print(f"File: {image.filename}, Content-Type: {image.content_type}, Size: {image.size if hasattr(image, 'size') else 'unknown'}")
+        
+        # Validate file type at upload level
+        allowed_content_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+        if image.content_type not in allowed_content_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file type. Only JPEG, PNG, GIF, and WEBP are allowed."
+            )
+        
+        # Get user's business
+        business_result = supabase_admin.table("businesses").select("id").eq("user_id", str(current_user.id)).execute()
+        
+        if not business_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business not found"
+            )
+        
+        business_id = business_result.data[0]["id"]
+        
+        # Read file content
+        original_data = await image.read()
+        print(f"Read {len(original_data)} bytes from uploaded file")
+        
+        # Import image utilities
+        try:
+            from app.utils.image_utils import validate_image_file, compress_image, get_image_info
+        except ImportError as e:
+            print(f"Failed to import image utilities: {e}")
+            # Fallback: proceed without compression
+            file_content = original_data
+            compression_info = {"message": "Image utilities not available, using original"}
+        else:
+            # Validate the actual image data
+            is_valid, validation_message = validate_image_file(original_data)
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid image: {validation_message}"
+                )
+            
+            # Get original image info
+            original_info = get_image_info(original_data)
+            print(f"Original image info: {original_info}")
+            
+            # Set size limit for Supabase (5MB max, but compress to 2MB for better performance)
+            max_size = 2 * 1024 * 1024  # 2MB
+            
+            # Compress image if necessary (optimize for logos)
+            width = original_info.get('width') or 0
+            if len(original_data) > max_size or width > 800:
+                print(f"Compressing logo from {len(original_data)} bytes...")
+                file_content, compression_info = compress_image(
+                    original_data, 
+                    max_size_bytes=max_size,
+                    quality=90,  # Higher quality for logos
+                    max_dimension=800  # Good size for business logos
+                )
+                print(f"Compression info: {compression_info}")
+            else:
+                file_content = original_data
+                compression_info = {
+                    "original_size": len(original_data),
+                    "compressed_size": len(original_data),
+                    "compression_ratio": 0,
+                    "message": "No compression needed"
+                }
+        
+        # Final size check
+        if len(file_content) > 5 * 1024 * 1024:  # Supabase hard limit
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Image too large even after compression. Please use a smaller image."
+            )
+        
+        # Generate unique filename (always .jpg after compression)
+        file_extension = ".jpg" if compression_info.get("compression_ratio", 0) > 0 else os.path.splitext(image.filename)[1].lower()
+        if not file_extension:
+            file_extension = ".jpg"
+            
+        # Use consistent filename to overwrite previous logo
+        consistent_filename = f"business-logos/{business_id}/logo{file_extension}"
+        
+        print(f"Uploading: {consistent_filename} ({len(file_content)} bytes)")
+        
+        # Upload using requests library with proper overwrite behavior
+        try:
+            import requests
+            
+            # First, try to delete the existing file (ignore if it doesn't exist)
+            delete_url = f"{settings.supabase_url}/storage/v1/object/profile-images/{consistent_filename}"
+            delete_headers = {
+                "Authorization": f"Bearer {settings.supabase_service_role_key}"
+            }
+            
+            print(f"Attempting to delete existing file: {delete_url}")
+            delete_response = requests.delete(delete_url, headers=delete_headers, timeout=10)
+            print(f"Delete response: {delete_response.status_code}")
+            # Don't fail if delete doesn't work - file might not exist
+            
+            # Now upload the new file
+            upload_url = f"{settings.supabase_url}/storage/v1/object/profile-images/{consistent_filename}"
+            
+            upload_headers = {
+                "Authorization": f"Bearer {settings.supabase_service_role_key}",
+                "Content-Type": image.content_type,
+                "Cache-Control": "3600"
+            }
+            
+            print(f"Making upload request to: {upload_url}")
+            response = requests.post(upload_url, data=file_content, headers=upload_headers, timeout=30)
+            
+            print(f"Upload response: {response.status_code}")
+            if response.status_code not in [200, 201]:
+                print(f"Upload failed with response: {response.text}")
+                raise Exception(f"Upload failed: {response.status_code} - {response.text}")
+            
+            print("✅ Upload successful!")
+            
+        except requests.RequestException as e:
+            print(f"❌ Upload request failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Upload failed: {str(e)}"
+            )
+        except Exception as upload_error:
+            print(f"❌ Upload failed: {upload_error}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Upload failed: {str(upload_error)}"
+            )
+        
+        # Generate clean public URL (for database storage)
+        clean_public_url = f"{settings.supabase_url}/storage/v1/object/public/profile-images/{consistent_filename}"
+        
+        # Generate cache-busted URL (for immediate display)
+        import time
+        cache_buster = int(time.time())
+        display_url = f"{clean_public_url}?v={cache_buster}"
+        
+        # Update business record with clean URL (no cache buster in DB)
+        update_result = supabase_admin.table("businesses").update({
+            "avatar_url": clean_public_url,
+            "updated_at": datetime.utcnow().isoformat()
+        }).eq("id", business_id).execute()
+        
+        if not update_result.data:
+            print("Warning: Failed to update business record with logo URL")
+        else:
+            print(f"✅ Business record updated with logo URL: {clean_public_url}")
+        
+        # Create response with detailed info (return cache-busted URL for immediate display)
+        response_data = {
+            "path": consistent_filename,
+            "url": display_url,  # Cache-busted for immediate display
+            "clean_url": clean_public_url,  # Clean URL for reference
+            "message": "Image uploaded successfully"
+        }
+        
+        # Include compression info if available
+        if compression_info:
+            response_data["compression_info"] = compression_info
+            if compression_info.get("compression_ratio", 0) > 0:
+                response_data["compression_applied"] = True
+                response_data["size_reduction"] = f"{compression_info['compression_ratio']:.1f}%"
+            else:
+                response_data["compression_applied"] = False
+        
+        print(f"Returning response: {response_data}")
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error in business logo upload: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Logo upload failed: {str(e)}"
+        )
+
+
+@router.put("/profile", response_model=dict)
+async def update_business_profile(
+    profile_update: dict,
+    current_user: UserProfile = Depends(get_current_business_user)
+):
+    """Update current business profile"""
+    
+    try:
+        # Get business profile
+        business_result = supabase_admin.table("businesses").select("id").eq("user_id", str(current_user.id)).execute()
+        
+        if not business_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business profile not found"
+            )
+        
+        business_id = business_result.data[0]["id"]
+        
+        # Prepare update data - map frontend fields to database fields
+        update_data = {}
+        field_mapping = {
+            "business_name": "business_name",
+            "address": "business_address", 
+            "phone": "phone_number",
+            "website": "business_website",
+            "category": "category_id",
+            "timezone": "timezone",
+            "promotional_updates": "promotional_updates",
+            "transaction_alerts": "transaction_alerts",
+            "email_notifications": "email_notifications"
+        }
+        
+        for frontend_field, db_field in field_mapping.items():
+            if frontend_field in profile_update:
+                value = profile_update[frontend_field]
+                
+                # Special handling for category - convert name to ID if needed
+                if frontend_field == "category" and value:
+                    # If it's already a UUID, use it directly
+                    if isinstance(value, str) and len(value) == 36 and '-' in value:
+                        update_data[db_field] = value
+                    else:
+                        # It's a category name, look up the ID
+                        category_result = supabase_admin.table("categories").select("id").eq("name", value).execute()
+                        if category_result.data:
+                            update_data[db_field] = category_result.data[0]["id"]
+                        else:
+                            # Category not found, skip this field
+                            print(f"Warning: Category '{value}' not found, skipping category update")
+                            continue
+                else:
+                    # Handle website URL formatting and empty strings
+                    if db_field == "business_website":
+                        if not value or value.strip() == "":
+                            update_data[db_field] = None
+                        else:
+                            # Ensure URL has proper protocol
+                            url = value.strip()
+                            if url and not url.startswith(('http://', 'https://')):
+                                url = 'https://' + url
+                            update_data[db_field] = url
+                    else:
+                        update_data[db_field] = value
+        
+        # Update user email separately if provided
+        if "email" in profile_update:
+            user_update_result = supabase_admin.table("profiles").update({
+                "email": profile_update["email"]
+            }).eq("id", str(current_user.id)).execute()
+            
+            if not user_update_result.data:
+                print("Warning: Failed to update user email")
+        
+        # Add updated timestamp
+        update_data["updated_at"] = datetime.utcnow().isoformat()
+        
+        # Convert data for Supabase
+        update_data = prepare_data_for_supabase(update_data)
+        
+        # Update business profile
+        result = supabase_admin.table("businesses").update(update_data).eq("id", business_id).execute()
+        
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business profile not found"
+            )
+        
+        # Get updated business profile with category info
+        updated_business = supabase_admin.table("businesses").select(
+            "*, categories(*)"
+        ).eq("id", business_id).execute()
+        
+        # Convert any problematic fields
+        business_data = convert_decimals_to_float(updated_business.data[0])
+        
+        return {"business": BusinessResponse(**business_data)}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating business profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update business profile: {str(e)}"
+        )
+
 # Update the existing register_business function in business.py
 
 @router.post("/register", response_model=dict)
@@ -604,6 +907,27 @@ async def register_business(
         business_dict = business_data.model_dump(exclude_none=True)
         business_dict["user_id"] = str(current_user.id)
         business_dict["id"] = str(uuid.uuid4())
+        
+        # Set default values for new fields if not provided
+        if "timezone" not in business_dict:
+            business_dict["timezone"] = "America/Toronto"
+        if "promotional_updates" not in business_dict:
+            business_dict["promotional_updates"] = True
+        if "transaction_alerts" not in business_dict:
+            business_dict["transaction_alerts"] = True
+        if "email_notifications" not in business_dict:
+            business_dict["email_notifications"] = True
+        
+        # Handle website URL formatting and empty strings for constraint compliance
+        website = business_dict.get("business_website")
+        if not website or website.strip() == "":
+            business_dict["business_website"] = None
+        else:
+            # Ensure URL has proper protocol
+            url = website.strip()
+            if url and not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            business_dict["business_website"] = url
         
         # Handle location data logging
         if business_data.latitude and business_data.longitude:
@@ -748,8 +1072,25 @@ async def register_business_user_complete(
             "place_id": registration_data.place_id,
             "address_components": registration_data.address_components,
             
+            # Settings with defaults
+            "timezone": getattr(registration_data, 'timezone', 'America/Toronto'),
+            "promotional_updates": getattr(registration_data, 'promotional_updates', True),
+            "transaction_alerts": getattr(registration_data, 'transaction_alerts', True),
+            "email_notifications": getattr(registration_data, 'email_notifications', True),
+            
             "is_verified": False
         }
+        
+        # Handle website URL formatting and empty strings for constraint compliance
+        website = business_data.get("business_website")
+        if not website or website.strip() == "":
+            business_data["business_website"] = None
+        else:
+            # Ensure URL has proper protocol
+            url = website.strip()
+            if url and not url.startswith(('http://', 'https://')):
+                url = 'https://' + url
+            business_data["business_website"] = url
         
         print("Creating business...")
         business_data = prepare_data_for_supabase(business_data)

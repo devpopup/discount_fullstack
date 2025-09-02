@@ -21,6 +21,14 @@ class Business(Base):
     business_hours = Column(JSON, nullable=True)  # Store as JSON
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     
+    # Settings
+    timezone = Column(String, nullable=True, default='America/Toronto')  # Business timezone
+    
+    # Notification preferences
+    promotional_updates = Column(Boolean, default=True, nullable=False)
+    transaction_alerts = Column(Boolean, default=True, nullable=False)
+    email_notifications = Column(Boolean, default=True, nullable=False)
+    
     # Status flags
     is_verified = Column(Boolean, default=False, nullable=False)
     
