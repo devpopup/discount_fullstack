@@ -37,6 +37,10 @@ export const endpoints = {
   redeemClaim: '/business/claims/redeem',
   redemptionStats: '/business/redemption-stats',
 
+  // Analytics
+  businessAnalytics: '/business/analytics',
+  offersAnalyticsList: '/business/analytics/offers',
+
   // Customer endpoints (for reference)
   customer: {
     searchProducts: '/customer/search/products',
