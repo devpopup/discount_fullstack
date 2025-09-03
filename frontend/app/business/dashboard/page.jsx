@@ -27,8 +27,7 @@ import {
   Eye,
   MoreHorizontal,
   Edit,
-  Trash,
-  Building2
+  Trash
 } from 'lucide-react'
 
 // Import API functions
@@ -585,24 +584,6 @@ export default function Dashboard() {
           {/* Stats Cards */}
           <StatsCards stats={stats} />
 
-          {/* Welcome Section */}
-          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20 mb-8">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-white mb-2">
-                    Welcome back{businessProfile?.business?.business_name ? `, ${businessProfile.business.business_name}!` : businessName ? `, ${businessName}!` : '!'}
-                  </h2>
-                  <p className="text-slate-400">
-                    Here's what's happening with your business today.
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Main Content Grid */}
           <div className="space-y-8">

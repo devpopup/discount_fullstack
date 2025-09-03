@@ -69,11 +69,13 @@ function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose,
         </div>
 
         {/* Logo */}
-        <div className="flex items-center gap-3 p-4 lg:p-6 border-b border-slate-700">
-          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-sm transform rotate-45"></div>
-          </div>
-          <span className="text-lg lg:text-xl font-semibold">PopupReach</span>
+        <div className="flex items-center justify-center p-4 lg:p-4 border-b border-slate-700">
+          <img
+            src="/logo.svg"
+            alt="PopupReach Logo"
+            width={240}
+            height={240}
+          />
         </div>
 
         {/* Navigation */}
@@ -96,9 +98,8 @@ function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose,
           </div>
         </nav>
 
-        {/* User Info & Logout */}
-        <div className="p-4 border-t border-slate-700 space-y-4">
-          {/* User Info */}
+        {/* User Info */}
+        <div className="p-4 border-t border-slate-700">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
               <User className="h-4 w-4 text-white" />
@@ -113,8 +114,10 @@ function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose,
               <p className="text-xs text-slate-400">Business Portal</p>
             </div>
           </div>
-          
-          {/* Logout Button */}
+        </div>
+
+        {/* Logout Button - At Very Bottom */}
+        <div className="p-4 border-t border-slate-700">
           <Button
             onClick={onLogout}
             variant="ghost"
@@ -191,8 +194,10 @@ export default function BusinessLayout({
   const { user, loading, logout, businessProfile, businessProfileLoading } = useAuth()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   const handleLogout = async () => {
+    setLoggingOut(true)
     await logout()
     router.push('/')
   }
@@ -217,13 +222,13 @@ export default function BusinessLayout({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Show loading state while auth is being checked
-  if (loading) {
+  // Show loading state while auth is being checked or logging out
+  if (loading || loggingOut) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading...</p>
+          <p className="text-slate-400">{loggingOut ? 'Signing out...' : 'Loading...'}</p>
         </div>
       </div>
     )
