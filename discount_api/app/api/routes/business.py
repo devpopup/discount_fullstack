@@ -2694,32 +2694,31 @@ async def get_business_analytics(
         offers_result = supabase_admin.table("offers").select("id", count="exact").eq("business_id", business_id).eq("is_active", True).lte("start_date", current_time).gte("expiry_date", current_time).execute()
         active_offers = offers_result.count or 0
         
-        # Get total views in date range
-        views_result = supabase_admin.table("offer_views").select(
-            "id", count="exact"
-        ).in_(
-            "offer_id", 
-            [offer["id"] for offer in (supabase_admin.table("offers").select("id").eq("business_id", business_id).execute().data or [])]
-        ).gte("viewed_at", start_date_str).execute()
-        total_views = views_result.count or 0
+        # Get offer IDs once to avoid repeated queries
+        offers_data = supabase_admin.table("offers").select("id").eq("business_id", business_id).execute()
+        offer_ids = [offer["id"] for offer in (offers_data.data or [])]
         
-        # Get total clicks in date range
-        clicks_result = supabase_admin.table("offer_clicks").select(
-            "id", count="exact"
-        ).in_(
-            "offer_id", 
-            [offer["id"] for offer in (supabase_admin.table("offers").select("id").eq("business_id", business_id).execute().data or [])]
-        ).gte("clicked_at", start_date_str).execute()
-        total_clicks = clicks_result.count or 0
-        
-        # Get total claims in date range
-        claims_result = supabase_admin.table("claimed_offers").select(
-            "id", count="exact"
-        ).in_(
-            "offer_id", 
-            [offer["id"] for offer in (supabase_admin.table("offers").select("id").eq("business_id", business_id).execute().data or [])]
-        ).gte("claimed_at", start_date_str).execute()
-        total_claims = claims_result.count or 0
+        if not offer_ids:
+            # No offers, return zeros
+            total_views = total_clicks = total_claims = 0
+        else:
+            # Get total views in date range
+            views_result = supabase_admin.table("offer_views").select(
+                "id", count="exact"
+            ).in_("offer_id", offer_ids).gte("viewed_at", start_date_str).execute()
+            total_views = views_result.count or 0
+            
+            # Get total clicks in date range  
+            clicks_result = supabase_admin.table("offer_clicks").select(
+                "id", count="exact"
+            ).in_("offer_id", offer_ids).gte("clicked_at", start_date_str).execute()
+            total_clicks = clicks_result.count or 0
+            
+            # Get total claims in date range
+            claims_result = supabase_admin.table("claimed_offers").select(
+                "id", count="exact"
+            ).in_("offer_id", offer_ids).gte("claimed_at", start_date_str).execute()
+            total_claims = claims_result.count or 0
         
         return {
             "success": True,
