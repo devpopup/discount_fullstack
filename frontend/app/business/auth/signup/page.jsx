@@ -49,6 +49,7 @@ import {
   Zap,
   Target,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 
 export default function BusinessSignup() {
@@ -1063,7 +1064,7 @@ export default function BusinessSignup() {
                         </div>
                       ) : isLoading ? (
                         <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                          <Loader2 className="h-4 w-4 animate-spin" />
                           <span>Creating Account...</span>
                         </div>
                       ) : (

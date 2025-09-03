@@ -2689,9 +2689,10 @@ async def get_business_analytics(
         
         start_date_str = start_date.isoformat()
         
-        # Get total offers for this business (all offers, not just active ones)
-        offers_result = supabase_admin.table("offers").select("id", count="exact").eq("business_id", business_id).execute()
-        total_offers = offers_result.count or 0
+        # Get active offers for this business (using same logic as offers endpoint)
+        current_time = datetime.utcnow().isoformat()
+        offers_result = supabase_admin.table("offers").select("id", count="exact").eq("business_id", business_id).eq("is_active", True).lte("start_date", current_time).gte("expiry_date", current_time).execute()
+        active_offers = offers_result.count or 0
         
         # Get total views in date range
         views_result = supabase_admin.table("offer_views").select(
@@ -2729,7 +2730,7 @@ async def get_business_analytics(
                     "end": now.strftime("%Y-%m-%d")
                 },
                 "summary": {
-                    "total_offers": total_offers,
+                    "active_offers": active_offers,
                     "total_views": total_views,
                     "total_clicks": total_clicks,
                     "total_claims": total_claims

@@ -40,7 +40,9 @@ import {
   Play,
   X,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Grid3X3,
+  List
 } from 'lucide-react'
 
 // Import API functions
@@ -64,6 +66,7 @@ export default function OffersPage() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [sortBy, setSortBy] = useState('created_at')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -284,12 +287,12 @@ export default function OffersPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           {/* Search */}
           <div className="relative flex-1 max-w-md w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
               placeholder="Search offers..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
             />
           </div>
 
@@ -305,57 +308,87 @@ export default function OffersPage() {
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Product Filter */}
-          <Select value={selectedProduct || 'all'} onValueChange={handleProductFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All Products" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Products</SelectItem>
-              {products.map((product) => (
-                <SelectItem key={product.id} value={product.id}>
-                  {product.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col sm:flex-row gap-3 justify-between">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Product Filter */}
+            <Select value={selectedProduct || 'all'} onValueChange={handleProductFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-slate-800 border-slate-600 text-white">
+                <Filter className="h-4 w-4 mr-2 text-slate-400" />
+                <SelectValue placeholder="All Products" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Products</SelectItem>
+                {products.map((product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {/* Status Filter */}
-          <Select value={selectedStatus} onValueChange={handleStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[140px]">
-              <Tag className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="upcoming">Scheduled</SelectItem>
-              <SelectItem value="inactive">Paused</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Status Filter */}
+            <Select value={selectedStatus} onValueChange={handleStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[140px] bg-slate-800 border-slate-600 text-white">
+                <Tag className="h-4 w-4 mr-2 text-slate-400" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="upcoming">Scheduled</SelectItem>
+                <SelectItem value="inactive">Paused</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Sort */}
-          <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-            const [field, order] = value.split('-')
-            setSortBy(field)
-            setSortOrder(order)
-            setCurrentPage(1)
-          }}>
-            <SelectTrigger className="w-full sm:w-[140px]">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at-desc">Newest First</SelectItem>
-              <SelectItem value="created_at-asc">Oldest First</SelectItem>
-              <SelectItem value="expiry_date-desc">Expiry Date (New)</SelectItem>
-              <SelectItem value="expiry_date-asc">Expiring Soon</SelectItem>
-              <SelectItem value="current_claims-desc">Most Claims</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Sort */}
+            <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+              const [field, order] = value.split('-')
+              setSortBy(field)
+              setSortOrder(order)
+              setCurrentPage(1)
+            }}>
+              <SelectTrigger className="w-full sm:w-[140px] bg-slate-800 border-slate-600 text-white">
+                <TrendingUp className="h-4 w-4 mr-2 text-slate-400" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at-desc">Newest First</SelectItem>
+                <SelectItem value="created_at-asc">Oldest First</SelectItem>
+                <SelectItem value="expiry_date-desc">Expiry Date (New)</SelectItem>
+                <SelectItem value="expiry_date-asc">Expiring Soon</SelectItem>
+                <SelectItem value="current_claims-desc">Most Claims</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex border border-slate-600 rounded-lg bg-slate-800">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-2 rounded-r-none ${
+                viewMode === 'grid' 
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                  : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-2 rounded-l-none border-l border-slate-600 ${
+                viewMode === 'list' 
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                  : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -367,7 +400,9 @@ export default function OffersPage() {
         </div>
       ) : offers.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {viewMode === 'grid' ? (
+            /* Grid View */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {offers.map((offer) => (
               <Card key={offer.id} className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-[420px] flex flex-col overflow-hidden py-0">
                 <CardContent className="p-0 flex flex-col h-full">
@@ -497,6 +532,142 @@ export default function OffersPage() {
               </Card>
             ))}
           </div>
+          ) : (
+            /* List View */
+            <div className="space-y-4 mb-8">
+              {offers.map((offer) => (
+                <Card key={offer.id} className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-200">
+                  <CardContent className="p-6">
+                    <div className="flex gap-6">
+                      {/* Offer Image */}
+                      <div className="relative w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        {offer.image_url || offer.product?.image_url ? (
+                          <img 
+                            src={offer.image_url || offer.product?.image_url} 
+                            alt={offer.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <Tag className="h-8 w-8 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Offer Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="min-w-0 flex-1 mr-4">
+                            <h3 className="font-semibold text-gray-900 text-lg truncate">{offer.title}</h3>
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                              <Badge className="bg-[#e94e1b] text-white font-bold">
+                                {getDiscountDisplay(offer)}
+                              </Badge>
+                              {getStatusBadge(offer.status)}
+                              {offer.product && (
+                                <span className="text-sm text-gray-600">
+                                  Product: {offer.product.name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Actions Dropdown */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleView(offer.id)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(offer.id)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Offer
+                              </DropdownMenuItem>
+                              {offer.status === 'active' || offer.status === 'upcoming' ? (
+                                <DropdownMenuItem onClick={() => handlePauseResume(offer.id, true)}>
+                                  <Pause className="h-4 w-4 mr-2" />
+                                  Pause Offer
+                                </DropdownMenuItem>
+                              ) : offer.status === 'inactive' ? (
+                                <DropdownMenuItem onClick={() => handlePauseResume(offer.id, false)}>
+                                  <Play className="h-4 w-4 mr-2" />
+                                  Resume Offer
+                                </DropdownMenuItem>
+                              ) : null}
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(offer.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        {offer.description && (
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                            {offer.description}
+                          </p>
+                        )}
+
+                        {/* Offer Details */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3 text-sm">
+                          <div>
+                            <span className="text-gray-500">Start:</span>
+                            <div className="font-medium">{formatDate(offer.start_date)}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">End:</span>
+                            <div className="font-medium">{formatDate(offer.expiry_date)}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Claims:</span>
+                            <div className="font-medium">
+                              {offer.current_claims || 0}
+                              {offer.max_claims ? ` / ${offer.max_claims}` : ''}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-gray-400" />
+                            <span className="text-gray-500 text-xs">
+                              {new Date(offer.expiry_date) < new Date() ? 'Expired' : 'Active'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleView(offer.id)}
+                            className="border-[#e94e1b] text-[#e94e1b] hover:bg-[#e94e1b] hover:text-white"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleEdit(offer.id)}
+                            className="bg-[#e94e1b] hover:bg-[#d13f16] text-white"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (

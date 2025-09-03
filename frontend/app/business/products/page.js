@@ -50,7 +50,9 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  X
+  X,
+  Grid3X3,
+  List
 } from 'lucide-react'
 
 // Import API functions and utils
@@ -76,6 +78,7 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState('created_at')
   const [sortOrder, setSortOrder] = useState('desc')
   const [businessName, setBusinessName] = useState('')
+  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
   
   // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState({
@@ -270,12 +273,12 @@ export default function ProductsPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           {/* Search */}
           <div className="relative flex-1 max-w-md w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 bg-white border-gray-200"
+              className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
             />
           </div>
 
@@ -292,21 +295,51 @@ export default function ProductsPage() {
 
         {/* Filters and Sort Controls Row */}
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
-          {/* Category Filter */}
-          <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-white border-gray-200">
-              <Filter className="h-4 w-4 mr-2 text-gray-400" />
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Category Filter */}
+            <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-slate-800 border-slate-600 text-white">
+                <Filter className="h-4 w-4 mr-2 text-slate-400" />
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* View Toggle */}
+            <div className="flex border border-slate-600 rounded-lg bg-slate-800">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-2 rounded-r-none ${
+                  viewMode === 'grid' 
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 rounded-l-none border-l border-slate-600 ${
+                  viewMode === 'list' 
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
           {/* Sort Controls */}
           <div className="flex gap-2 overflow-x-auto">
@@ -314,7 +347,7 @@ export default function ProductsPage() {
               variant="outline"
               size="sm"
               onClick={() => handleSort('name')}
-              className="text-sm whitespace-nowrap border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+              className="text-sm whitespace-nowrap bg-slate-800 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
             >
               Name {getSortIcon('name')}
             </Button>
@@ -322,7 +355,7 @@ export default function ProductsPage() {
               variant="outline"
               size="sm"
               onClick={() => handleSort('price')}
-              className="text-sm whitespace-nowrap border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+              className="text-sm whitespace-nowrap bg-slate-800 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
             >
               Price {getSortIcon('price')}
             </Button>
@@ -330,7 +363,7 @@ export default function ProductsPage() {
               variant="outline"
               size="sm"
               onClick={() => handleSort('created_at')}
-              className="text-sm whitespace-nowrap border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+              className="text-sm whitespace-nowrap bg-slate-800 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
             >
               Date {getSortIcon('created_at')}
             </Button>
@@ -361,7 +394,8 @@ export default function ProductsPage() {
             Add Your First Product
           </Button>
         </div>
-      ) : (
+      ) : viewMode === 'grid' ? (
+        /* Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
             <Card key={product.id} className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-[420px] flex flex-col overflow-hidden py-0">
@@ -481,6 +515,129 @@ export default function ProductsPage() {
                       <Tag className="h-3 w-3 mr-1" />
                       Create Offer
                     </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        /* List View */
+        <div className="space-y-4">
+          {products.map((product) => (
+            <Card key={product.id} className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex gap-6">
+                  {/* Product Image */}
+                  <div className="relative w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ShoppingBag className="h-8 w-8 text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="min-w-0 flex-1 mr-4">
+                        <h3 className="font-semibold text-gray-900 text-lg truncate">{product.name}</h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {product.categories?.name || product.category?.name || 'Uncategorized'}
+                          </Badge>
+                          {product.price && (
+                            <span className="text-lg font-bold text-[#e94e1b]">
+                              ${parseFloat(product.price).toFixed(2)}
+                            </span>
+                          )}
+                          {product.stock_quantity !== null && product.stock_quantity !== undefined && (
+                            <Badge
+                              variant={product.stock_quantity > 0 ? "default" : "destructive"}
+                              className="text-xs"
+                            >
+                              {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Actions Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => handleViewOffers(product.id)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Offers
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleCreateOffer(product.id)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <Tag className="h-4 w-4 mr-2" />
+                            Create Offer
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleEdit(product.id)}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => openDeleteDialog(product)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {product.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleViewOffers(product.id)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Offers
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleCreateOffer(product.id)}
+                        className="bg-[#e94e1b] hover:bg-[#d13f16] text-white"
+                      >
+                        <Tag className="h-4 w-4 mr-2" />
+                        Create Offer
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>

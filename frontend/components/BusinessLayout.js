@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
-import { apiRequest, endpoints } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { 
   BarChart3,
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react'
 
 // Sidebar Navigation Component
-function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose }) {
+function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose, businessProfileLoading }) {
   const router = useRouter()
   
   const menuItems = [
@@ -106,7 +105,10 @@ function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose 
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-white truncate">
-                {userInfo?.business?.business_name || userInfo?.business_name || `${userInfo?.first_name}'s Business` || 'Business Account'}
+                {businessProfileLoading 
+                  ? 'Business Account' 
+                  : (userInfo?.business?.business_name || userInfo?.business_name || 'Business Account')
+                }
               </h2>
               <p className="text-xs text-slate-400">Business Portal</p>
             </div>
@@ -186,10 +188,9 @@ export default function BusinessLayout({
   showRefresh = false,
   headerActions
 }) {
-  const { user, logout } = useAuth()
+  const { user, loading, logout, businessProfile, businessProfileLoading } = useAuth()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [businessProfile, setBusinessProfile] = useState(null)
 
   const handleLogout = async () => {
     await logout()
@@ -204,26 +205,6 @@ export default function BusinessLayout({
     setSidebarOpen(false)
   }
 
-  // Fetch business profile data
-  useEffect(() => {
-    const fetchBusinessProfile = async () => {
-      if (user && user.is_business) {
-        try {
-          const result = await apiRequest(endpoints.businessProfile, {
-            method: 'GET'
-          })
-          if (result.success && result.data) {
-            setBusinessProfile(result.data)
-          }
-        } catch (error) {
-          // Silently handle error - user data fallback will be used
-        }
-      }
-    }
-
-    fetchBusinessProfile()
-  }, [user])
-
   // Close sidebar on screen resize to desktop
   useEffect(() => {
     const handleResize = () => {
@@ -235,6 +216,18 @@ export default function BusinessLayout({
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Show loading state while auth is being checked
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   // Redirect if not business user
   if (!user || !user.is_business) {
@@ -264,6 +257,7 @@ export default function BusinessLayout({
         userInfo={{...user, ...businessProfile}}
         isOpen={sidebarOpen}
         onClose={closeSidebar}
+        businessProfileLoading={businessProfileLoading}
       />
 
       {/* Main Content */}

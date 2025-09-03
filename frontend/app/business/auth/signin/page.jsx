@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 // Icons
-import { Mail, Lock, EyeOff, Eye, CheckCircle, Store, MapPin, ArrowLeft, TrendingUp, Users, BarChart3 } from 'lucide-react'
+import { Mail, Lock, EyeOff, Eye, CheckCircle, Store, MapPin, ArrowLeft, TrendingUp, Users, BarChart3, Loader2 } from 'lucide-react'
 
 export default function BusinessLogin() {
   const router = useRouter()
@@ -278,7 +278,7 @@ export default function BusinessLogin() {
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Signing In...</span>
                   </div>
                 ) : (

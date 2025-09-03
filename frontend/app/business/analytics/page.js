@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { apiRequest, endpoints } from '@/lib/api'
 import BusinessLayout from '@/components/BusinessLayout'
-import { RefreshCw, Eye, MousePointer, Gift, TrendingUp, Calendar, Clock } from 'lucide-react'
+import { Eye, MousePointer, Gift, TrendingUp, Calendar, Clock, Loader2 } from 'lucide-react'
 
 const AnalyticsPage = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('30')
@@ -34,7 +34,7 @@ const AnalyticsPage = () => {
       ])
 
       if (businessResult.success && businessResult.data) {
-        setBusinessAnalytics(businessResult.data)
+        setBusinessAnalytics(businessResult.data.data || businessResult.data)
       } else {
         throw new Error(businessResult.error || 'Failed to fetch business analytics')
       }
@@ -72,7 +72,7 @@ const AnalyticsPage = () => {
   const getStatsData = () => {
     if (!businessAnalytics?.summary) {
       return [
-        { label: 'Total Offers', value: '0', icon: Gift, color: 'text-orange-500' },
+        { label: 'Active Offers', value: '0', icon: Gift, color: 'text-orange-500' },
         { label: 'Total Views', value: '0', icon: Eye, color: 'text-blue-500' },
         { label: 'Total Clicks', value: '0', icon: MousePointer, color: 'text-green-500' },
         { label: 'Total Claims', value: '0', icon: TrendingUp, color: 'text-purple-500' }
@@ -81,7 +81,7 @@ const AnalyticsPage = () => {
 
     const { summary } = businessAnalytics
     return [
-      { label: 'Total Offers', value: summary.total_offers?.toString() || '0', icon: Gift, color: 'text-orange-500' },
+      { label: 'Active Offers', value: summary.active_offers?.toString() || '0', icon: Gift, color: 'text-orange-500' },
       { label: 'Total Views', value: summary.total_views?.toString() || '0', icon: Eye, color: 'text-blue-500' },
       { label: 'Total Clicks', value: summary.total_clicks?.toString() || '0', icon: MousePointer, color: 'text-green-500' },
       { label: 'Total Claims', value: summary.total_claims?.toString() || '0', icon: TrendingUp, color: 'text-purple-500' }
@@ -95,8 +95,11 @@ const AnalyticsPage = () => {
         title="Analytics"
         subtitle="Track your offers performance and metrics"
       >
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 text-slate-400 animate-spin" />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 text-orange-500 animate-spin mx-auto mb-4" />
+            <p className="text-slate-400">Loading analytics data...</p>
+          </div>
         </div>
       </BusinessLayout>
     )
@@ -214,8 +217,8 @@ const AnalyticsPage = () => {
               <Gift className="w-12 h-12 text-slate-600 mx-auto mb-4" />
               <p className="text-slate-400 mb-2">No offers data available</p>
               <p className="text-sm text-slate-500">
-                {businessAnalytics?.summary?.total_offers === 0 
-                  ? 'Create your first offer to start tracking analytics'
+                {businessAnalytics?.summary?.active_offers === 0 
+                  ? 'Create your first active offer to start tracking analytics'
                   : 'No data available for the selected time range'
                 }
               </p>
