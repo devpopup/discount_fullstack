@@ -33,6 +33,7 @@ import {
 // Import API functions
 import { createOffer } from '@/lib/offers'
 import { getProducts } from '@/lib/products'
+import LocationAdvertisingControls from '@/components/LocationAdvertisingControls'
 
 function CreateOfferForm() {
   const { user } = useAuth()
@@ -54,7 +55,12 @@ function CreateOfferForm() {
     minimum_quantity: '',
     buy_quantity: '',
     get_quantity: '',
-    get_discount_percentage: '100'
+    get_discount_percentage: '100',
+    // Geofence and advertising fields
+    geofence_enabled: false,
+    geofence_radius: 1000,
+    auto_advertise: false,
+    daily_ad_budget: 20.00
   })
   
   const [products, setProducts] = useState([])
@@ -92,10 +98,10 @@ function CreateOfferForm() {
   }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value, type, checked } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }))
   }
 
@@ -197,6 +203,11 @@ function CreateOfferForm() {
         expiry_date: formData.expiry_date,
         max_claims: formData.max_claims ? parseInt(formData.max_claims) : undefined,
         terms_conditions: formData.terms_conditions.trim() || undefined,
+        // Geofence and advertising fields
+        geofence_enabled: formData.geofence_enabled,
+        geofence_radius: parseInt(formData.geofence_radius),
+        auto_advertise: formData.auto_advertise,
+        daily_ad_budget: parseFloat(formData.daily_ad_budget),
         is_active: true
       }
 
@@ -620,6 +631,15 @@ function CreateOfferForm() {
                       className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 resize-none"
                     />
                   </div>
+
+                  {/* Location-Based Advertising Controls */}
+                  <LocationAdvertisingControls
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                    setFormData={setFormData}
+                    useSlider={false}
+                    autoAdvertiseEnabled={false}
+                  />
 
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-4 border-t border-slate-700">

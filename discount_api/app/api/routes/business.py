@@ -1342,6 +1342,28 @@ async def create_offer(
         
         # === ENHANCED VALIDATION AND DEFAULT VALUE SETTING ===
         
+        # Validate geofence fields
+        geofence_enabled = offer_data.get("geofence_enabled", False)
+        geofence_radius = offer_data.get("geofence_radius", 1000)
+        auto_advertise = offer_data.get("auto_advertise", False) 
+        daily_ad_budget = offer_data.get("daily_ad_budget", 20.00)
+        
+        # Validate geofence radius
+        if geofence_enabled and geofence_radius:
+            if not isinstance(geofence_radius, int) or geofence_radius < 100 or geofence_radius > 5000:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Geofence radius must be between 100 and 5000 meters"
+                )
+        
+        # Validate daily ad budget
+        if auto_advertise and daily_ad_budget:
+            if not isinstance(daily_ad_budget, (int, float)) or daily_ad_budget < 10 or daily_ad_budget > 500:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Daily ad budget must be between $10 and $500"
+                )
+        
         # Handle discount_value based on offer type
         if discount_type in ["percentage", "fixed"]:
             if not offer_data.get("discount_value"):
@@ -1430,6 +1452,12 @@ async def create_offer(
             "current_claims": 0,
             "is_active": offer_data.get("is_active", True),
             "terms_conditions": offer_data.get("terms_conditions"),
+            
+            # Geofence and advertising fields
+            "geofence_enabled": geofence_enabled,
+            "geofence_radius": geofence_radius,
+            "auto_advertise": auto_advertise,
+            "daily_ad_budget": float(daily_ad_budget),
             
             # Type-specific fields (set to None if not applicable)
             "minimum_purchase_amount": float(offer_data.get("minimum_purchase_amount")) if offer_data.get("minimum_purchase_amount") else None,
@@ -1573,6 +1601,11 @@ async def update_offer(
             "max_claims": "max_claims",
             "is_active": "is_active",
             "terms_conditions": "terms_conditions",
+            # Geofence and advertising fields
+            "geofence_enabled": "geofence_enabled",
+            "geofence_radius": "geofence_radius", 
+            "auto_advertise": "auto_advertise",
+            "daily_ad_budget": "daily_ad_budget",
             # New fields for different offer types
             "minimum_purchase_amount": "minimum_purchase_amount",
             "minimum_quantity": "minimum_quantity",
@@ -1588,14 +1621,34 @@ async def update_offer(
                 value = offer_update[frontend_field]
                 
                 # Type conversion based on field
-                if db_field in ["discount_value", "minimum_purchase_amount", "get_discount_percentage"]:
+                if db_field in ["discount_value", "minimum_purchase_amount", "get_discount_percentage", "daily_ad_budget"]:
                     if value is not None:
                         update_data[db_field] = float(value)
-                elif db_field in ["minimum_quantity", "buy_quantity", "get_quantity", "max_claims"]:
+                elif db_field in ["minimum_quantity", "buy_quantity", "get_quantity", "max_claims", "geofence_radius"]:
                     if value is not None:
                         update_data[db_field] = int(value)
+                elif db_field in ["geofence_enabled", "auto_advertise"]:
+                    if value is not None:
+                        update_data[db_field] = bool(value)
                 else:
                     update_data[db_field] = value
+        
+        # Validate geofence fields if they are being updated
+        if "geofence_radius" in update_data:
+            geofence_radius = update_data["geofence_radius"]
+            if geofence_radius < 100 or geofence_radius > 5000:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Geofence radius must be between 100 and 5000 meters"
+                )
+        
+        if "daily_ad_budget" in update_data:
+            daily_ad_budget = update_data["daily_ad_budget"]
+            if daily_ad_budget < 10 or daily_ad_budget > 500:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Daily ad budget must be between $10 and $500"
+                )
         
         # Validate offer data if discount_type is being changed
         if "discount_type" in offer_update:

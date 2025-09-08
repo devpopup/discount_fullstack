@@ -3,3 +3,4 @@ knowledge_base/
 popup_users/
 *.pyc
 __pycache__/
+.newprojectpath

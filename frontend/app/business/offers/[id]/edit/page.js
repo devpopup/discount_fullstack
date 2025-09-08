@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import BusinessLayout from '@/components/BusinessLayout'
+import LocationAdvertisingControls from '@/components/LocationAdvertisingControls'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -54,7 +55,12 @@ export default function EditOfferPage() {
     minimum_quantity: '',
     buy_quantity: '',
     get_quantity: '',
-    get_discount_percentage: '100'
+    get_discount_percentage: '100',
+    // Geofence and advertising fields
+    geofence_enabled: false,
+    geofence_radius: 1000,
+    auto_advertise: false,
+    daily_ad_budget: 20.00
   })
   
   const [products, setProducts] = useState([])
@@ -103,7 +109,12 @@ export default function EditOfferPage() {
         minimum_quantity: offer.minimum_quantity?.toString() || '',
         buy_quantity: offer.buy_quantity?.toString() || '',
         get_quantity: offer.get_quantity?.toString() || '',
-        get_discount_percentage: offer.get_discount_percentage?.toString() || '100'
+        get_discount_percentage: offer.get_discount_percentage?.toString() || '100',
+        // Geofence and advertising fields
+        geofence_enabled: offer.geofence_enabled || false,
+        geofence_radius: offer.geofence_radius || 1000,
+        auto_advertise: offer.auto_advertise || false,
+        daily_ad_budget: offer.daily_ad_budget || 20.00
       })
       
     } catch (error) {
@@ -115,10 +126,10 @@ export default function EditOfferPage() {
   }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value, type, checked } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }))
   }
 
@@ -239,7 +250,12 @@ export default function EditOfferPage() {
         start_date: formData.start_date,
         expiry_date: formData.expiry_date,
         max_claims: formData.max_claims ? parseInt(formData.max_claims) : undefined,
-        terms_conditions: formData.terms_conditions.trim() || undefined
+        terms_conditions: formData.terms_conditions.trim() || undefined,
+        // Geofence and advertising fields
+        geofence_enabled: formData.geofence_enabled,
+        geofence_radius: parseInt(formData.geofence_radius),
+        auto_advertise: formData.auto_advertise,
+        daily_ad_budget: parseFloat(formData.daily_ad_budget)
       }
 
       // Add type-specific fields
@@ -682,6 +698,15 @@ export default function EditOfferPage() {
                       className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 resize-none"
                     />
                   </div>
+
+                  {/* Location & Advertising Controls */}
+                  <LocationAdvertisingControls
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                    setFormData={setFormData}
+                    useSlider={false}
+                    autoAdvertiseEnabled={true}
+                  />
 
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-4 border-t border-slate-700">
