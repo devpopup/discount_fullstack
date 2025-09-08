@@ -49,6 +49,7 @@ import {
 import { getOffers, deleteOffer, pauseOffer, resumeOffer } from '@/lib/offers'
 import { getProducts } from '@/lib/products'
 import { getImageUrl } from '@/lib/api'
+import { GeofenceStatusBadge } from '@/components/GeofenceInfo'
 
 export default function OffersPage() {
   const { user } = useAuth()
@@ -431,6 +432,11 @@ export default function OffersPage() {
                     <div className="absolute top-2 right-12">
                       {getStatusBadge(offer.status)}
                     </div>
+
+                    {/* Geofence Badge */}
+                    <div className="absolute top-12 right-2">
+                      <GeofenceStatusBadge offer={offer} size="xs" />
+                    </div>
                     
                     {/* Actions Dropdown */}
                     <div className="absolute top-2 right-2">
@@ -564,6 +570,7 @@ export default function OffersPage() {
                                 {getDiscountDisplay(offer)}
                               </Badge>
                               {getStatusBadge(offer.status)}
+                              <GeofenceStatusBadge offer={offer} size="sm" />
                               {offer.product && (
                                 <span className="text-sm text-gray-600">
                                   Product: {offer.product.name}

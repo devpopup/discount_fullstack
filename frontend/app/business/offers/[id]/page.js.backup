@@ -600,7 +600,7 @@ export default function OfferDetailPage() {
             </Card>
           )}
 
-          {/* Discount Details */}
+          {/* Discount Details */
           <Card className="bg-white border-0 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
