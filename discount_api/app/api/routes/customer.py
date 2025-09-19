@@ -217,7 +217,7 @@ async def search_offers(
         )
 
 
-@router.get("/offers/trending", response_model=OfferListResponse)
+@router.get("/offers/trending")
 async def get_trending_offers(
     limit: int = Query(10, ge=1, le=50),
     category_id: Optional[str] = None
@@ -227,9 +227,9 @@ async def get_trending_offers(
     try:
         current_time = datetime.utcnow().isoformat()
         
-        # Step 1: Get offers WITHOUT trying to join products
+        # Step 1: Get offers WITHOUT trying to join products  
         query = supabase.table("offers").select(
-            "*, businesses!inner(business_name, is_verified, avatar_url)", 
+            "*, businesses!inner(business_name, is_verified, avatar_url, business_address, latitude, longitude)", 
             count="exact"
         ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time)
         
@@ -267,27 +267,29 @@ async def get_trending_offers(
             
             enriched_offers.append(offer)
         
-        # Step 3: Transform data
+        # Step 3: Transform data - return raw dict to preserve all fields
         offers = []
         for offer in enriched_offers:
             offer_data = offer.copy()
+            
+            # Ensure business data is preserved
             if 'businesses' in offer_data:
                 offer_data['business'] = offer_data['businesses']
-                del offer_data['businesses']
+                # Keep both for compatibility
             
             # Remove the null 'product' field and keep 'products'
             if 'product' in offer_data:
                 del offer_data['product']
                 
-            offers.append(OfferSearchResponse(**offer_data))
+            offers.append(offer_data)
         
-        return OfferListResponse(
-            offers=offers,
-            total=len(offers),
-            page=1,
-            size=limit,
-            has_next=False
-        )
+        return {
+            "offers": offers,
+            "total": len(offers),
+            "page": 1,
+            "size": limit,
+            "has_next": False
+        }
         
     except Exception as e:
         print(f"Error in get_trending_offers: {e}")
@@ -296,7 +298,7 @@ async def get_trending_offers(
             detail=f"Failed to get trending offers: {str(e)}"
         )
 
-@router.get("/offers/expiring-soon", response_model=OfferListResponse)
+@router.get("/offers/expiring-soon")
 async def get_expiring_offers(
     hours: int = Query(24, ge=1, le=168, description="Hours until expiry"),
     limit: int = Query(10, ge=1, le=50)
@@ -311,7 +313,7 @@ async def get_expiring_offers(
         
         # Step 1: Get offers WITHOUT product join
         query = supabase.table("offers").select(
-            "*, businesses!inner(business_name, is_verified, avatar_url)"
+            "*, businesses!inner(business_name, is_verified, avatar_url, business_address, latitude, longitude)"
         ).eq("is_active", True).gte("expiry_date", current_time.isoformat()).lte("expiry_date", expiry_threshold.isoformat())
         
         # Sort by expiry date ascending (most urgent first)
@@ -340,22 +342,29 @@ async def get_expiring_offers(
             
             enriched_offers.append(offer)
         
-        # Step 3: Transform data
+        # Step 3: Transform data - return raw dict to preserve all fields
         offers = []
         for offer in enriched_offers:
             offer_data = offer.copy()
+            
+            # Ensure business data is preserved
             if 'businesses' in offer_data:
                 offer_data['business'] = offer_data['businesses']
-                del offer_data['businesses']
-            offers.append(OfferSearchResponse(**offer_data))
+                # Keep both for compatibility
+            
+            # Remove the null 'product' field and keep 'products'
+            if 'product' in offer_data:
+                del offer_data['product']
+                
+            offers.append(offer_data)
         
-        return OfferListResponse(
-            offers=offers,
-            total=len(offers),
-            page=1,
-            size=limit,
-            has_next=False
-        )
+        return {
+            "offers": offers,
+            "total": len(offers),
+            "page": 1,
+            "size": limit,
+            "has_next": False
+        }
         
     except Exception as e:
         raise HTTPException(
@@ -1131,8 +1140,6 @@ from app.utils.dependencies import get_current_active_user
 from app.schemas.user import UserProfile
 from decimal import Decimal
 
-router = APIRouter(prefix="/customer", tags=["Customer"])
-
 def convert_decimals_to_float(data):
     """Convert Decimal fields to float in a dictionary or list"""
     if isinstance(data, dict):
@@ -1312,8 +1319,6 @@ from app.core.database import supabase, supabase_admin
 from app.schemas.user import UserProfile
 from app.utils.dependencies import get_current_active_user
 from app.utils.offer_calculations import OfferCalculator
-
-router = APIRouter(prefix="/customer", tags=["Customer"])
 
 @router.get("/offers/search", response_model=dict)
 async def search_offers(

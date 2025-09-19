@@ -1,20 +1,87 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { 
-  MapPin,
-  ArrowLeft,
-  Clock,
-  Users,
-  ShoppingBag,
-  Gift,
-  Star
-} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { signIn } from '@/lib/auth'
+import { useAuth } from '@/context/AuthContext'
 
-export default function ShopperSigninComingSoon() {
+// Import shadcn components
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+// Icons
+import { Mail, Lock, EyeOff, Eye, CheckCircle, ShoppingBag, MapPin, Gift, Star, Loader2 } from 'lucide-react'
+
+export default function ShopperSignin() {
+  const router = useRouter()
+  const { login } = useAuth()
+  
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const registered = urlParams.get('registered')
+      const reset = urlParams.get('reset')
+
+      if (registered === 'true') {
+        setSuccessMessage('Account created successfully! Please log in.')
+      } else if (reset === 'success') {
+        setSuccessMessage('Password updated successfully! Please log in with your new password.')
+      }
+    }
+  }, [])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
+
+    try {
+      console.log('Starting login process...')
+      
+      const result = await signIn({ email, password })
+      
+      if (result.error) {
+        console.error('Login failed:', result.error)
+        const errorMessage = typeof result.error === 'object' 
+          ? (Array.isArray(result.error) 
+              ? result.error.map(err => err.msg || err).join(', ')
+              : result.error.message || result.error.detail || JSON.stringify(result.error))
+          : result.error
+        setError(errorMessage)
+        return
+      }
+      
+      if (result.user && result.user.is_business) {
+        setError('This account is registered as a business. Please use the business login or register a customer account.')
+        return
+      }
+
+      console.log('Login successful, user:', result.user)
+      login(result.user)
+      
+      setTimeout(() => {
+        router.push('/shoppers')
+      }, 100)
+      
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('Failed to sign in. Please check your credentials and try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1e3a5f] via-[#2a4d6e] to-[#1e3a5f] flex">
       {/* Left Side - Desktop Only - Visual Content */}
@@ -25,8 +92,8 @@ export default function ShopperSigninComingSoon() {
             <img
               src="/logo.svg"
               alt="PopupReach Logo"
-              width={120}
-              height={120}
+              width={240}
+              height={240}
               className="rounded-lg"
             />
           </div>
@@ -98,7 +165,7 @@ export default function ShopperSigninComingSoon() {
         </div>
       </div>
 
-      {/* Right Side - Coming Soon Content */}
+      {/* Right Side - Sign In Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8">
         <div className="w-full max-w-md">
           {/* Mobile Header */}
@@ -107,15 +174,15 @@ export default function ShopperSigninComingSoon() {
               <img
                 src="/logo.svg"
                 alt="PopupReach Logo"
-                width={80}
-                height={80}
+                width={120}
+                height={120}
                 className="rounded-lg"
               />
             </div>
             
             <div className="flex items-center justify-center space-x-2 mb-4">
               <ShoppingBag className="w-6 h-6 text-[#e94e1b]"/>
-              <h1 className="text-2xl font-bold text-white">Shopper Access</h1>
+              <h1 className="text-2xl font-bold text-white">Shopper Sign In</h1>
             </div>
           </div>
 
@@ -125,88 +192,128 @@ export default function ShopperSigninComingSoon() {
                 <ShoppingBag className="w-7 h-7 text-[#e94e1b]" />
                 <CardTitle className="text-2xl font-bold text-gray-900">Shopper Sign In</CardTitle>
               </div>
-              <CardTitle className="lg:hidden text-2xl font-bold text-gray-900">Coming Soon!</CardTitle>
+              <CardTitle className="lg:hidden text-2xl font-bold text-gray-900">Welcome back</CardTitle>
               <CardDescription className="text-gray-600 text-lg">
-                We're working hard to bring you the best shopping experience
+                Access your account and discover amazing deals
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6 px-6 pb-8">
-              {/* Coming Soon Message */}
-              <div className="text-center py-8">
-                <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-br from-[#e94e1b] to-red-600 rounded-full flex items-center justify-center">
-                  <Clock className="w-10 h-10 text-white" />
-                </div>
-                
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  Shopper Features Coming Soon!
-                </h3>
-                
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  We're building an amazing experience for shoppers to discover and claim exclusive local deals. 
-                  Get ready to save big on your favorite products and services!
-                </p>
+              {successMessage && (
+                <Alert className="border-green-200 bg-green-50 text-green-800">
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>{successMessage}</AlertDescription>
+                </Alert>
+              )}
 
-                {/* Feature Preview */}
-                <div className="grid grid-cols-1 gap-4 text-left bg-gray-50 p-6 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#e94e1b] rounded-full flex items-center justify-center">
-                      <MapPin className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-sm text-gray-700">Location-based deal discovery</span>
+              {error && (
+                <Alert variant="destructive" className="bg-red-50 border-red-200">
+                  <AlertDescription className="text-red-800">{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700 font-semibold">
+                    Email Address
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="pl-10 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                      disabled={isLoading}
+                    />
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#e94e1b] rounded-full flex items-center justify-center">
-                      <Gift className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-sm text-gray-700">Exclusive discount notifications</span>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-gray-700 font-semibold">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="pl-10 pr-12 h-12 border-gray-300 focus:border-[#e94e1b] focus:ring-[#e94e1b] rounded-lg"
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#e94e1b] rounded-full flex items-center justify-center">
-                      <Users className="w-4 h-4 text-white" />
+                </div>
+
+                <div className="text-right">
+                  <Link 
+                    href="/shoppers/auth/forgot-password" 
+                    className="text-sm text-[#e94e1b] hover:text-[#d13f16] font-medium"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+
+                <Button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white h-12 text-lg font-semibold disabled:opacity-50 rounded-lg shadow-lg"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Signing In...</span>
                     </div>
-                    <span className="text-sm text-gray-700">Favorite businesses tracking</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#e94e1b] rounded-full flex items-center justify-center">
-                      <Star className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-sm text-gray-700">Rewards and loyalty points</span>
-                  </div>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </form>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500">Don't have an account?</span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-4">
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold"
-                  asChild
-                >
-                  <Link href="/">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Home
-                  </Link>
-                </Button>
-
-                <Button 
-                  className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white h-12 text-lg font-semibold rounded-lg shadow-lg"
-                  asChild
-                >
-                  <Link href="/business/auth/signin">
-                    Are you a business? Sign in here
-                  </Link>
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full h-12 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold"
+                asChild
+              >
+                <Link href="/shoppers/auth/signup">
+                  Create Shopper Account
+                </Link>
+              </Button>
 
               <div className="mt-6">
                 <p className="text-center text-sm text-gray-500">
-                  Want to list your business?{' '}
+                  Are you a business owner?{' '}
                   <Link 
-                    href="/business/auth/signup" 
+                    href="/business/auth/signin" 
                     className="text-[#e94e1b] hover:text-[#d13f16] font-medium"
                   >
-                    Create Business Account
+                    Sign in as Business
                   </Link>
                 </p>
               </div>
@@ -215,19 +322,19 @@ export default function ShopperSigninComingSoon() {
 
           {/* Mobile Features */}
           <div className="lg:hidden mt-8 text-center">
-            <p className="text-blue-200 text-sm mb-4">Coming soon for shoppers</p>
+            <p className="text-blue-200 text-sm mb-4">Discover local deals near you</p>
             <div className="grid grid-cols-1 gap-3 text-xs text-blue-100">
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-[#e94e1b] rounded-full"></div>
-                <span>Discover local deals and offers</span>
+                <span>Get exclusive offers from nearby businesses</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-[#e94e1b] rounded-full"></div>
-                <span>Get notified about nearby discounts</span>
+                <span>Save money on your favorite products</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-[#e94e1b] rounded-full"></div>
-                <span>Save on your favorite local businesses</span>
+                <span>Support local businesses in your community</span>
               </div>
             </div>
           </div>

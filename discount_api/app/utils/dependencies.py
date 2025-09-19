@@ -6,6 +6,7 @@ from app.schemas.user import UserProfile
 import uuid
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
@@ -91,7 +92,7 @@ async def get_current_admin_user(
 
 # Optional user dependency (doesn't raise exception if no user)
 async def get_current_user_optional(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)
 ) -> Optional[UserProfile]:
     """Get current user if authenticated, None otherwise"""
     if not credentials:
