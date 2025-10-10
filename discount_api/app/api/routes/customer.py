@@ -1,7 +1,7 @@
 # app/api/routes/customer.py
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.database import supabase
 from app.schemas.business import (
     ProductResponse, ProductListResponse,
@@ -145,7 +145,7 @@ async def search_offers(
     """Search and filter offers with advanced options"""
     
     try:
-        current_time = datetime.utcnow().isoformat()
+        current_time = datetime.now(timezone.utc).isoformat()
         
         # Build query - only active offers within date range
         query = supabase.table("offers").select(
@@ -223,9 +223,10 @@ async def get_trending_offers(
     category_id: Optional[str] = None
 ):
     """Get trending offers based on claims"""
-    
+
     try:
-        current_time = datetime.utcnow().isoformat()
+        # Use timezone-aware datetime to match database timestamps
+        current_time = datetime.now(timezone.utc).isoformat()
         
         # Step 1: Get offers WITHOUT trying to join products  
         query = supabase.table("offers").select(
@@ -308,7 +309,7 @@ async def get_expiring_offers(
     try:
         from datetime import timedelta
         
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         expiry_threshold = current_time + timedelta(hours=hours)
         
         # Step 1: Get offers WITHOUT product join
@@ -480,7 +481,7 @@ async def get_saved_offers(
         ).eq("user_id", str(current_user.id))
         
         if active_only:
-            current_time = datetime.utcnow().isoformat()
+            current_time = datetime.now(timezone.utc).isoformat()
             query = query.eq("offers.is_active", True).gte("offers.expiry_date", current_time)
         
         # Apply pagination
@@ -1058,7 +1059,7 @@ async def discover_businesses(
             query = query.ilike("business_name", f"%{search}%")
         
         if has_active_offers:
-            current_time = datetime.utcnow().isoformat()
+            current_time = datetime.now(timezone.utc).isoformat()
             # This would need a join - simplified for now
             query = query.eq("is_verified", True)  # Placeholder logic
         
@@ -1159,32 +1160,110 @@ async def get_offers_nearby(
     limit: int = Query(20, description="Maximum results", gt=0, le=100),
     category_id: Optional[str] = Query(None, description="Filter by category")
 ):
-    """Find offers near a location"""
+    """Find offers near a location with geofencing support"""
     try:
-        print(f"Searching offers near: {lat}, {lng} within {radius}km")
-        
-        # Call the database function
-        result = supabase_admin.rpc('get_nearby_offers', {
-            'user_lat': lat,
-            'user_lng': lng,
-            'search_radius': radius,
-            'result_limit': limit
-        }).execute()
-        
-        offers = result.data or []
-        
+        print(f"Searching geofenced offers near: {lat}, {lng}")
+
+        # Get current time for active offers check
+        current_time = datetime.now(timezone.utc).isoformat()
+
+        # Get all active offers with business location data
+        result = supabase_admin.table("offers").select(
+            "*, businesses!inner(id, business_name, is_verified, avatar_url, business_address, latitude, longitude)"
+        ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time).execute()
+
+        all_offers = result.data or []
+        print(f"Found {len(all_offers)} active offers total")
+
+        # Filter offers based on geofencing logic
+        nearby_offers = []
+        for offer in all_offers:
+            business = offer.get('businesses', {})
+            business_lat = business.get('latitude')
+            business_lng = business.get('longitude')
+
+            if not business_lat or not business_lng:
+                continue
+
+            # Calculate distance between user and business (in meters)
+            from math import radians, sin, cos, sqrt, atan2
+
+            R = 6371000  # Earth's radius in meters
+            lat1, lng1 = radians(lat), radians(lng)
+            lat2, lng2 = radians(float(business_lat)), radians(float(business_lng))
+
+            dlat = lat2 - lat1
+            dlng = lng2 - lng1
+
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            distance_meters = R * c
+
+            # Check geofencing: if geofence_enabled, use geofence_radius, otherwise use search radius
+            geofence_enabled = offer.get('geofence_enabled', False)
+            geofence_radius = offer.get('geofence_radius', 1000)  # default 1km in meters
+
+            if geofence_enabled:
+                # For geofenced offers, user must be within the specific geofence radius
+                if distance_meters <= geofence_radius:
+                    offer['distance_km'] = round(distance_meters / 1000, 2)
+                    offer['within_geofence'] = True
+                    nearby_offers.append(offer)
+                    print(f"Offer {offer.get('id')} is within geofence ({distance_meters}m <= {geofence_radius}m)")
+            else:
+                # For non-geofenced offers, use the general search radius
+                if distance_meters <= (radius * 1000):  # convert km to meters
+                    offer['distance_km'] = round(distance_meters / 1000, 2)
+                    offer['within_geofence'] = False
+                    nearby_offers.append(offer)
+
+        print(f"Found {len(nearby_offers)} offers within range (geofenced and non-geofenced)")
+
+        # Sort by geofence priority (geofenced first), then by distance
+        nearby_offers.sort(key=lambda x: (not x.get('within_geofence', False), x['distance_km']))
+        offers = nearby_offers[:limit]
+
+        print(f"Returning {len(offers)} offers (prioritizing geofenced offers)")
+
         # Filter by category if specified
         if category_id and offers:
             # Get businesses in this category
             category_businesses = supabase_admin.table("businesses").select("id").eq("category_id", category_id).execute()
             business_ids = [b["id"] for b in category_businesses.data] if category_businesses.data else []
-            
+
             # Filter offers
             offers = [offer for offer in offers if offer["business_id"] in business_ids]
-        
+
         # Convert decimals to floats for JSON serialization
         offers = convert_decimals_to_float(offers)
-        
+
+        # Enrich offers with product data (similar to trending endpoint)
+        enriched_offers = []
+        for offer in offers:
+            # Get product data if product_id exists
+            if offer.get('product_id'):
+                try:
+                    product_result = supabase_admin.table("products").select(
+                        "*, categories(*)"
+                    ).eq("id", offer['product_id']).execute()
+
+                    if product_result.data:
+                        # Use 'products' (plural) to match frontend expectations
+                        offer['products'] = product_result.data[0]
+                        print(f"Added product data to nearby offer: {product_result.data[0].get('name')} with image: {product_result.data[0].get('image_url')}")
+                    else:
+                        offer['products'] = None
+                except Exception as e:
+                    print(f"Error fetching product for nearby offer {offer.get('id')}: {e}")
+                    offer['products'] = None
+            else:
+                offer['products'] = None
+
+            enriched_offers.append(offer)
+
+        # Use enriched offers instead of plain offers
+        offers = enriched_offers
+
         # Add additional computed fields
         for offer in offers:
             # Calculate savings
@@ -1337,7 +1416,7 @@ async def search_offers(
     """Search and filter offers with support for all discount types"""
     
     try:
-        current_time = datetime.utcnow().isoformat()
+        current_time = datetime.now(timezone.utc).isoformat()
         
         # Build query - only active offers within date range
         query = supabase.table("offers").select(
@@ -1432,14 +1511,14 @@ async def search_offers(
 @router.get("/offers/{offer_id}", response_model=dict)
 async def get_offer_details(
     offer_id: str,
-    current_user: Optional[UserProfile] = Depends(get_current_active_user)
+    current_user: Optional[UserProfile] = Depends(get_current_user_optional)
 ):
     """Get detailed offer information with calculation examples"""
     
     try:
-        # Get offer with all related data
+        # Get offer with all related data including complete business info
         result = supabase.table("offers").select(
-            "*, products(*, categories(*)), businesses(business_name, is_verified, avatar_url, business_address)"
+            "*, products(*, categories(*)), businesses(business_name, is_verified, avatar_url, business_address, latitude, longitude, phone_number, business_website, business_hours)"
         ).eq("id", offer_id).eq("is_active", True).execute()
         
         if not result.data:
@@ -1612,7 +1691,7 @@ def get_offer_conditions_text(offer_data: Dict[str, Any]) -> Optional[str]:
         else:
             expiry_dt = expiry_date
         
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if expiry_dt > now:
             days_remaining = (expiry_dt - now).days
             if days_remaining == 0:

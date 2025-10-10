@@ -1,5 +1,5 @@
-import InfiniteDealsPage from '@/components/InfiniteDealsPage'
+import InfiniteDealsPage from "@/components/InfiniteDealsPage";
 
-export default function NearbyDealsPage() {
-  return <InfiniteDealsPage dealType="nearby" />
+export default function ExpiringDealsPage() {
+  return <InfiniteDealsPage dealType="nearby" />;
 }

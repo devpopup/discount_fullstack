@@ -1,97 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import DealCard from '@/components/DealCard'
-import { ChevronLeft, ChevronRight, MapPin, TrendingUp, Clock, ArrowRight, Search, Filter, Loader2 } from 'lucide-react'
-import { 
-  getFeaturedOffers, 
-  getNearbyOffers, 
-  getTrendingOffers, 
+import Navbar from '@/components/Navbar'
+import Featured from '@/components/Featured'
+import { MapPin, TrendingUp, Clock, ArrowRight, Loader2 } from 'lucide-react'
+import {
+  getNearbyOffers,
+  getTrendingOffers,
   getExpiringSoonOffers,
-  transformOfferData,
+  transformOfferDataWithDistance,
   getUserLocation,
   getDefaultLocation
 } from '@/lib/offers-api'
 
 
-function FeaturedCarousel({ deals }) {
-  const [currentIndex, setCurrentIndex] = useState(0)
+function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null }) {
+  const scrollContainerRef = useRef(null)
 
-  const nextSlide = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === deals.length - 1 ? 0 : prevIndex + 1
-    )
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' })
+    }
   }
 
-  const prevSlide = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? deals.length - 1 : prevIndex - 1
-    )
-  }
-
-  useEffect(() => {
-    const timer = setInterval(nextSlide, 5000) // Auto-advance every 5 seconds
-    return () => clearInterval(timer)
-  }, [deals.length])
-
-  if (deals.length === 0) return null
-
-  return (
-    <div className="relative w-full">
-      <div className="overflow-hidden rounded-lg">
-        <div 
-          className="flex transition-transform duration-300 ease-in-out"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        >
-          {deals.map((deal) => (
-            <div key={deal.id} className="w-full flex-shrink-0">
-              <DealCard deal={deal} className="max-w-md mx-auto" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Navigation Buttons */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white"
-        onClick={prevSlide}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white"
-        onClick={nextSlide}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-
-      {/* Indicators */}
-      <div className="flex justify-center mt-4 space-x-2">
-        {deals.map((_, index) => (
-          <button
-            key={index}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              index === currentIndex ? 'bg-[#e94e1b]' : 'bg-gray-300'
-            }`}
-            onClick={() => setCurrentIndex(index)}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function DealsSection({ title, description, deals, sectionType, icon: Icon }) {
-  // Show only first 4 deals in a single row
-  const displayDeals = deals.slice(0, 4)
-  
   return (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -104,7 +38,7 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon }) {
             <p className="text-gray-600">{description}</p>
           </div>
         </div>
-        
+
         <Link href={`/shoppers/deals/${sectionType}`}>
           <Button variant="outline" className="text-[#e94e1b] border-[#e94e1b] hover:bg-[#e94e1b] hover:text-white">
             View More
@@ -113,11 +47,29 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon }) {
         </Link>
       </div>
 
-      {displayDeals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {displayDeals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
-          ))}
+      {deals.length > 0 ? (
+        <div className="relative">
+          {/* Horizontal scrollable container */}
+          <div
+            ref={scrollContainerRef}
+            className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {deals.map((deal, index) => (
+              <DealCard key={deal.id || `deal-${index}`} deal={deal} userLocation={userLocation} />
+            ))}
+          </div>
+
+          {/* Chevron button */}
+          {deals.length > 4 && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-700" />
+            </button>
+          )}
         </div>
       ) : (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -130,8 +82,6 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon }) {
 }
 
 export default function ShoppersHome() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [featuredDeals, setFeaturedDeals] = useState([])
   const [nearbyDeals, setNearbyDeals] = useState([])
   const [trendingDeals, setTrendingDeals] = useState([])
   const [expiringSoonDeals, setExpiringSoonDeals] = useState([])
@@ -159,18 +109,28 @@ export default function ShoppersHome() {
       }
 
       // Fetch all deal types in parallel - only need 4 for single row display
-      const [featuredResult, nearbyResult, trendingResult, expiringResult] = await Promise.all([
-        getFeaturedOffers({ limit: 4 }),
+      const [nearbyResult, trendingResult, expiringResult] = await Promise.all([
         getNearbyOffers({ ...location, limit: 4 }),
         getTrendingOffers({ limit: 4 }),
         getExpiringSoonOffers({ limit: 4 })
       ])
 
-      // Transform and set data
-      setFeaturedDeals(featuredResult.offers.map(transformOfferData))
-      setNearbyDeals(nearbyResult.offers.map(transformOfferData))
-      setTrendingDeals(trendingResult.offers.map(transformOfferData))
-      setExpiringSoonDeals(expiringResult.offers.map(transformOfferData))
+      // Transform and set data with distance calculation, filter out invalid offers
+      setNearbyDeals(
+        nearbyResult.offers
+          .map(offer => transformOfferDataWithDistance(offer, location))
+          .filter(offer => offer && offer.id)
+      )
+      setTrendingDeals(
+        trendingResult.offers
+          .map(offer => transformOfferDataWithDistance(offer, location))
+          .filter(offer => offer && offer.id)
+      )
+      setExpiringSoonDeals(
+        expiringResult.offers
+          .map(offer => transformOfferDataWithDistance(offer, location))
+          .filter(offer => offer && offer.id)
+      )
 
     } catch (err) {
       console.error('Error loading deals:', err)
@@ -182,48 +142,11 @@ export default function ShoppersHome() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Discover Local Deals</h1>
-              <p className="text-gray-600">Find amazing offers from businesses near you</p>
-            </div>
-            
-            {/* Search Bar */}
-            <div className="hidden md:flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search deals, businesses..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-80 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1b] focus:border-transparent"
-                />
-              </div>
-              <Button variant="outline" size="icon">
-                <Filter className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+      {/* Navbar */}
+      <Navbar />
 
-          {/* Mobile Search */}
-          <div className="md:hidden mt-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search deals, businesses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1b] focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Featured Hero Section - Full width, outside main container */}
+      {!loading && !error && <Featured />}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -242,7 +165,7 @@ export default function ShoppersHome() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
             <div className="text-center">
               <p className="text-red-800 mb-4">{error}</p>
-              <Button 
+              <Button
                 onClick={loadAllDeals}
                 className="bg-[#e94e1b] hover:bg-[#d13f16] text-white"
               >
@@ -255,39 +178,30 @@ export default function ShoppersHome() {
         {/* Content - only show when not loading */}
         {!loading && !error && (
           <>
-            {/* Featured Deals Carousel */}
-            <section className="mb-12">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Deals</h2>
-                <p className="text-gray-600">Don't miss out on these amazing limited-time offers</p>
-              </div>
-              
-              {featuredDeals.length > 0 ? (
-                <FeaturedCarousel deals={featuredDeals} />
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">No featured deals available at the moment.</p>
-                </div>
-              )}
-            </section>
 
             {/* Deals Near You */}
-            <DealsSection
-              title="Deals Near You"
-              description="Discover great offers from businesses in your area"
-              deals={nearbyDeals}
-              sectionType="nearby"
-              icon={MapPin}
-            />
+            <div id="nearby-deals">
+              <DealsSection
+                title="Deals Near You"
+                description="Discover great offers from businesses in your area"
+                deals={nearbyDeals}
+                sectionType="nearby"
+                icon={MapPin}
+                userLocation={userLocation}
+              />
+            </div>
 
             {/* Trending Deals */}
-            <DealsSection
-              title="Trending Deals"
-              description="Popular offers that everyone is talking about"
-              deals={trendingDeals}
-              sectionType="trending"
-              icon={TrendingUp}
-            />
+            <div id="trending-deals">
+              <DealsSection
+                title="Trending Deals"
+                description="Popular offers that everyone is talking about"
+                deals={trendingDeals}
+                sectionType="trending"
+                icon={TrendingUp}
+                userLocation={userLocation}
+              />
+            </div>
 
             {/* Expiring Soon */}
             <DealsSection
@@ -296,6 +210,7 @@ export default function ShoppersHome() {
               deals={expiringSoonDeals}
               sectionType="expiring"
               icon={Clock}
+              userLocation={userLocation}
             />
 
             {/* Call to Action */}

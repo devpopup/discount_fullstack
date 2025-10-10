@@ -35,7 +35,11 @@ export async function POST(request) {
     } else {
       console.error('Google Places API error:', data.status, data.error_message)
       console.error('Full Google response:', data)
-      return NextResponse.json({ predictions: [] })
+      return NextResponse.json({
+        predictions: [],
+        error_message: data.error_message,
+        status: data.status
+      })
     }
 
   } catch (error) {

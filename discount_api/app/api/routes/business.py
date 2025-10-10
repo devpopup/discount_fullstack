@@ -790,11 +790,21 @@ async def update_business_profile(
         update_data = {}
         field_mapping = {
             "business_name": "business_name",
-            "address": "business_address", 
+            "business_address": "business_address",
+            "address": "business_address",
             "phone": "phone_number",
+            "phone_number": "phone_number",
             "website": "business_website",
+            "business_website": "business_website",
             "category": "category_id",
+            "category_id": "category_id",
+            "avatar_url": "avatar_url",
             "timezone": "timezone",
+            "latitude": "latitude",
+            "longitude": "longitude",
+            "formatted_address": "formatted_address",
+            "place_id": "place_id",
+            "address_components": "address_components",
             "promotional_updates": "promotional_updates",
             "transaction_alerts": "transaction_alerts",
             "email_notifications": "email_notifications"
@@ -843,12 +853,18 @@ async def update_business_profile(
         
         # Add updated timestamp
         update_data["updated_at"] = datetime.utcnow().isoformat()
-        
+
+        # Debug: Print what we're about to update
+        print(f"Updating business {business_id} with data: {update_data}")
+
         # Convert data for Supabase
         update_data = prepare_data_for_supabase(update_data)
-        
+
         # Update business profile
         result = supabase_admin.table("businesses").update(update_data).eq("id", business_id).execute()
+
+        # Debug: Print the result
+        print(f"Update result: {result.data}")
         
         if not result.data:
             raise HTTPException(

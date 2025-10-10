@@ -45,8 +45,23 @@ const AddressAutocomplete = ({
       } else {
         console.error('Autocomplete API error:', data.error)
         console.error('Full response:', { status: response.status, data })
-        setSuggestions([])
-        setShowSuggestions(false)
+
+        // Show fallback message for billing issues
+        if (data.error_message && data.error_message.includes('Billing')) {
+          setSuggestions([{
+            place_id: 'fallback',
+            description: `Type your full address: "${input}"`,
+            structured_formatting: {
+              main_text: 'Use manual entry',
+              secondary_text: '(Google API billing required for autocomplete)'
+            },
+            fallback: true
+          }])
+          setShowSuggestions(true)
+        } else {
+          setSuggestions([])
+          setShowSuggestions(false)
+        }
       }
     } catch (error) {
       console.error('Error getting suggestions:', error)
@@ -97,8 +112,25 @@ const AddressAutocomplete = ({
   const handleSuggestionClick = async (suggestion) => {
     try {
       setIsLoading(true)
+
+      // Handle fallback manual entry
+      if (suggestion.fallback) {
+        const manualAddress = value // Use current input value
+        onChange(manualAddress)
+        onLocationSelect({
+          address: manualAddress,
+          latitude: null,
+          longitude: null,
+          place_id: null,
+          address_components: null
+        })
+        setShowSuggestions(false)
+        setSuggestions([])
+        return
+      }
+
       const place = await getPlaceDetails(suggestion.place_id)
-      
+
       const locationData = {
         address: place.formatted_address,
         latitude: place.geometry.location.lat,
@@ -111,7 +143,7 @@ const AddressAutocomplete = ({
       onLocationSelect(locationData)
       setShowSuggestions(false)
       setSuggestions([])
-      
+
     } catch (error) {
       console.error('Error getting place details:', error)
       // Still update the address even if details fail

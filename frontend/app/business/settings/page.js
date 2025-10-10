@@ -49,6 +49,11 @@ export default function SettingsPage() {
     category: '',
     timezone: 'America/Toronto',
     avatar_url: '',
+    latitude: null,
+    longitude: null,
+    formatted_address: null,
+    place_id: null,
+    address_components: null,
     promotional_updates: true,
     transaction_alerts: true,
     email_notifications: true
@@ -106,6 +111,11 @@ export default function SettingsPage() {
               category: profileData.business?.category_id || profileData.category_id || profileData.category || user.category || '',
               timezone: profileData.business?.timezone || profileData.timezone || user.timezone || 'America/Toronto',
               avatar_url: profileData.business?.avatar_url || profileData.avatar_url || user.avatar_url || '',
+              latitude: profileData.business?.latitude || profileData.latitude || user.latitude || null,
+              longitude: profileData.business?.longitude || profileData.longitude || user.longitude || null,
+              formatted_address: profileData.business?.formatted_address || profileData.formatted_address || user.formatted_address || null,
+              place_id: profileData.business?.place_id || profileData.place_id || user.place_id || null,
+              address_components: profileData.business?.address_components || profileData.address_components || user.address_components || null,
               promotional_updates: profileData.promotional_updates ?? true,
               transaction_alerts: profileData.transaction_alerts ?? true,
               email_notifications: profileData.email_notifications ?? true
@@ -121,6 +131,11 @@ export default function SettingsPage() {
               category: user.business?.category_id || user.category_id || user.category || '',
               timezone: user.business?.timezone || user.timezone || 'America/Toronto',
               avatar_url: user.business?.avatar_url || user.avatar_url || '',
+              latitude: user.business?.latitude || user.latitude || null,
+              longitude: user.business?.longitude || user.longitude || null,
+              formatted_address: user.business?.formatted_address || user.formatted_address || null,
+              place_id: user.business?.place_id || user.place_id || null,
+              address_components: user.business?.address_components || user.address_components || null,
               promotional_updates: true,
               transaction_alerts: true,
               email_notifications: true
@@ -138,6 +153,11 @@ export default function SettingsPage() {
             category: user.business?.category_id || user.category_id || user.category || '',
             timezone: user.business?.timezone || user.timezone || 'America/Toronto',
             avatar_url: user.business?.avatar_url || user.avatar_url || '',
+            latitude: user.business?.latitude || user.latitude || null,
+            longitude: user.business?.longitude || user.longitude || null,
+            formatted_address: user.business?.formatted_address || user.formatted_address || null,
+            place_id: user.business?.place_id || user.place_id || null,
+            address_components: user.business?.address_components || user.address_components || null,
             promotional_updates: true,
             transaction_alerts: true,
             email_notifications: true
@@ -175,14 +195,38 @@ export default function SettingsPage() {
     setLoading(true)
     setSuccess('')
     setError('')
-    
+
     try {
+      // Map frontend field names to backend field names
+      const apiData = {
+        business_name: formData.business_name,
+        business_address: formData.address, // Map address to business_address
+        phone_number: formData.phone,
+        business_website: formData.website,
+        category_id: formData.category,
+        avatar_url: formData.avatar_url,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        formatted_address: formData.formatted_address,
+        place_id: formData.place_id,
+        address_components: formData.address_components,
+        // Note: email, timezone, notification settings handled separately if needed
+      }
+
+      // Remove null/undefined fields to avoid sending empty data
+      Object.keys(apiData).forEach(key => {
+        if (apiData[key] === null || apiData[key] === undefined) {
+          delete apiData[key]
+        }
+      })
+
+      console.log('Sending business profile update:', apiData)
       const result = await apiRequest(endpoints.businessProfile, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(apiData)
       })
       
       if (result.success) {
@@ -210,6 +254,11 @@ export default function SettingsPage() {
         email: user.email || '',
         category: user.business?.category || user.category || '',
         timezone: user.business?.timezone || user.timezone || 'America/Toronto',
+        latitude: user.business?.latitude || user.latitude || null,
+        longitude: user.business?.longitude || user.longitude || null,
+        formatted_address: user.business?.formatted_address || user.formatted_address || null,
+        place_id: user.business?.place_id || user.place_id || null,
+        address_components: user.business?.address_components || user.address_components || null,
         promotional_updates: true,
         transaction_alerts: true,
         email_notifications: true
@@ -363,8 +412,32 @@ export default function SettingsPage() {
                     value={formData.address}
                     onChange={(value) => handleInputChange('address', value)}
                     onLocationSelect={(location) => {
-                      // You can store additional location data if needed
                       console.log('Selected location:', location)
+                      if (location) {
+                        const locationUpdate = {
+                          latitude: location.latitude,
+                          longitude: location.longitude,
+                          formatted_address: location.address,
+                          place_id: location.place_id,
+                          address_components: location.address_components
+                        }
+                        console.log('Updating form with location data:', locationUpdate)
+                        setFormData(prev => ({
+                          ...prev,
+                          ...locationUpdate
+                        }))
+                      } else {
+                        // Clear location data when location is null
+                        console.log('Clearing location data')
+                        setFormData(prev => ({
+                          ...prev,
+                          latitude: null,
+                          longitude: null,
+                          formatted_address: null,
+                          place_id: null,
+                          address_components: null
+                        }))
+                      }
                     }}
                     placeholder="Enter full business address"
                     className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-orange-500 focus:ring-orange-500"

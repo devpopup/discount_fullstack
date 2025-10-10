@@ -1,15 +1,12 @@
 'use client'
 
-import Link from 'next/link'
 import Image from 'next/image'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Star, Tag, Users, Heart, Share2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { Tag } from 'lucide-react'
+import { calculateDistance } from '@/lib/offers-api'
 
-export default function DealCard({ deal, className = "" }) {
+export default function DealCard({ deal, userLocation = null, className = "" }) {
   const {
-    id,
     title,
     description,
     businessName,
@@ -19,7 +16,7 @@ export default function DealCard({ deal, className = "" }) {
     discountedPrice,
     category,
     location,
-    distance,
+    distance: providedDistance,
     rating,
     reviewCount,
     expiresAt,
@@ -27,8 +24,21 @@ export default function DealCard({ deal, className = "" }) {
     maxClaims,
     isPopular,
     isFeatured,
-    images = []
+    images = [],
+    latitude,
+    longitude
   } = deal || {}
+
+  // Calculate distance if not provided and we have user location + business coordinates
+  let distance = providedDistance
+  if (!distance && userLocation && latitude && longitude) {
+    distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      parseFloat(latitude),
+      parseFloat(longitude)
+    )
+  }
 
   const calculateTimeRemaining = (expiresAt) => {
     if (!expiresAt) return 'No expiry'
@@ -58,155 +68,96 @@ export default function DealCard({ deal, className = "" }) {
 
   const progressPercentage = maxClaims ? (claimedCount / maxClaims) * 100 : 0
 
+  if (!deal?.id) {
+    console.error('DealCard: Missing deal.id', deal)
+    return null
+  }
+
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-200 overflow-hidden bg-white border-gray-200 ${className}`}>
-      <div className="relative">
-        {/* Deal Image */}
-        <div className="aspect-[16/10] relative overflow-hidden bg-gray-100">
-          {images.length > 0 ? (
-            <Image
-              src={images[0]}
-              alt={title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <Tag className="w-12 h-12 text-gray-400" />
-            </div>
-          )}
-        </div>
-
-        {/* Overlay Badges */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-          {isFeatured && (
-            <Badge className="bg-[#e94e1b] text-white">Featured</Badge>
-          )}
-          {isPopular && (
-            <Badge className="bg-purple-600 text-white">Popular</Badge>
-          )}
-          <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
-            {discount}% OFF
-          </Badge>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button size="sm" variant="ghost" className="w-8 h-8 p-0 bg-white/90 hover:bg-white">
-            <Heart className="w-4 h-4" />
-          </Button>
-          <Button size="sm" variant="ghost" className="w-8 h-8 p-0 bg-white/90 hover:bg-white">
-            <Share2 className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Time Remaining */}
-        <div className="absolute bottom-3 right-3">
-          <Badge variant="outline" className="bg-white/90 text-[#e94e1b] border-[#e94e1b]">
-            <Clock className="w-3 h-3 mr-1" />
-            {calculateTimeRemaining(expiresAt)}
-          </Badge>
-        </div>
-      </div>
-
-      <CardContent className="p-4">
-        {/* Business Info */}
-        <div className="flex items-center gap-2 mb-2">
-          {businessLogo ? (
-            <Image
-              src={businessLogo}
-              alt={businessName}
-              width={20}
-              height={20}
-              className="rounded-full"
-            />
-          ) : (
-            <div className="w-5 h-5 bg-gray-300 rounded-full"></div>
-          )}
-          <span className="text-sm text-gray-600 font-medium">{businessName}</span>
-          {category && (
-            <Badge variant="outline" className="text-xs px-2 py-0">
-              {category}
-            </Badge>
-          )}
-        </div>
-
-        {/* Deal Title */}
-        <Link href={`/shoppers/deals/${id}`}>
-          <h3 className="font-semibold text-gray-900 line-clamp-2 hover:text-[#e94e1b] transition-colors mb-2">
-            {title}
-          </h3>
-        </Link>
-
-        {/* Description */}
-        <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-          {description}
-        </p>
-
-        {/* Pricing */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg font-bold text-[#e94e1b]">
-            ${discountedPrice?.toFixed(2) || '0.00'}
-          </span>
-          {originalPrice && originalPrice > 0 && (
-            <span className="text-sm text-gray-500 line-through">
-              ${originalPrice.toFixed(2)}
-            </span>
-          )}
-          {originalPrice && discountedPrice && originalPrice > discountedPrice && (
-            <span className="text-sm text-green-600 font-medium">
-              Save ${(originalPrice - discountedPrice).toFixed(2)}
-            </span>
-          )}
-        </div>
-
-        {/* Location & Rating */}
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-          <div className="flex items-center gap-1">
-            <MapPin className="w-4 h-4" />
-            <span>{location}</span>
-            {distance && (
-              <span className="text-[#e94e1b]">• {formatDistance(distance)}</span>
-            )}
-          </div>
-          
-          {rating && rating > 0 && (
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span>{rating}</span>
-              {reviewCount && reviewCount > 0 && (
-                <span>({reviewCount})</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Progress Bar for Limited Offers */}
-        {maxClaims && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-              <span className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                {claimedCount} claimed
-              </span>
-              <span>{maxClaims - claimedCount} left</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-[#e94e1b] h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+    <Link
+      href={`/shoppers/offers/${deal.id}`}
+      className={`hover:shadow-lg transition-shadow duration-200 overflow-hidden bg-white flex-shrink-0 ${className}`}
+      style={{
+        width: '140px',
+        height: '222px',
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
+      {/* Deal Image - Full width, 140px height */}
+      <div className="relative" style={{ width: '100%', height: '140px', overflow: 'hidden' }}>
+        {images && images.length > 0 ? (
+          <Image
+            src={images[0]}
+            alt={title || 'Product'}
+            width={140}
+            height={140}
+            className="object-cover"
+            style={{ width: '100%', height: '100%' }}
+            unoptimized
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
+            <Tag className="w-12 h-12 text-gray-400" />
           </div>
         )}
 
-        {/* Action Button */}
-        <Link href={`/shoppers/deals/${id}`}>
-          <Button className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white">
-            View Deal
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
+        {/* Percentage OFF Badge - Top Left */}
+        <div
+          className="absolute bg-[#e74c3c] text-white font-semibold"
+          style={{
+            top: '8px',
+            left: '8px',
+            fontSize: '11px',
+            padding: '4px 8px',
+            borderRadius: '4px'
+          }}
+        >
+          {discount}% OFF
+        </div>
+
+        {/* Days Remaining Badge - Bottom Right */}
+        <div
+          className="absolute text-white font-medium"
+          style={{
+            bottom: '8px',
+            right: '8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            fontSize: '10px',
+            padding: '4px 8px',
+            borderRadius: '4px'
+          }}
+        >
+          {calculateTimeRemaining(expiresAt)} left
+        </div>
+      </div>
+
+      {/* Card Content */}
+      <div style={{ padding: '12px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Price container */}
+        <div className="flex items-center gap-1.5" style={{ marginBottom: '6px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
+            ${discountedPrice?.toFixed(2) || '0.00'}
+          </div>
+          {originalPrice && originalPrice > 0 && (
+            <div style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through' }}>
+              ${originalPrice.toFixed(2)}
+            </div>
+          )}
+        </div>
+
+        {/* Product Name */}
+        <div style={{ fontSize: '13px', color: '#333', lineHeight: '1.3', marginBottom: '4px' }}>
+          {title || businessName}
+        </div>
+
+        {/* Distance */}
+        <div style={{ fontSize: '11px', color: '#666' }}>
+          {distance ? `${formatDistance(distance)} away` : 'Distance N/A'}
+        </div>
+      </div>
+    </Link>
   )
 }

@@ -46,7 +46,7 @@ class BusinessCreate(BusinessBase):
     longitude: Optional[float] = Field(None, ge=-180, le=180)
     formatted_address: Optional[str] = Field(None, max_length=500)
     place_id: Optional[str] = Field(None, max_length=255)
-    address_components: Optional[Dict[str, Any]] = None
+    address_components: Optional[Union[List[Dict[str, Any]], Dict[str, Any]]] = None
     
     @field_validator('business_website')
     @classmethod
@@ -65,6 +65,11 @@ class BusinessUpdate(BaseModel):
     avatar_url: Optional[str] = None
     business_hours: Optional[Dict[str, Any]] = None
     category_id: Optional[int] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    formatted_address: Optional[str] = Field(None, max_length=500)
+    place_id: Optional[str] = Field(None, max_length=255)
+    address_components: Optional[Union[List[Dict[str, Any]], Dict[str, Any]]] = None
 
     @field_validator('business_website')
     @classmethod
@@ -76,12 +81,17 @@ class BusinessUpdate(BaseModel):
 
 class BusinessResponse(BusinessBase):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: uuid.UUID
     user_id: uuid.UUID
     is_verified: bool
     created_at: datetime
     updated_at: datetime
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    formatted_address: Optional[str] = None
+    place_id: Optional[str] = None
+    address_components: Optional[Union[List[Dict[str, Any]], Dict[str, Any]]] = None
     category: Optional[CategoryResponse] = None
 
 
@@ -269,7 +279,7 @@ class BusinessUserRegistration(BaseModel):
     longitude: Optional[float] = None
     formatted_address: Optional[str] = None
     place_id: Optional[str] = None
-    address_components: Optional[Any] = None  # Accept anything for now
+    address_components: Optional[Union[List[Dict[str, Any]], Dict[str, Any]]] = None
     
     # Handle phone_number mapping
     phone_number: Optional[str] = None

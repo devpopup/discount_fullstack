@@ -5,12 +5,12 @@ import Link from 'next/link'
 import DealCard from '@/components/DealCard'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, Filter, Search, MapPin, TrendingUp, Clock } from 'lucide-react'
-import { 
-  getNearbyOffers, 
-  getTrendingOffers, 
+import {
+  getNearbyOffers,
+  getTrendingOffers,
   getExpiringSoonOffers,
   searchOffers,
-  transformOfferData,
+  transformOfferDataWithDistance,
   getUserLocation,
   getDefaultLocation
 } from '@/lib/offers-api'
@@ -49,10 +49,9 @@ export default function InfiniteDealsPage({ dealType }) {
 
   const config = sectionConfig[dealType] || sectionConfig.nearby
 
-  // Get user location and load initial deals
+  // Get user location first
   useEffect(() => {
-    const initializeData = async () => {
-      // Get user location for nearby deals
+    const initializeLocation = async () => {
       if (dealType === 'nearby') {
         try {
           const location = await getUserLocation()
@@ -61,23 +60,31 @@ export default function InfiniteDealsPage({ dealType }) {
           console.log('Using default location:', locationError.message)
           setUserLocation(getDefaultLocation())
         }
+      } else {
+        // For non-nearby types, load immediately
+        loadMoreDeals(1, true)
       }
-      
+    }
+
+    initializeLocation()
+  }, [dealType])
+
+  // Load deals when userLocation is available (for nearby type)
+  useEffect(() => {
+    if (dealType === 'nearby' && userLocation) {
       loadMoreDeals(1, true)
     }
-    
-    initializeData()
-  }, [dealType])
+  }, [userLocation, dealType])
 
   const loadMoreDeals = useCallback(async (pageNumber, isInitial = false) => {
     if (loading) return
-    
+
     setLoading(true)
     setError(null)
-    
+
     try {
       let result = { offers: [], hasMore: false }
-      
+
       if (searchQuery) {
         // Use search API when searching
         result = await searchOffers({
@@ -92,7 +99,8 @@ export default function InfiniteDealsPage({ dealType }) {
             const location = userLocation || getDefaultLocation()
             result = await getNearbyOffers({
               ...location,
-              limit: 12 * pageNumber // Load more items for pagination simulation
+              radius: 50, // Search radius for non-geofenced offers
+              limit: 12 * pageNumber
             })
             // For nearby, we need to simulate pagination
             const startIndex = (pageNumber - 1) * 12
@@ -131,9 +139,11 @@ export default function InfiniteDealsPage({ dealType }) {
         }
       }
       
-      // Transform the offers
-      const transformedOffers = result.offers.map(transformOfferData)
-      
+      // Transform the offers with distance calculation and filter out invalid ones
+      const transformedOffers = result.offers
+        .map(offer => transformOfferDataWithDistance(offer, userLocation))
+        .filter(offer => offer && offer.id)
+
       if (isInitial) {
         setDeals(transformedOffers)
       } else {
@@ -251,8 +261,8 @@ export default function InfiniteDealsPage({ dealType }) {
           <>
             {filteredDeals.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredDeals.map((deal) => (
-                  <DealCard key={deal.id} deal={deal} />
+                {filteredDeals.map((deal, index) => (
+                  <DealCard key={deal.id || `deal-${index}`} deal={deal} userLocation={userLocation} />
                 ))}
               </div>
             ) : !loading && (
@@ -305,7 +315,7 @@ export default function InfiniteDealsPage({ dealType }) {
             {/* End of Results */}
             {!hasMore && filteredDeals.length > 0 && (
               <div className="text-center py-8">
-                <p className="text-gray-600">You've reached the end! That's all the deals for now.</p>
+                <p className="text-gray-600">No more deals.</p>
                 <Link href="/shoppers">
                   <Button className="mt-4 bg-[#e94e1b] hover:bg-[#d13f16] text-white">
                     Back to Home

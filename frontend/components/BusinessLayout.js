@@ -73,8 +73,8 @@ function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose,
           <img
             src="/logo.svg"
             alt="PopupReach Logo"
-            width={240}
-            height={240}
+            width={48}
+            height={48}
           />
         </div>
 
