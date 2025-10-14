@@ -39,6 +39,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import AuthWrapper from '@/components/AuthWrapper'
+import { Toaster } from '@/components/ui/sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -95,6 +96,7 @@ export default function RootLayout({
         <AuthWrapper>
           {children}
         </AuthWrapper>
+        <Toaster />
       </body>
     </html>
   )

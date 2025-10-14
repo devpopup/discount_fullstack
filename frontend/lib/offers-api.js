@@ -371,3 +371,245 @@ export function transformOfferDataWithDistance(apiOffer, userLocation = null) {
 
   return transformedOffer
 }
+
+// ============================================================================
+// FAVORITES API
+// ============================================================================
+
+/**
+ * Save offer to favorites
+ */
+export async function saveOfferToFavorites(offerId) {
+  try {
+    const response = await makeOfferRequest(
+      `/customer/offers/${offerId}/save`,
+      {
+        method: 'POST'
+      },
+      true // Requires authentication
+    )
+    return { success: true, data: response }
+  } catch (error) {
+    console.error('Error saving offer to favorites:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Remove offer from favorites
+ */
+export async function removeOfferFromFavorites(offerId) {
+  try {
+    const response = await makeOfferRequest(
+      `/customer/offers/${offerId}/save`,
+      {
+        method: 'DELETE'
+      },
+      true // Requires authentication
+    )
+    return { success: true, data: response }
+  } catch (error) {
+    console.error('Error removing offer from favorites:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Get user's saved/favorite offers
+ */
+export async function getFavoriteOffers({ page = 1, size = 20, activeOnly = true } = {}) {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+      active_only: activeOnly.toString()
+    })
+
+    const response = await makeOfferRequest(
+      `/customer/saved-offers?${params.toString()}`,
+      {
+        method: 'GET'
+      },
+      true // Requires authentication
+    )
+
+    return {
+      offers: response.saved_offers || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      size: response.size || size,
+      hasMore: response.has_next || false
+    }
+  } catch (error) {
+    console.error('Error fetching favorite offers:', error)
+    return {
+      offers: [],
+      total: 0,
+      page: 1,
+      size,
+      hasMore: false,
+      error: error.message
+    }
+  }
+}
+
+/**
+ * Check if an offer is saved/favorited
+ * This is a client-side helper that checks if an offer ID exists in the favorites list
+ */
+export async function isOfferFavorited(offerId) {
+  try {
+    const result = await getFavoriteOffers({ size: 100 }) // Get a reasonable batch
+    return result.offers.some(offer => {
+      const savedOfferId = offer.offers?.id || offer.offer_id || offer.id
+      return savedOfferId === offerId
+    })
+  } catch (error) {
+    console.error('Error checking if offer is favorited:', error)
+    return false
+  }
+}
+
+/**
+ * Get a Set of all favorited offer IDs for efficient lookup
+ * This should be called once and cached on the client
+ */
+export async function getFavoritedOfferIds() {
+  try {
+    const result = await getFavoriteOffers({ size: 100 })
+    const favoriteIds = new Set()
+
+    result.offers.forEach(savedOffer => {
+      const offer = savedOffer.offers || savedOffer
+      const offerId = offer.id || offer.offer_id
+      if (offerId) {
+        favoriteIds.add(offerId)
+      }
+    })
+
+    return favoriteIds
+  } catch (error) {
+    console.error('Error fetching favorited offer IDs:', error)
+    return new Set()
+  }
+}
+
+/**
+ * Get a Set of all claimed offer IDs for efficient lookup
+ * This should be called once and cached on the client
+ */
+export async function getClaimedOfferIds() {
+  try {
+    const result = await getClaimedOffers({ page: 1, size: 100 })
+    const claimedIds = new Set()
+
+    if (result.claimed_offers) {
+      result.claimed_offers.forEach(claimedOffer => {
+        const offer = claimedOffer.offer || claimedOffer.offers
+        const offerId = offer?.id || claimedOffer.offer_id
+        if (offerId) {
+          claimedIds.add(offerId)
+        }
+      })
+    }
+
+    return claimedIds
+  } catch (error) {
+    console.error('Error fetching claimed offer IDs:', error)
+    return new Set()
+  }
+}
+
+// ============================================================================
+// CLAIM OFFERS API
+// ============================================================================
+
+/**
+ * Claim an offer
+ */
+export async function claimOffer(offerId, claimType = 'in_store', redirectUrl = null) {
+  try {
+    const requestBody = {
+      claim_type: claimType
+    }
+
+    if (redirectUrl) {
+      requestBody.redirect_url = redirectUrl
+    }
+
+    const data = await makeOfferRequest(
+      `/customer/offers/${offerId}/claim`,
+      {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      },
+      true // require auth
+    )
+
+    return { success: true, data, error: null }
+  } catch (error) {
+    console.error('Error claiming offer:', error)
+    return { success: false, data: null, error: error.message }
+  }
+}
+
+/**
+ * Get claimed offers
+ */
+export async function getClaimedOffers({ page = 1, size = 20, redeemed_only = null, claim_type = null } = {}) {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString()
+    })
+
+    if (redeemed_only !== null) {
+      params.append('redeemed_only', redeemed_only.toString())
+    }
+
+    if (claim_type) {
+      params.append('claim_type', claim_type)
+    }
+
+    const data = await makeOfferRequest(`/customer/claimed-offers?${params}`, {}, true)
+
+    return data
+  } catch (error) {
+    console.error('Error fetching claimed offers:', error)
+    throw error
+  }
+}
+
+/**
+ * Get offer status (check if claimed, saved, etc.)
+ */
+export async function getOfferStatus(offerId) {
+  try {
+    const data = await makeOfferRequest(`/customer/offers/${offerId}/status`, {}, false)
+
+    return { success: true, data, error: null }
+  } catch (error) {
+    console.error('Error fetching offer status:', error)
+    return { success: false, data: null, error: error.message }
+  }
+}
+
+/**
+ * Unclaim an offer (remove claim if not yet redeemed)
+ */
+export async function unclaimOffer(offerId) {
+  try {
+    const data = await makeOfferRequest(
+      `/customer/offers/${offerId}/claim`,
+      {
+        method: 'DELETE'
+      },
+      true // require auth
+    )
+
+    return { success: true, data, error: null }
+  } catch (error) {
+    console.error('Error unclaiming offer:', error)
+    return { success: false, data: null, error: error.message }
+  }
+}

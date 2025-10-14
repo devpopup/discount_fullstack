@@ -1,21 +1,25 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, User, Heart, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
   const [signupDropdownOpen, setSignupDropdownOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   // Close mobile menu when screen size changes to desktop
   useEffect(() => {
@@ -50,6 +54,25 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   };
 
+  const handleLogout = async () => {
+    await logout();
+    closeMobileMenu();
+    // Redirect to home page after logout
+    window.location.href = '/';
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return '';
+    if (user.full_name) {
+      const names = user.full_name.split(' ');
+      return names.length > 1
+        ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+        : names[0][0].toUpperCase();
+    }
+    return user.email ? user.email[0].toUpperCase() : 'U';
+  };
+
   return (
     <>
       <nav className="bg-[#F5F8FC] border-b border-[#E8E9EB] relative z-50">
@@ -67,7 +90,7 @@ export default function Navbar() {
                   priority
                 />
                 <span className="absolute left-[28px] top-[2px] text-2xl font-bold text-[#1E3A5F]">
-                  PopReach
+                  PopupReach
                 </span>
               </div>
             </Link>
@@ -94,80 +117,138 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Desktop Auth Buttons with Dropdowns */}
+            {/* Desktop Auth Section - Show Profile or Login/Signup */}
             <div className="hidden md:flex items-center gap-4">
-              {/* Login Dropdown */}
-              <DropdownMenu onOpenChange={setLoginDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="border-[#1E3A5F] text-[#1E3A5F] hover:bg-[#1E3A5F] hover:text-white rounded-2xl"
+              {user ? (
+                // Profile Avatar with Dropdown
+                <DropdownMenu onOpenChange={setProfileDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="relative h-10 w-10 rounded-full bg-[#e94e1b] hover:bg-[#d13f16] text-white p-0"
+                    >
+                      <span className="text-sm font-semibold">
+                        {getUserInitials()}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 bg-white border border-gray-200 shadow-lg"
                   >
-                    Login
-                    <ChevronDown
-                      className={`ml-2 h-4 w-4 transition-transform duration-200 ${
-                        loginDropdownOpen ? 'rotate-180' : 'rotate-0'
-                      }`}
-                    />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-48 bg-white border border-gray-200 shadow-lg"
-                >
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/shoppers/auth/signin"
-                      className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user.full_name || 'User'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/shoppers/favorites"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                      >
+                        <Heart className="h-4 w-4" />
+                        Favorites
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/shoppers/claims"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                      >
+                        <User className="h-4 w-4" />
+                        My Claims
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
                     >
-                      as Shopper
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/business/auth/signin"
-                      className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                // Login/Signup Dropdowns
+                <>
+                  {/* Login Dropdown */}
+                  <DropdownMenu onOpenChange={setLoginDropdownOpen}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="border-[#1E3A5F] text-[#1E3A5F] hover:bg-[#1E3A5F] hover:text-white rounded-2xl"
+                      >
+                        Login
+                        <ChevronDown
+                          className={`ml-2 h-4 w-4 transition-transform duration-200 ${
+                            loginDropdownOpen ? 'rotate-180' : 'rotate-0'
+                          }`}
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-48 bg-white border border-gray-200 shadow-lg"
                     >
-                      as Business
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/shoppers/auth/signin"
+                          className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                        >
+                          as Shopper
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/business/auth/signin"
+                          className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                        >
+                          as Business
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
-              {/* Sign Up Dropdown */}
-              <DropdownMenu onOpenChange={setSignupDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button className="bg-[#1E3A5F] hover:bg-[#FFF] hover:text-[#1E3A5F] text-white rounded-2xl">
-                    Sign Up
-                    <ChevronDown
-                      className={`ml-2 h-4 w-4 transition-transform duration-200 ${
-                        signupDropdownOpen ? 'rotate-180' : 'rotate-0'
-                      }`}
-                    />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-48 bg-white border border-gray-200 shadow-lg"
-                >
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/shoppers/auth/signup"
-                      className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                  {/* Sign Up Dropdown */}
+                  <DropdownMenu onOpenChange={setSignupDropdownOpen}>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="bg-[#1E3A5F] hover:bg-[#FFF] hover:text-[#1E3A5F] text-white rounded-2xl">
+                        Sign Up
+                        <ChevronDown
+                          className={`ml-2 h-4 w-4 transition-transform duration-200 ${
+                            signupDropdownOpen ? 'rotate-180' : 'rotate-0'
+                          }`}
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-48 bg-white border border-gray-200 shadow-lg"
                     >
-                      as Shopper
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/business/auth/signup"
-                      className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
-                    >
-                      as Business
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/shoppers/auth/signup"
+                          className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                        >
+                          as Shopper
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/business/auth/signup"
+                          className="flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
+                        >
+                          as Business
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -212,6 +293,50 @@ export default function Navbar() {
           </button>
         </div>
         <div className="pt-20 px-6 overflow-y-auto h-full">
+          {/* User Profile Section (if logged in) */}
+          {user && (
+            <div className="mb-8 pb-6 border-b border-gray-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-12 w-12 rounded-full bg-[#e94e1b] flex items-center justify-center text-white font-semibold">
+                  {getUserInitials()}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {user.full_name || 'User'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Link
+                  href="/shoppers/favorites"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-2 text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
+                >
+                  <Heart className="h-4 w-4" />
+                  Favorites
+                </Link>
+                <Link
+                  href="/shoppers/claims"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-2 text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  My Claims
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-red-600 py-2 hover:text-red-700 transition-colors w-full text-left"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Navigation Links */}
           <div className="space-y-6 mb-8">
             <Link
@@ -237,54 +362,56 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Auth Sections */}
-          <div className="space-y-6">
-            {/* Login Section */}
-            <div>
-              <h4 className="text-sm font-semibold text-[#1E3A5F] mb-3">
-                Login
-              </h4>
-              <div className="space-y-2">
-                <Link
-                  href="/shoppers/auth/signin"
-                  onClick={closeMobileMenu}
-                  className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
-                >
-                  as Shopper
-                </Link>
-                <Link
-                  href="/business/auth/signin"
-                  onClick={closeMobileMenu}
-                  className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
-                >
-                  as Business
-                </Link>
+          {/* Auth Sections - Only show if not logged in */}
+          {!user && (
+            <div className="space-y-6">
+              {/* Login Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#1E3A5F] mb-3">
+                  Login
+                </h4>
+                <div className="space-y-2">
+                  <Link
+                    href="/shoppers/auth/signin"
+                    onClick={closeMobileMenu}
+                    className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
+                  >
+                    as Shopper
+                  </Link>
+                  <Link
+                    href="/business/auth/signin"
+                    onClick={closeMobileMenu}
+                    className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
+                  >
+                    as Business
+                  </Link>
+                </div>
               </div>
-            </div>
 
-            {/* Sign Up Section */}
-            <div>
-              <h4 className="text-sm font-semibold text-[#1E3A5F] mb-3">
-                Sign Up
-              </h4>
-              <div className="space-y-2">
-                <Link
-                  href="/shoppers/auth/signup"
-                  onClick={closeMobileMenu}
-                  className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
-                >
-                  as Shopper
-                </Link>
-                <Link
-                  href="/business/auth/signup"
-                  onClick={closeMobileMenu}
-                  className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
-                >
-                  as Business
-                </Link>
+              {/* Sign Up Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-[#1E3A5F] mb-3">
+                  Sign Up
+                </h4>
+                <div className="space-y-2">
+                  <Link
+                    href="/shoppers/auth/signup"
+                    onClick={closeMobileMenu}
+                    className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
+                  >
+                    as Shopper
+                  </Link>
+                  <Link
+                    href="/business/auth/signup"
+                    onClick={closeMobileMenu}
+                    className="block text-[#343538] py-2 hover:text-[#e94e1b] transition-colors"
+                  >
+                    as Business
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>

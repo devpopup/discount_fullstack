@@ -1,11 +1,16 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Tag } from 'lucide-react'
-import { calculateDistance } from '@/lib/offers-api'
+import { Tag, Heart } from 'lucide-react'
+import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
+import { useAuth } from '@/context/AuthContext'
 
-export default function DealCard({ deal, userLocation = null, className = "" }) {
+export default function DealCard({ deal, userLocation = null, className = "", isFavorited: initialFavorited = false, onFavoriteChange }) {
+  const [isFavorited, setIsFavorited] = useState(initialFavorited)
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
+  const { user } = useAuth()
   const {
     title,
     description,
@@ -68,6 +73,65 @@ export default function DealCard({ deal, userLocation = null, className = "" }) 
 
   const progressPercentage = maxClaims ? (claimedCount / maxClaims) * 100 : 0
 
+  // Update favorited state when prop changes
+  useEffect(() => {
+    setIsFavorited(initialFavorited)
+  }, [initialFavorited])
+
+  // Handle favorite toggle
+  const handleFavoriteClick = async (e) => {
+    e.preventDefault() // Prevent navigation to offer details
+    e.stopPropagation()
+
+    // Check if user is logged in
+    if (!user) {
+      // Redirect to login or show message
+      alert('Please sign in to save offers to your favorites')
+      return
+    }
+
+    setIsTogglingFavorite(true)
+
+    try {
+      if (isFavorited) {
+        // Remove from favorites
+        const result = await removeOfferFromFavorites(deal.id)
+        if (result.success) {
+          setIsFavorited(false)
+          if (onFavoriteChange) {
+            onFavoriteChange(deal.id, false)
+          }
+        } else {
+          console.error('Failed to remove from favorites:', result.error)
+        }
+      } else {
+        // Add to favorites
+        const result = await saveOfferToFavorites(deal.id)
+        if (result.success) {
+          setIsFavorited(true)
+          if (onFavoriteChange) {
+            onFavoriteChange(deal.id, true)
+          }
+        } else {
+          // Handle "already saved" error gracefully
+          if (result.error && result.error.includes('already saved')) {
+            // Just update the UI to show it's favorited
+            setIsFavorited(true)
+            if (onFavoriteChange) {
+              onFavoriteChange(deal.id, true)
+            }
+          } else {
+            console.error('Failed to save to favorites:', result.error)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+    } finally {
+      setIsTogglingFavorite(false)
+    }
+  }
+
   if (!deal?.id) {
     console.error('DealCard: Missing deal.id', deal)
     return null
@@ -117,6 +181,25 @@ export default function DealCard({ deal, userLocation = null, className = "" }) 
         >
           {discount}% OFF
         </div>
+
+        {/* Favorite Button - Top Right */}
+        <button
+          onClick={handleFavoriteClick}
+          disabled={isTogglingFavorite}
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 hover:bg-white transition-all duration-200 shadow-md"
+          style={{
+            zIndex: 10
+          }}
+          aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Heart
+            className={`w-4 h-4 transition-all duration-200 ${
+              isFavorited
+                ? 'fill-red-500 text-red-500'
+                : 'text-gray-600 hover:text-red-500'
+            }`}
+          />
+        </button>
 
         {/* Days Remaining Badge - Bottom Right */}
         <div

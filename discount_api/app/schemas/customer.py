@@ -62,8 +62,8 @@ class SavedOfferBase(BaseModel):
 
 class SavedOfferResponse(SavedOfferBase):
     model_config = ConfigDict(from_attributes=True)
-    
-    id: uuid.UUID
+
+    id: int  # bigint in database
     offers: OfferResponse  # Full offer details
 
 
@@ -96,8 +96,8 @@ class ClaimedOfferBase(BaseModel):
 
 class ClaimedOfferResponse(ClaimedOfferBase):
     model_config = ConfigDict(from_attributes=True)
-    
-    id: uuid.UUID
+
+    id: int  # bigint in database
     offers: OfferResponse  # Full offer details
     claim_info: Optional[ClaimInfo] = None  # Processed claim information for display
 
@@ -105,9 +105,9 @@ class ClaimedOfferResponse(ClaimedOfferBase):
 class EnhancedClaimedOfferResponse(BaseModel):
     """Enhanced response with claim display information"""
     model_config = ConfigDict(from_attributes=True)
-    
+
     # Basic claim info
-    id: uuid.UUID
+    id: int  # bigint in database
     user_id: uuid.UUID
     offer_id: uuid.UUID
     claimed_at: datetime

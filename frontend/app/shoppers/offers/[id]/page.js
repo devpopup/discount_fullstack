@@ -19,7 +19,9 @@ import {
   ExternalLink,
   Loader2
 } from 'lucide-react'
-import { getOfferById } from '@/lib/offers-api'
+import { getOfferById, claimOffer, unclaimOffer, getClaimedOfferIds, getFavoritedOfferIds, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
+import { useAuth } from '@/context/AuthContext'
+import { toast } from 'sonner'
 
 export default function OfferDetailsPage({ params }) {
   // Use React's use() hook to unwrap the params promise
@@ -27,10 +29,16 @@ export default function OfferDetailsPage({ params }) {
   const offerId = resolvedParams?.id
 
   const router = useRouter()
+  const { user } = useAuth()
   const [offer, setOffer] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [isClaimed, setIsClaimed] = useState(false)
+  const [claiming, setClaiming] = useState(false)
+  const [claimError, setClaimError] = useState(null)
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
 
   useEffect(() => {
     if (offerId) {
@@ -49,6 +57,12 @@ export default function OfferDetailsPage({ params }) {
         setError(result.error)
       } else if (result.offer) {
         setOffer(result.offer)
+
+        // Check if offer is claimed and favorited (if user is logged in)
+        if (user) {
+          checkIfClaimed()
+          checkIfFavorited()
+        }
       } else {
         setError('Offer not found')
       }
@@ -60,15 +74,145 @@ export default function OfferDetailsPage({ params }) {
     }
   }
 
-  const handleClaimInStore = () => {
-    // TODO: Implement claim in store functionality
-    console.log('Claim in store clicked')
+  const checkIfClaimed = async () => {
+    try {
+      const claimedIds = await getClaimedOfferIds()
+      setIsClaimed(claimedIds.has(offerId))
+    } catch (err) {
+      console.error('Error checking claim status:', err)
+    }
+  }
+
+  const checkIfFavorited = async () => {
+    try {
+      const favoritedIds = await getFavoritedOfferIds()
+      setIsFavorited(favoritedIds.has(offerId))
+    } catch (err) {
+      console.error('Error checking favorite status:', err)
+    }
+  }
+
+  const handleClaimInStore = async () => {
+    // Check if user is logged in
+    if (!user) {
+      toast.error('Please sign in to claim this offer')
+      router.push('/shoppers/auth/signin')
+      return
+    }
+
+    setClaiming(true)
+    setClaimError(null)
+
+    try {
+      if (isClaimed) {
+        // Unclaim the offer
+        const result = await unclaimOffer(offerId)
+
+        if (result.success) {
+          toast.success('Offer unclaimed successfully!')
+          setIsClaimed(false)
+        } else {
+          setClaimError(result.error || 'Failed to unclaim offer. Please try again.')
+          toast.error(result.error || 'Failed to unclaim offer. Please try again.')
+        }
+      } else {
+        // Claim the offer
+        const result = await claimOffer(offerId, 'in_store')
+
+        if (result.success) {
+          toast.success('Offer claimed successfully! Visit the store to redeem.')
+          setIsClaimed(true)
+        } else {
+          setClaimError(result.error || 'Failed to claim offer. Please try again.')
+          toast.error(result.error || 'Failed to claim offer. Please try again.')
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling claim:', err)
+      const errorMsg = isClaimed ? 'Failed to unclaim offer.' : 'Failed to claim offer.'
+      setClaimError(errorMsg)
+      toast.error(errorMsg)
+    } finally {
+      setClaiming(false)
+    }
   }
 
   const handleGoToWebsite = () => {
     const website = offer?.business?.business_website || offer?.business?.website
     if (website) {
       window.open(website, '_blank')
+    }
+  }
+
+  const handleFavoriteToggle = async () => {
+    if (!user) {
+      toast.error('Please sign in to save favorites')
+      router.push('/shoppers/auth/signin')
+      return
+    }
+
+    setIsTogglingFavorite(true)
+
+    try {
+      if (isFavorited) {
+        const result = await removeOfferFromFavorites(offerId)
+        if (result.success) {
+          setIsFavorited(false)
+          toast.success('Removed from favorites')
+        } else {
+          toast.error(result.error || 'Failed to remove from favorites')
+        }
+      } else {
+        const result = await saveOfferToFavorites(offerId)
+        if (result.success) {
+          setIsFavorited(true)
+          toast.success('Added to favorites')
+        } else {
+          // Handle "already saved" error gracefully
+          if (result.error && result.error.includes('already saved')) {
+            setIsFavorited(true)
+            toast.success('Added to favorites')
+          } else {
+            toast.error(result.error || 'Failed to save to favorites')
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err)
+      toast.error('Failed to update favorites')
+    } finally {
+      setIsTogglingFavorite(false)
+    }
+  }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: offer?.title || 'Check out this offer',
+      text: `${offer?.title} - ${offer?.description || 'Great deal!'}`,
+      url: window.location.href
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        toast.success('Shared successfully!')
+      } else {
+        // Fallback: copy link to clipboard
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success('Link copied to clipboard!')
+      }
+    } catch (err) {
+      // User cancelled or error occurred
+      if (err.name !== 'AbortError') {
+        console.error('Error sharing:', err)
+        // Try clipboard as last resort
+        try {
+          await navigator.clipboard.writeText(window.location.href)
+          toast.success('Link copied to clipboard!')
+        } catch (clipboardErr) {
+          toast.error('Failed to share')
+        }
+      }
     }
   }
 
@@ -272,12 +416,37 @@ export default function OfferDetailsPage({ params }) {
           <div className="space-y-6">
             {/* Action Buttons */}
             <div className="bg-white rounded-lg shadow-sm p-6 space-y-3">
+              {claimError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
+                  {claimError}
+                </div>
+              )}
+
               <Button
                 onClick={handleClaimInStore}
-                className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white py-6 text-lg font-semibold"
+                disabled={claiming}
+                className={`w-full py-6 text-lg font-semibold ${
+                  isClaimed
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-[#e94e1b] hover:bg-[#d13f16]'
+                } text-white`}
               >
-                <Store className="w-5 h-5 mr-2" />
-                Claim In Store
+                {claiming ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    {isClaimed ? 'Unclaiming...' : 'Claiming...'}
+                  </>
+                ) : isClaimed ? (
+                  <>
+                    <Store className="w-5 h-5 mr-2" />
+                    Unclaim Offer
+                  </>
+                ) : (
+                  <>
+                    <Store className="w-5 h-5 mr-2" />
+                    Claim In Store
+                  </>
+                )}
               </Button>
 
               <Button
@@ -294,10 +463,19 @@ export default function OfferDetailsPage({ params }) {
               </Button>
 
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1">
-                  <Heart className="w-5 h-5" />
+                <Button
+                  variant="outline"
+                  className={`flex-1 ${isFavorited ? 'bg-red-50 border-red-500 hover:bg-red-100' : ''}`}
+                  onClick={handleFavoriteToggle}
+                  disabled={isTogglingFavorite}
+                >
+                  <Heart className={`w-5 h-5 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`} />
                 </Button>
-                <Button variant="outline" className="flex-1">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleShare}
+                >
                   <Share2 className="w-5 h-5" />
                 </Button>
               </div>

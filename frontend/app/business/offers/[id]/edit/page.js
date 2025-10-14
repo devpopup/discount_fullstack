@@ -56,11 +56,9 @@ export default function EditOfferPage() {
     buy_quantity: '',
     get_quantity: '',
     get_discount_percentage: '100',
-    // Geofence and advertising fields
+    // Geofence fields
     geofence_enabled: false,
-    geofence_radius: 1000,
-    auto_advertise: false,
-    daily_ad_budget: 20.00
+    geofence_radius: 1000
   })
   
   const [products, setProducts] = useState([])
@@ -110,11 +108,9 @@ export default function EditOfferPage() {
         buy_quantity: offer.buy_quantity?.toString() || '',
         get_quantity: offer.get_quantity?.toString() || '',
         get_discount_percentage: offer.get_discount_percentage?.toString() || '100',
-        // Geofence and advertising fields
+        // Geofence fields
         geofence_enabled: offer.geofence_enabled || false,
-        geofence_radius: offer.geofence_radius || 1000,
-        auto_advertise: offer.auto_advertise || false,
-        daily_ad_budget: offer.daily_ad_budget || 20.00
+        geofence_radius: offer.geofence_radius || 1000
       })
       
     } catch (error) {
@@ -251,11 +247,9 @@ export default function EditOfferPage() {
         expiry_date: formData.expiry_date,
         max_claims: formData.max_claims ? parseInt(formData.max_claims) : undefined,
         terms_conditions: formData.terms_conditions.trim() || undefined,
-        // Geofence and advertising fields
+        // Geofence fields
         geofence_enabled: formData.geofence_enabled,
-        geofence_radius: parseInt(formData.geofence_radius),
-        auto_advertise: formData.auto_advertise,
-        daily_ad_budget: parseFloat(formData.daily_ad_budget)
+        geofence_radius: parseInt(formData.geofence_radius)
       }
 
       // Add type-specific fields
@@ -705,7 +699,6 @@ export default function EditOfferPage() {
                     handleInputChange={handleInputChange}
                     setFormData={setFormData}
                     useSlider={false}
-                    autoAdvertiseEnabled={true}
                   />
 
                   {/* Action Buttons */}

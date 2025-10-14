@@ -13,11 +13,13 @@ import {
   getExpiringSoonOffers,
   transformOfferDataWithDistance,
   getUserLocation,
-  getDefaultLocation
+  getDefaultLocation,
+  getFavoritedOfferIds
 } from '@/lib/offers-api'
+import { useAuth } from '@/context/AuthContext'
 
 
-function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null }) {
+function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), onFavoriteChange }) {
   const scrollContainerRef = useRef(null)
 
   const scrollRight = () => {
@@ -56,7 +58,13 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {deals.map((deal, index) => (
-              <DealCard key={deal.id || `deal-${index}`} deal={deal} userLocation={userLocation} />
+              <DealCard
+                key={deal.id || `deal-${index}`}
+                deal={deal}
+                userLocation={userLocation}
+                isFavorited={favoritedIds.has(deal.id)}
+                onFavoriteChange={onFavoriteChange}
+              />
             ))}
           </div>
 
@@ -88,11 +96,26 @@ export default function ShoppersHome() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [userLocation, setUserLocation] = useState(null)
+  const [favoritedIds, setFavoritedIds] = useState(new Set())
+  const { user } = useAuth()
 
   // Load all deals on component mount
   useEffect(() => {
     loadAllDeals()
   }, [])
+
+  // Handle favorite state changes
+  const handleFavoriteChange = (offerId, isFavorited) => {
+    setFavoritedIds(prev => {
+      const newSet = new Set(prev)
+      if (isFavorited) {
+        newSet.add(offerId)
+      } else {
+        newSet.delete(offerId)
+      }
+      return newSet
+    })
+  }
 
   const loadAllDeals = async () => {
     try {
@@ -106,6 +129,13 @@ export default function ShoppersHome() {
         setUserLocation(location)
       } catch (locationError) {
         console.log('Using default location:', locationError.message)
+      }
+
+      // Fetch favorited IDs if user is logged in
+      let favIds = new Set()
+      if (user) {
+        favIds = await getFavoritedOfferIds()
+        setFavoritedIds(favIds)
       }
 
       // Fetch all deal types in parallel - only need 4 for single row display
@@ -188,6 +218,8 @@ export default function ShoppersHome() {
                 sectionType="nearby"
                 icon={MapPin}
                 userLocation={userLocation}
+                favoritedIds={favoritedIds}
+                onFavoriteChange={handleFavoriteChange}
               />
             </div>
 
@@ -200,6 +232,8 @@ export default function ShoppersHome() {
                 sectionType="trending"
                 icon={TrendingUp}
                 userLocation={userLocation}
+                favoritedIds={favoritedIds}
+                onFavoriteChange={handleFavoriteChange}
               />
             </div>
 
@@ -211,6 +245,8 @@ export default function ShoppersHome() {
               sectionType="expiring"
               icon={Clock}
               userLocation={userLocation}
+              favoritedIds={favoritedIds}
+              onFavoriteChange={handleFavoriteChange}
             />
 
             {/* Call to Action */}

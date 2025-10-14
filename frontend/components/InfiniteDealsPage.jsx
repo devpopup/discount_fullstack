@@ -12,8 +12,10 @@ import {
   searchOffers,
   transformOfferDataWithDistance,
   getUserLocation,
-  getDefaultLocation
+  getDefaultLocation,
+  getFavoritedOfferIds
 } from '@/lib/offers-api'
+import { useAuth } from '@/context/AuthContext'
 
 
 const sectionConfig = {
@@ -45,13 +47,21 @@ export default function InfiniteDealsPage({ dealType }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [userLocation, setUserLocation] = useState(null)
   const [error, setError] = useState(null)
+  const [favoritedIds, setFavoritedIds] = useState(new Set())
   const observer = useRef()
+  const { user } = useAuth()
 
   const config = sectionConfig[dealType] || sectionConfig.nearby
 
-  // Get user location first
+  // Get user location and favorited IDs
   useEffect(() => {
     const initializeLocation = async () => {
+      // Load favorited IDs if user is logged in
+      if (user) {
+        const favIds = await getFavoritedOfferIds()
+        setFavoritedIds(favIds)
+      }
+
       if (dealType === 'nearby') {
         try {
           const location = await getUserLocation()
@@ -75,6 +85,19 @@ export default function InfiniteDealsPage({ dealType }) {
       loadMoreDeals(1, true)
     }
   }, [userLocation, dealType])
+
+  // Handle favorite state changes
+  const handleFavoriteChange = (offerId, isFavorited) => {
+    setFavoritedIds(prev => {
+      const newSet = new Set(prev)
+      if (isFavorited) {
+        newSet.add(offerId)
+      } else {
+        newSet.delete(offerId)
+      }
+      return newSet
+    })
+  }
 
   const loadMoreDeals = useCallback(async (pageNumber, isInitial = false) => {
     if (loading) return
@@ -201,7 +224,7 @@ export default function InfiniteDealsPage({ dealType }) {
               </Button>
             </Link>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               <div className={`w-10 h-10 bg-[#e94e1b] rounded-full flex items-center justify-center`}>
                 <config.icon className="w-5 h-5 text-white" />
               </div>
@@ -260,9 +283,15 @@ export default function InfiniteDealsPage({ dealType }) {
         {!error && (
           <>
             {filteredDeals.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1">
                 {filteredDeals.map((deal, index) => (
-                  <DealCard key={deal.id || `deal-${index}`} deal={deal} userLocation={userLocation} />
+                  <DealCard
+                    key={deal.id || `deal-${index}`}
+                    deal={deal}
+                    userLocation={userLocation}
+                    isFavorited={favoritedIds.has(deal.id)}
+                    onFavoriteChange={handleFavoriteChange}
+                  />
                 ))}
               </div>
             ) : !loading && (

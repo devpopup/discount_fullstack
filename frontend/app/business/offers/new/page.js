@@ -56,11 +56,9 @@ function CreateOfferForm() {
     buy_quantity: '',
     get_quantity: '',
     get_discount_percentage: '100',
-    // Geofence and advertising fields
+    // Geofence fields
     geofence_enabled: false,
-    geofence_radius: 1000,
-    auto_advertise: false,
-    daily_ad_budget: 20.00
+    geofence_radius: 1000
   })
   
   const [products, setProducts] = useState([])
@@ -203,11 +201,9 @@ function CreateOfferForm() {
         expiry_date: formData.expiry_date,
         max_claims: formData.max_claims ? parseInt(formData.max_claims) : undefined,
         terms_conditions: formData.terms_conditions.trim() || undefined,
-        // Geofence and advertising fields
+        // Geofence fields
         geofence_enabled: formData.geofence_enabled,
         geofence_radius: parseInt(formData.geofence_radius),
-        auto_advertise: formData.auto_advertise,
-        daily_ad_budget: parseFloat(formData.daily_ad_budget),
         is_active: true
       }
 
@@ -632,13 +628,12 @@ function CreateOfferForm() {
                     />
                   </div>
 
-                  {/* Location-Based Advertising Controls */}
+                  {/* Geofencing Controls */}
                   <LocationAdvertisingControls
                     formData={formData}
                     handleInputChange={handleInputChange}
                     setFormData={setFormData}
                     useSlider={false}
-                    autoAdvertiseEnabled={false}
                   />
 
                   {/* Action Buttons */}
