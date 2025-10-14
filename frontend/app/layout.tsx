@@ -96,7 +96,18 @@ export default function RootLayout({
         <AuthWrapper>
           {children}
         </AuthWrapper>
-        <Toaster />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#1E3A5F',
+              color: '#fff',
+              border: '1px solid #e94e1b',
+            },
+            className: 'sonner-toast',
+            duration: 3000,
+          }}
+        />
       </body>
     </html>
   )

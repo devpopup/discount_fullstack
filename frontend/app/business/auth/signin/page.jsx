@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from '@/lib/auth'
 import { useAuth } from '@/context/AuthContext'
+import Navbar from '@/components/Navbar'
 
 // Import shadcn components
 import { Button } from '@/components/ui/button'
@@ -84,6 +85,8 @@ export default function BusinessLogin() {
   }
 
   return (
+    <>
+      <Navbar />
     <div className="min-h-screen bg-gradient-to-br from-[#1e3a5f] via-[#2a4d6e] to-[#1e3a5f] flex">
       {/* Left Side - Desktop Only - Visual Content */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
@@ -340,5 +343,6 @@ export default function BusinessLogin() {
         </div>
       </div>
     </div>
+    </>
   )
 }

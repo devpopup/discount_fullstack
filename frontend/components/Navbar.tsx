@@ -75,7 +75,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-[#F5F8FC] border-b border-[#E8E9EB] relative z-50">
+      <nav className="sticky top-0 bg-[#F5F8FC] border-b border-[#E8E9EB] z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-[86px]">
             {/* Logo and PopReach - Left */}
@@ -97,24 +97,28 @@ export default function Navbar() {
 
             {/* Center - Browse deals, For Shoppers, For Businesses */}
             <div className="hidden md:flex items-center gap-8">
-              <Link
-                href="/shoppers"
-                className="text-[#343538] font-medium hover:text-[#e94e1b]"
-              >
-                Browse deals
-              </Link>
-              <Link
-                href="/shoppers"
-                className="text-[#343538] font-medium hover:text-[#e94e1b]"
-              >
-                For Shoppers
-              </Link>
-              <Link
-                href="/business/auth/signin"
-                className="text-[#343538] font-medium hover:text-[#e94e1b]"
-              >
-                For Businesses
-              </Link>
+              {!user && (
+                <>
+                  <Link
+                    href="/shoppers"
+                    className="text-[#343538] font-medium hover:text-[#e94e1b]"
+                  >
+                    Browse deals
+                  </Link>
+                  <Link
+                    href="/shoppers"
+                    className="text-[#343538] font-medium hover:text-[#e94e1b]"
+                  >
+                    For Shoppers
+                  </Link>
+                  <Link
+                    href="/business/auth/signin"
+                    className="text-[#343538] font-medium hover:text-[#e94e1b]"
+                  >
+                    For Businesses
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Desktop Auth Section - Show Profile or Login/Signup */}
@@ -339,27 +343,31 @@ export default function Navbar() {
 
           {/* Navigation Links */}
           <div className="space-y-6 mb-8">
-            <Link
-              href="/shoppers"
-              onClick={closeMobileMenu}
-              className="block text-[#343538] py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-gray-200"
-            >
-              Browse deals
-            </Link>
-            <Link
-              href="/shoppers"
-              onClick={closeMobileMenu}
-              className="block text-[#343538] py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-gray-200"
-            >
-              For Shoppers
-            </Link>
-            <Link
-              href="/business/auth/signin"
-              onClick={closeMobileMenu}
-              className="block text-[#343538] py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-gray-200"
-            >
-              For Businesses
-            </Link>
+            {!user && (
+              <>
+                <Link
+                  href="/shoppers"
+                  onClick={closeMobileMenu}
+                  className="block text-[#343538] py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-gray-200"
+                >
+                  Browse deals
+                </Link>
+                <Link
+                  href="/shoppers"
+                  onClick={closeMobileMenu}
+                  className="block text-[#343538] py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-gray-200"
+                >
+                  For Shoppers
+                </Link>
+                <Link
+                  href="/business/auth/signin"
+                  onClick={closeMobileMenu}
+                  className="block text-[#343538] py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-gray-200"
+                >
+                  For Businesses
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Auth Sections - Only show if not logged in */}

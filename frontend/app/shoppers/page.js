@@ -14,12 +14,13 @@ import {
   transformOfferDataWithDistance,
   getUserLocation,
   getDefaultLocation,
-  getFavoritedOfferIds
+  getFavoritedOfferIds,
+  getClaimedOfferIds
 } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
 
 
-function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), onFavoriteChange }) {
+function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange }) {
   const scrollContainerRef = useRef(null)
 
   const scrollRight = () => {
@@ -63,7 +64,9 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
                 deal={deal}
                 userLocation={userLocation}
                 isFavorited={favoritedIds.has(deal.id)}
+                isClaimed={claimedIds.has(deal.id)}
                 onFavoriteChange={onFavoriteChange}
+                onClaimChange={onClaimChange}
               />
             ))}
           </div>
@@ -97,6 +100,7 @@ export default function ShoppersHome() {
   const [error, setError] = useState(null)
   const [userLocation, setUserLocation] = useState(null)
   const [favoritedIds, setFavoritedIds] = useState(new Set())
+  const [claimedIds, setClaimedIds] = useState(new Set())
   const { user } = useAuth()
 
   // Load all deals on component mount
@@ -109,6 +113,19 @@ export default function ShoppersHome() {
     setFavoritedIds(prev => {
       const newSet = new Set(prev)
       if (isFavorited) {
+        newSet.add(offerId)
+      } else {
+        newSet.delete(offerId)
+      }
+      return newSet
+    })
+  }
+
+  // Handle claim state changes
+  const handleClaimChange = (offerId, isClaimed) => {
+    setClaimedIds(prev => {
+      const newSet = new Set(prev)
+      if (isClaimed) {
         newSet.add(offerId)
       } else {
         newSet.delete(offerId)
@@ -131,11 +148,16 @@ export default function ShoppersHome() {
         console.log('Using default location:', locationError.message)
       }
 
-      // Fetch favorited IDs if user is logged in
+      // Fetch favorited and claimed IDs if user is logged in
       let favIds = new Set()
+      let clmIds = new Set()
       if (user) {
-        favIds = await getFavoritedOfferIds()
+        [favIds, clmIds] = await Promise.all([
+          getFavoritedOfferIds(),
+          getClaimedOfferIds()
+        ])
         setFavoritedIds(favIds)
+        setClaimedIds(clmIds)
       }
 
       // Fetch all deal types in parallel - only need 4 for single row display
@@ -219,7 +241,9 @@ export default function ShoppersHome() {
                 icon={MapPin}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
+                claimedIds={claimedIds}
                 onFavoriteChange={handleFavoriteChange}
+                onClaimChange={handleClaimChange}
               />
             </div>
 
@@ -233,7 +257,9 @@ export default function ShoppersHome() {
                 icon={TrendingUp}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
+                claimedIds={claimedIds}
                 onFavoriteChange={handleFavoriteChange}
+                onClaimChange={handleClaimChange}
               />
             </div>
 
@@ -246,7 +272,9 @@ export default function ShoppersHome() {
               icon={Clock}
               userLocation={userLocation}
               favoritedIds={favoritedIds}
+              claimedIds={claimedIds}
               onFavoriteChange={handleFavoriteChange}
+              onClaimChange={handleClaimChange}
             />
 
             {/* Call to Action */}

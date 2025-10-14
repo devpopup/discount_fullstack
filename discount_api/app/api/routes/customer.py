@@ -475,8 +475,9 @@ async def get_saved_offers(
 
     try:
         # Build query - select from saved_offers table with joined offers data
+        # Note: Use 'product' (singular) to match the foreign key relationship
         query = supabase.table("saved_offers").select(
-            "*, offers(*, products(*, categories(*)), businesses(business_name, is_verified, avatar_url, business_address, latitude, longitude, phone_number, business_website, business_hours))",
+            "*, offers(*, product:products(*, categories(*)), businesses(business_name, is_verified, avatar_url, business_address, latitude, longitude, phone_number, business_website, business_hours))",
             count="exact"
         ).eq("user_id", str(current_user.id))
 

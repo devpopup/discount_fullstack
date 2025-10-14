@@ -209,6 +209,12 @@ export function transformOfferData(apiOffer) {
   const product = apiOffer.products || apiOffer.product || {}
   const category = product.categories || {}
 
+  // Debug logging for images
+  console.log('transformOfferData - apiOffer.id:', apiOffer.id)
+  console.log('transformOfferData - product:', product)
+  console.log('transformOfferData - product.image_url:', product?.image_url)
+  console.log('transformOfferData - apiOffer.images:', apiOffer.images)
+
   // Handle both regular API format and RPC function format (nearby offers)
   // RPC returns: offer_id, offer_title, offer_description, business_name, business_address, etc.
   const offerId = apiOffer.id || apiOffer.offer_id
@@ -234,7 +240,10 @@ export function transformOfferData(apiOffer) {
     maxClaims: apiOffer.max_claims || null,
     isPopular: apiOffer.is_popular || false,
     isFeatured: apiOffer.is_featured || false,
-    images: apiOffer.images || apiOffer.product_images || (product.image_url ? [constructImageUrl(product.image_url)] : []) || (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
+    images: apiOffer.images ||
+            apiOffer.product_images ||
+            (product && product.image_url ? [constructImageUrl(product.image_url)] : []) ||
+            (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
     latitude: parseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude || 0),
     longitude: parseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude || 0),
     // Preserve full business object for detailed pages
@@ -247,14 +256,16 @@ export function transformOfferData(apiOffer) {
  */
 function constructImageUrl(imagePath) {
   if (!imagePath) return null
-  
+
   // If it's already a full URL, return as is
   if (imagePath.startsWith('http')) {
     return imagePath
   }
-  
+
   // Construct Supabase storage URL
-  return `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${imagePath}`
+  const fullUrl = `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${imagePath}`
+  console.log('constructImageUrl - input:', imagePath, 'output:', fullUrl)
+  return fullUrl
 }
 
 /**

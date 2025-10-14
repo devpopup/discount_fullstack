@@ -3,14 +3,36 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Tag, Heart } from 'lucide-react'
-import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
+import { Tag, Heart, Store } from 'lucide-react'
+import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites, claimOffer, unclaimOffer } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
+import { useClaims } from '@/context/ClaimsContext'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { useRouter } from 'next/navigation'
 
-export default function DealCard({ deal, userLocation = null, className = "", isFavorited: initialFavorited = false, onFavoriteChange }) {
+export default function DealCard({ deal, userLocation = null, className = "", isFavorited: initialFavorited = false, onFavoriteChange, isClaimed: initialClaimed = false, onClaimChange }) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited)
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
+  const [isClaiming, setIsClaiming] = useState(false)
+  const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const [authAction, setAuthAction] = useState('') // 'favorite' or 'claim'
   const { user } = useAuth()
+  const { claimedIds, loading: claimsLoading, addClaim, removeClaim } = useClaims()
+  const router = useRouter()
+
+  // Get claimed status from context (overrides prop)
+  const isClaimed = claimedIds.has(deal.id)
   const {
     title,
     description,
@@ -78,6 +100,7 @@ export default function DealCard({ deal, userLocation = null, className = "", is
     setIsFavorited(initialFavorited)
   }, [initialFavorited])
 
+
   // Handle favorite toggle
   const handleFavoriteClick = async (e) => {
     e.preventDefault() // Prevent navigation to offer details
@@ -85,8 +108,8 @@ export default function DealCard({ deal, userLocation = null, className = "", is
 
     // Check if user is logged in
     if (!user) {
-      // Redirect to login or show message
-      alert('Please sign in to save offers to your favorites')
+      setAuthAction('favorite')
+      setShowAuthDialog(true)
       return
     }
 
@@ -132,26 +155,96 @@ export default function DealCard({ deal, userLocation = null, className = "", is
     }
   }
 
+  // Handle claim toggle
+  const handleClaimClick = async (e) => {
+    e.preventDefault() // Prevent navigation to offer details
+    e.stopPropagation()
+
+    // Check if user is logged in
+    if (!user) {
+      setAuthAction('claim')
+      setShowAuthDialog(true)
+      return
+    }
+
+    setIsClaiming(true)
+
+    try {
+      if (isClaimed) {
+        // Unclaim the offer
+        const result = await unclaimOffer(deal.id)
+        if (result.success) {
+          toast.success('Offer unclaimed successfully!')
+          removeClaim(deal.id)
+          if (onClaimChange) {
+            onClaimChange(deal.id, false)
+          }
+        } else {
+          toast.error(result.error || 'Failed to unclaim offer')
+        }
+      } else {
+        // Claim the offer
+        const result = await claimOffer(deal.id, 'in_store')
+        if (result.success) {
+          toast.success('Offer claimed successfully!')
+          addClaim(deal.id)
+          if (onClaimChange) {
+            onClaimChange(deal.id, true)
+          }
+        } else {
+          // Check if error is "already claimed" and update state accordingly
+          const errorLower = (result.error || '').toLowerCase()
+          if (errorLower.includes('already claimed')) {
+            toast.info('This offer is already claimed')
+            addClaim(deal.id)
+            if (onClaimChange) {
+              onClaimChange(deal.id, true)
+            }
+          } else if (errorLower.includes('maximum claims')) {
+            toast.error('This offer has reached its maximum claims')
+          } else {
+            toast.error(result.error || 'Failed to claim offer')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling claim:', error)
+      // Check if error is "already claimed" and update state accordingly
+      if (error.message && error.message.includes('already claimed')) {
+        toast.info('This offer is already claimed')
+        addClaim(deal.id)
+        if (onClaimChange) {
+          onClaimChange(deal.id, true)
+        }
+      } else {
+        toast.error('Failed to update claim status')
+      }
+    } finally {
+      setIsClaiming(false)
+    }
+  }
+
   if (!deal?.id) {
     console.error('DealCard: Missing deal.id', deal)
     return null
   }
 
   return (
+    <>
     <Link
       href={`/shoppers/offers/${deal.id}`}
       className={`hover:shadow-lg transition-shadow duration-200 overflow-hidden bg-white flex-shrink-0 ${className}`}
       style={{
-        width: '140px',
-        height: '222px',
+        width: '160px',
+        height: '270px',
         borderRadius: '8px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         display: 'flex',
         flexDirection: 'column'
       }}
     >
-      {/* Deal Image - Full width, 140px height */}
-      <div className="relative" style={{ width: '100%', height: '140px', overflow: 'hidden' }}>
+      {/* Deal Image - Full width, 150px height */}
+      <div className="relative" style={{ width: '100%', height: '150px', overflow: 'hidden' }}>
         {images && images.length > 0 ? (
           <Image
             src={images[0]}
@@ -237,10 +330,56 @@ export default function DealCard({ deal, userLocation = null, className = "", is
         </div>
 
         {/* Distance */}
-        <div style={{ fontSize: '11px', color: '#666' }}>
+        <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
           {distance ? `${formatDistance(distance)} away` : 'Distance N/A'}
         </div>
+
+        {/* Claim Button */}
+        <Button
+          onClick={handleClaimClick}
+          disabled={isClaiming}
+          size="sm"
+          className={`w-full ${isClaimed ? 'bg-green-600 hover:bg-green-700' : 'bg-[#e94e1b] hover:bg-[#d13f16]'} text-white text-xs py-1`}
+        >
+          {isClaiming ? (
+            isClaimed ? 'Unclaiming...' : 'Claiming...'
+          ) : isClaimed ? (
+            <>
+              <Store className="w-3 h-3 mr-1" />
+              Unclaim
+            </>
+          ) : (
+            <>
+              <Store className="w-3 h-3 mr-1" />
+              Claim
+            </>
+          )}
+        </Button>
       </div>
     </Link>
+
+    {/* Auth Dialog */}
+    <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Sign in required</AlertDialogTitle>
+          <AlertDialogDescription>
+            Please sign in to {authAction === 'favorite' ? 'save offers to your favorites' : 'claim this offer'}.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              router.push('/shoppers/auth/signin')
+            }}
+            className="bg-[#e94e1b] hover:bg-[#d13f16]"
+          >
+            Sign In
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

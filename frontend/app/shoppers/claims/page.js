@@ -30,6 +30,11 @@ export default function ClaimedOffersPage() {
     try {
       const redeemedOnly = filter === 'redeemed' ? true : filter === 'pending' ? false : null
       const result = await getClaimedOffers({ page: 1, size: 50, redeemed_only: redeemedOnly })
+      console.log('Claims result:', result)
+      if (result.claimed_offers && result.claimed_offers.length > 0) {
+        console.log('First claim structure:', result.claimed_offers[0])
+        console.log('First claim offer:', result.claimed_offers[0].offer || result.claimed_offers[0].offers)
+      }
       setClaims(result.claimed_offers || [])
     } catch (err) {
       console.error('Error loading claimed offers:', err)
@@ -203,7 +208,17 @@ export default function ClaimedOffersPage() {
             {filteredClaims.map((claim) => {
               const offer = claim.offer || claim.offers
               const business = offer?.businesses || {}
-              const imageUrl = offer?.image_url || (offer?.images && offer.images.length > 0 ? offer.images[0] : null)
+              const product = offer?.product || offer?.products
+
+              // Construct image URL
+              let imageUrl = null
+              if (offer?.image_url) {
+                imageUrl = offer.image_url.startsWith('http') ? offer.image_url : `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${offer.image_url}`
+              } else if (offer?.images && offer.images.length > 0) {
+                imageUrl = offer.images[0].startsWith('http') ? offer.images[0] : `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${offer.images[0]}`
+              } else if (product?.image_url) {
+                imageUrl = product.image_url.startsWith('http') ? product.image_url : `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${product.image_url}`
+              }
 
               return (
                 <div

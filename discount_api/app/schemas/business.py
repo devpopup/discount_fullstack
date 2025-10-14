@@ -1,5 +1,5 @@
 # app/schemas/business.py
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from typing import Optional, Dict, Any, List, Union
 from datetime import datetime
 from decimal import Decimal
@@ -744,7 +744,7 @@ class OfferUpdate(BaseModel):
 class OfferResponse(OfferBase):
     """Schema for offer responses"""
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: uuid.UUID
     business_id: uuid.UUID
     current_claims: int
@@ -752,8 +752,9 @@ class OfferResponse(OfferBase):
     created_at: datetime
     product: Optional['ProductResponse'] = None
     business: Optional['BusinessSummary'] = None
-    
-    @field_validator('discount_value', 'original_price', 'discounted_price', 
+    images: Optional[List[str]] = None  # Add images field
+
+    @field_validator('discount_value', 'original_price', 'discounted_price',
                     'minimum_purchase_amount', 'get_discount_percentage', mode='before')
     @classmethod
     def convert_decimal_to_float(cls, v):
@@ -761,6 +762,18 @@ class OfferResponse(OfferBase):
         if isinstance(v, Decimal):
             return float(v)
         return v
+
+    @model_validator(mode='after')
+    def populate_images(self):
+        """Populate images from product if not already set"""
+        if not self.images and self.product and hasattr(self.product, 'image_url') and self.product.image_url:
+            # Construct full Supabase URL if it's a relative path
+            image_url = self.product.image_url
+            if not image_url.startswith('http'):
+                # Construct full Supabase storage URL
+                image_url = f"https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/{image_url}"
+            self.images = [image_url]
+        return self
 
 
 # ============================================================================

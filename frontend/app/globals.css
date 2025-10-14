@@ -130,3 +130,48 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Toast customization */
+[data-sonner-toast] {
+  background: #1E3A5F !important;
+  border: 1px solid #e94e1b !important;
+  color: white !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  background: #10b981 !important;
+  border-color: #059669 !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: #ef4444 !important;
+  border-color: #dc2626 !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  background: #3b82f6 !important;
+  border-color: #2563eb !important;
+}
+
+[data-sonner-toast] [data-title] {
+  color: white !important;
+  font-weight: 600;
+}
+
+[data-sonner-toast] [data-description] {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-sonner-toast] [data-icon] {
+  color: white !important;
+}
+
+[data-sonner-toast] [data-button] {
+  background: #e94e1b !important;
+  color: white !important;
+  border: none !important;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  background: #d13f16 !important;
+}

@@ -61,6 +61,8 @@ export default function FavoritesPage() {
           // Debug: log the offer structure to see what we're getting
           console.log('Saved offer structure:', savedOffer)
           console.log('Extracted offer:', offer)
+          console.log('Offer product/products:', offer.product, offer.products)
+          console.log('Offer product_id:', offer.product_id)
 
           return transformOfferDataWithDistance(offer, location)
         })
