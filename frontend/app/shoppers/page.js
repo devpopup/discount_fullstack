@@ -6,18 +6,15 @@ import { Button } from '@/components/ui/button'
 import DealCard from '@/components/DealCard'
 import Navbar from '@/components/Navbar'
 import Featured from '@/components/Featured'
-import { MapPin, TrendingUp, Clock, ArrowRight, Loader2 } from 'lucide-react'
+import { MapPin, TrendingUp, Clock, ArrowRight, Loader2, ChevronRight } from 'lucide-react'
 import {
-  getNearbyOffers,
-  getTrendingOffers,
-  getExpiringSoonOffers,
-  transformOfferDataWithDistance,
   getUserLocation,
   getDefaultLocation,
   getFavoritedOfferIds,
   getClaimedOfferIds
 } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
+import { useNearbyOffers, useTrendingOffers, useExpiringSoonOffers } from '@/hooks/useOffers'
 
 
 function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange }) {
@@ -93,20 +90,64 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
 }
 
 export default function ShoppersHome() {
-  const [nearbyDeals, setNearbyDeals] = useState([])
-  const [trendingDeals, setTrendingDeals] = useState([])
-  const [expiringSoonDeals, setExpiringSoonDeals] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [userLocation, setUserLocation] = useState(null)
   const [favoritedIds, setFavoritedIds] = useState(new Set())
   const [claimedIds, setClaimedIds] = useState(new Set())
   const { user } = useAuth()
 
-  // Load all deals on component mount
+  // Use React Query hooks for data fetching with automatic caching
+  const { data: nearbyData, isLoading: nearbyLoading, error: nearbyError } = useNearbyOffers(
+    userLocation,
+    { limit: 4, enabled: !!userLocation }
+  )
+  const { data: trendingData, isLoading: trendingLoading, error: trendingError } = useTrendingOffers({
+    limit: 4,
+    userLocation
+  })
+  const { data: expiringData, isLoading: expiringLoading, error: expiringError } = useExpiringSoonOffers({
+    limit: 4,
+    userLocation
+  })
+
+  // Combined loading state
+  const loading = nearbyLoading || trendingLoading || expiringLoading
+  const error = nearbyError || trendingError || expiringError
+
+  // Initialize user location on mount
   useEffect(() => {
-    loadAllDeals()
+    const initLocation = async () => {
+      let location = getDefaultLocation()
+      try {
+        location = await getUserLocation()
+      } catch (locationError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Using default location:', locationError.message)
+        }
+      }
+      setUserLocation(location)
+    }
+
+    initLocation()
   }, [])
+
+  // Fetch favorited and claimed IDs if user is logged in
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user) {
+        const [favIds, clmIds] = await Promise.all([
+          getFavoritedOfferIds(),
+          getClaimedOfferIds()
+        ])
+        setFavoritedIds(favIds)
+        setClaimedIds(clmIds)
+      } else {
+        setFavoritedIds(new Set())
+        setClaimedIds(new Set())
+      }
+    }
+
+    loadUserData()
+  }, [user])
 
   // Handle favorite state changes
   const handleFavoriteChange = (offerId, isFavorited) => {
@@ -134,63 +175,10 @@ export default function ShoppersHome() {
     })
   }
 
-  const loadAllDeals = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      // Get user location first (optional)
-      let location = getDefaultLocation()
-      try {
-        location = await getUserLocation()
-        setUserLocation(location)
-      } catch (locationError) {
-        console.log('Using default location:', locationError.message)
-      }
-
-      // Fetch favorited and claimed IDs if user is logged in
-      let favIds = new Set()
-      let clmIds = new Set()
-      if (user) {
-        [favIds, clmIds] = await Promise.all([
-          getFavoritedOfferIds(),
-          getClaimedOfferIds()
-        ])
-        setFavoritedIds(favIds)
-        setClaimedIds(clmIds)
-      }
-
-      // Fetch all deal types in parallel - only need 4 for single row display
-      const [nearbyResult, trendingResult, expiringResult] = await Promise.all([
-        getNearbyOffers({ ...location, limit: 4 }),
-        getTrendingOffers({ limit: 4 }),
-        getExpiringSoonOffers({ limit: 4 })
-      ])
-
-      // Transform and set data with distance calculation, filter out invalid offers
-      setNearbyDeals(
-        nearbyResult.offers
-          .map(offer => transformOfferDataWithDistance(offer, location))
-          .filter(offer => offer && offer.id)
-      )
-      setTrendingDeals(
-        trendingResult.offers
-          .map(offer => transformOfferDataWithDistance(offer, location))
-          .filter(offer => offer && offer.id)
-      )
-      setExpiringSoonDeals(
-        expiringResult.offers
-          .map(offer => transformOfferDataWithDistance(offer, location))
-          .filter(offer => offer && offer.id)
-      )
-
-    } catch (err) {
-      console.error('Error loading deals:', err)
-      setError('Failed to load deals. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Extract deals from React Query results
+  const nearbyDeals = nearbyData?.offers || []
+  const trendingDeals = trendingData?.offers || []
+  const expiringSoonDeals = expiringData?.offers || []
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -216,9 +204,9 @@ export default function ShoppersHome() {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
             <div className="text-center">
-              <p className="text-red-800 mb-4">{error}</p>
+              <p className="text-red-800 mb-4">{error?.message || 'Failed to load deals. Please try again.'}</p>
               <Button
-                onClick={loadAllDeals}
+                onClick={() => window.location.reload()}
                 className="bg-[#e94e1b] hover:bg-[#d13f16] text-white"
               >
                 Try Again

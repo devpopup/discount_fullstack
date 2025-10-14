@@ -40,6 +40,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import AuthWrapper from '@/components/AuthWrapper'
 import { Toaster } from '@/components/ui/sonner'
+import { ReactQueryProvider } from '@/lib/react-query-provider'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -93,21 +95,25 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthWrapper>
-          {children}
-        </AuthWrapper>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#1E3A5F',
-              color: '#fff',
-              border: '1px solid #e94e1b',
-            },
-            className: 'sonner-toast',
-            duration: 3000,
-          }}
-        />
+        <ErrorBoundary>
+          <ReactQueryProvider>
+            <AuthWrapper>
+              {children}
+            </AuthWrapper>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: '#1E3A5F',
+                  color: '#fff',
+                  border: '1px solid #e94e1b',
+                },
+                className: 'sonner-toast',
+                duration: 3000,
+              }}
+            />
+          </ReactQueryProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

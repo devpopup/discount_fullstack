@@ -33,90 +33,123 @@ async function makeOfferRequest(endpoint, options = {}, requireAuth = false) {
       try {
         const errorData = await response.json()
         errorMessage = errorData.detail || errorData.message || errorMessage
-        console.error(`API Error Response for ${endpoint}:`, errorData)
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`API Error Response for ${endpoint}:`, errorData)
+        }
       } catch (parseError) {
         // If we can't parse the error response, use the status
-        console.error(`Failed to parse error response for ${endpoint}:`, parseError)
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`Failed to parse error response for ${endpoint}:`, parseError)
+        }
       }
       throw new Error(errorMessage)
     }
 
     return await response.json()
   } catch (error) {
-    console.error(`API request failed for ${endpoint}:`, error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`API request failed for ${endpoint}:`, error)
+    }
     throw error
   }
 }
 
 /**
  * Get nearby offers based on user location
+ * @param {number} offset - Starting index for pagination
+ * @param {number} limit - Number of items to fetch
  */
-export async function getNearbyOffers({ lat, lng, radius = 10, limit = 20, categoryId = null }) {
+export async function getNearbyOffers({ lat, lng, radius = 10, limit = 20, offset = 0, categoryId = null }) {
   try {
     const params = new URLSearchParams({
       lat: lat.toString(),
       lng: lng.toString(),
       radius: radius.toString(),
-      limit: limit.toString()
+      limit: limit.toString(),
+      offset: offset.toString()
     })
-    
+
     if (categoryId) {
       params.append('category_id', categoryId)
     }
 
     const data = await makeOfferRequest(`/customer/offers/nearby?${params}`)
-    
-    // Return the offers from API (could be empty array)
-    return { offers: data.offers || [], error: null }
-    
+
+    // Return the offers from API with pagination info
+    return {
+      offers: data.offers || [],
+      hasMore: (data.offers || []).length === limit, // If we got full page, there might be more
+      error: null
+    }
+
   } catch (error) {
-    console.error('Error fetching nearby offers:', error)
-    return { offers: [], error: error.message }
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching nearby offers:', error)
+    }
+    return { offers: [], hasMore: false, error: error.message }
   }
 }
 
 /**
  * Get trending offers
+ * @param {number} offset - Starting index for pagination
+ * @param {number} limit - Number of items to fetch
  */
-export async function getTrendingOffers({ limit = 10, categoryId = null } = {}) {
+export async function getTrendingOffers({ limit = 10, offset = 0, categoryId = null } = {}) {
   try {
     const params = new URLSearchParams({
-      limit: limit.toString()
+      limit: limit.toString(),
+      offset: offset.toString()
     })
-    
+
     if (categoryId) {
       params.append('category_id', categoryId)
     }
 
     const data = await makeOfferRequest(`/customer/offers/trending?${params}`)
-    
-    // Return the offers from API (could be empty array)
-    return { offers: data.offers || [], error: null }
-    
+
+    // Return the offers from API with pagination info
+    return {
+      offers: data.offers || [],
+      hasMore: (data.offers || []).length === limit,
+      error: null
+    }
+
   } catch (error) {
-    console.error('Error fetching trending offers:', error)
-    return { offers: [], error: error.message }
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching trending offers:', error)
+    }
+    return { offers: [], hasMore: false, error: error.message }
   }
 }
 
 /**
  * Get offers expiring soon
+ * @param {number} offset - Starting index for pagination
+ * @param {number} limit - Number of items to fetch
  */
-export async function getExpiringSoonOffers({ hours = 24, limit = 10 } = {}) {
+export async function getExpiringSoonOffers({ hours = 24, limit = 10, offset = 0 } = {}) {
   try {
     const params = new URLSearchParams({
       hours: hours.toString(),
-      limit: limit.toString()
+      limit: limit.toString(),
+      offset: offset.toString()
     })
 
     const data = await makeOfferRequest(`/customer/offers/expiring-soon?${params}`)
-    
-    // Return the offers from API (could be empty array) 
-    return { offers: data.offers || [], error: null }
-    
+
+    // Return the offers from API with pagination info
+    return {
+      offers: data.offers || [],
+      hasMore: (data.offers || []).length === limit,
+      error: null
+    }
+
   } catch (error) {
-    console.error('Error fetching expiring offers:', error)
-    return { offers: [], error: error.message }
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching expiring offers:', error)
+    }
+    return { offers: [], hasMore: false, error: error.message }
   }
 }
 
@@ -209,11 +242,13 @@ export function transformOfferData(apiOffer) {
   const product = apiOffer.products || apiOffer.product || {}
   const category = product.categories || {}
 
-  // Debug logging for images
-  console.log('transformOfferData - apiOffer.id:', apiOffer.id)
-  console.log('transformOfferData - product:', product)
-  console.log('transformOfferData - product.image_url:', product?.image_url)
-  console.log('transformOfferData - apiOffer.images:', apiOffer.images)
+  // Debug logging for images (development only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('transformOfferData - apiOffer.id:', apiOffer.id)
+    console.log('transformOfferData - product:', product)
+    console.log('transformOfferData - product.image_url:', product?.image_url)
+    console.log('transformOfferData - apiOffer.images:', apiOffer.images)
+  }
 
   // Handle both regular API format and RPC function format (nearby offers)
   // RPC returns: offer_id, offer_title, offer_description, business_name, business_address, etc.
@@ -264,7 +299,9 @@ function constructImageUrl(imagePath) {
 
   // Construct Supabase storage URL
   const fullUrl = `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${imagePath}`
-  console.log('constructImageUrl - input:', imagePath, 'output:', fullUrl)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('constructImageUrl - input:', imagePath, 'output:', fullUrl)
+  }
   return fullUrl
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Tag, Heart, Store } from 'lucide-react'
@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useRouter } from 'next/navigation'
 
-export default function DealCard({ deal, userLocation = null, className = "", isFavorited: initialFavorited = false, onFavoriteChange, isClaimed: initialClaimed = false, onClaimChange }) {
+function DealCard({ deal, userLocation = null, className = "", isFavorited: initialFavorited = false, onFavoriteChange, isClaimed: initialClaimed = false, onClaimChange }) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited)
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -225,7 +225,9 @@ export default function DealCard({ deal, userLocation = null, className = "", is
   }
 
   if (!deal?.id) {
-    console.error('DealCard: Missing deal.id', deal)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('DealCard: Missing deal.id', deal)
+    }
     return null
   }
 
@@ -249,11 +251,12 @@ export default function DealCard({ deal, userLocation = null, className = "", is
           <Image
             src={images[0]}
             alt={title || 'Product'}
-            width={140}
-            height={140}
+            width={160}
+            height={150}
             className="object-cover"
             style={{ width: '100%', height: '100%' }}
-            unoptimized
+            sizes="160px"
+            priority={false}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
@@ -383,3 +386,15 @@ export default function DealCard({ deal, userLocation = null, className = "", is
     </>
   )
 }
+
+// Memoize component to prevent unnecessary re-renders
+export default memo(DealCard, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.deal.id === nextProps.deal.id &&
+    prevProps.isFavorited === nextProps.isFavorited &&
+    prevProps.isClaimed === nextProps.isClaimed &&
+    prevProps.userLocation?.lat === nextProps.userLocation?.lat &&
+    prevProps.userLocation?.lng === nextProps.userLocation?.lng
+  )
+})

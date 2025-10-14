@@ -67,7 +67,9 @@ export default function InfiniteDealsPage({ dealType }) {
           const location = await getUserLocation()
           setUserLocation(location)
         } catch (locationError) {
-          console.log('Using default location:', locationError.message)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Using default location:', locationError.message)
+          }
           setUserLocation(getDefaultLocation())
         }
       } else {
@@ -77,7 +79,8 @@ export default function InfiniteDealsPage({ dealType }) {
     }
 
     initializeLocation()
-  }, [dealType])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dealType, user])
 
   // Load deals when userLocation is available (for nearby type)
   useEffect(() => {
@@ -107,61 +110,48 @@ export default function InfiniteDealsPage({ dealType }) {
 
     try {
       let result = { offers: [], hasMore: false }
+      const offset = (pageNumber - 1) * 12 // Calculate offset for server-side pagination
+      const limit = 12
 
       if (searchQuery) {
         // Use search API when searching
         result = await searchOffers({
           query: searchQuery,
           page: pageNumber,
-          size: 12
+          size: limit
         })
       } else {
-        // Use specific endpoint based on deal type
+        // Use specific endpoint based on deal type with proper offset-based pagination
         switch (dealType) {
           case 'nearby':
             const location = userLocation || getDefaultLocation()
             result = await getNearbyOffers({
               ...location,
-              radius: 50, // Search radius for non-geofenced offers
-              limit: 12 * pageNumber
+              radius: 50,
+              limit,
+              offset // Use server-side pagination
             })
-            // For nearby, we need to simulate pagination
-            const startIndex = (pageNumber - 1) * 12
-            const endIndex = pageNumber * 12
-            const paginatedOffers = result.offers.slice(startIndex, endIndex)
-            result = {
-              offers: paginatedOffers,
-              hasMore: endIndex < result.offers.length
-            }
             break
-            
+
           case 'trending':
-            result = await getTrendingOffers({ limit: 12 * pageNumber })
-            const trendingStartIndex = (pageNumber - 1) * 12
-            const trendingEndIndex = pageNumber * 12
-            const paginatedTrending = result.offers.slice(trendingStartIndex, trendingEndIndex)
-            result = {
-              offers: paginatedTrending,
-              hasMore: trendingEndIndex < result.offers.length
-            }
+            result = await getTrendingOffers({
+              limit,
+              offset // Use server-side pagination
+            })
             break
-            
+
           case 'expiring':
-            result = await getExpiringSoonOffers({ limit: 12 * pageNumber })
-            const expiringStartIndex = (pageNumber - 1) * 12
-            const expiringEndIndex = pageNumber * 12
-            const paginatedExpiring = result.offers.slice(expiringStartIndex, expiringEndIndex)
-            result = {
-              offers: paginatedExpiring,
-              hasMore: expiringEndIndex < result.offers.length
-            }
+            result = await getExpiringSoonOffers({
+              limit,
+              offset // Use server-side pagination
+            })
             break
-            
+
           default:
-            result = await searchOffers({ page: pageNumber, size: 12 })
+            result = await searchOffers({ page: pageNumber, size: limit })
         }
       }
-      
+
       // Transform the offers with distance calculation and filter out invalid ones
       const transformedOffers = result.offers
         .map(offer => transformOfferDataWithDistance(offer, userLocation))
@@ -172,12 +162,14 @@ export default function InfiniteDealsPage({ dealType }) {
       } else {
         setDeals(prev => [...prev, ...transformedOffers])
       }
-      
+
       setPage(pageNumber)
-      setHasMore(result.hasMore || transformedOffers.length === 12)
-      
+      setHasMore(result.hasMore)
+
     } catch (err) {
-      console.error('Error loading deals:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error loading deals:', err)
+      }
       setError('Failed to load deals. Please try again.')
     } finally {
       setLoading(false)
