@@ -110,7 +110,7 @@ export default function Navbar() {
                 For Shoppers
               </Link>
               <Link
-                href="/business"
+                href="/business/auth/signin"
                 className="text-[#343538] font-medium hover:text-[#e94e1b]"
               >
                 For Businesses
@@ -354,7 +354,7 @@ export default function Navbar() {
               For Shoppers
             </Link>
             <Link
-              href="/business"
+              href="/business/auth/signin"
               onClick={closeMobileMenu}
               className="block text-[#343538] py-3 hover:text-[#e94e1b] transition-colors font-medium text-lg border-b border-gray-200"
             >
