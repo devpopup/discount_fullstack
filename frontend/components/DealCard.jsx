@@ -308,6 +308,7 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
             padding: '4px 8px',
             borderRadius: '4px'
           }}
+          suppressHydrationWarning
         >
           {calculateTimeRemaining(expiresAt)} left
         </div>
