@@ -57,8 +57,8 @@ export default function Navbar() {
   const handleLogout = async () => {
     await logout();
     closeMobileMenu();
-    // Redirect to home page after logout
-    window.location.href = '/';
+    // Keep shoppers on /shoppers page after logout
+    window.location.href = '/shoppers';
   };
 
   // Get user initials for avatar
@@ -121,61 +121,39 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Desktop Auth Section - Show Profile or Login/Signup */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* Desktop Auth Section - Show Profile Links or Login/Signup */}
+            <div className="hidden md:flex items-center gap-6">
               {user ? (
-                // Profile Avatar with Dropdown
-                <DropdownMenu onOpenChange={setProfileDropdownOpen}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="relative h-10 w-10 rounded-full bg-[#e94e1b] hover:bg-[#d13f16] text-white p-0"
-                    >
-                      <span className="text-sm font-semibold">
-                        {getUserInitials()}
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56 bg-white border border-gray-200 shadow-lg"
+                // Profile Links for Desktop with Avatar
+                <>
+                  <Link
+                    href="/shoppers/favorites"
+                    className="flex items-center gap-2 text-[#343538] font-medium hover:text-[#e94e1b] transition-colors"
                   >
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <p className="text-sm font-medium text-gray-900">
-                        {user.full_name || 'User'}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {user.email}
-                      </p>
-                    </div>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/shoppers/favorites"
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
-                      >
-                        <Heart className="h-4 w-4" />
-                        Favorites
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/shoppers/claims"
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-[#1E3A5F] hover:text-white transition-colors cursor-pointer"
-                      >
-                        <User className="h-4 w-4" />
-                        My Claims
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    <Heart className="h-4 w-4" />
+                    Favorites
+                  </Link>
+                  <Link
+                    href="/shoppers/claims"
+                    className="flex items-center gap-2 text-[#343538] font-medium hover:text-[#e94e1b] transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    My Claims
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-[#343538] font-medium hover:text-red-600 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </button>
+                  {/* Profile Avatar Badge */}
+                  <div className="h-10 w-10 rounded-full bg-[#e94e1b] flex items-center justify-center text-white border-2 border-[#d13f16]">
+                    <span className="text-sm font-semibold">
+                      {getUserInitials()}
+                    </span>
+                  </div>
+                </>
               ) : (
                 // Login/Signup Dropdowns
                 <>
@@ -255,18 +233,29 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile menu button */}
-            <button
-              onClick={toggleMobileMenu}
-              className="md:hidden relative z-[60] p-2 text-[#1E3A5F] hover:bg-gray-200 rounded-md transition-colors"
-              aria-label="Toggle mobile menu"
-            >
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
+            {/* Mobile - Show Profile Avatar or Hamburger Menu */}
+            <div className="md:hidden flex items-center gap-3">
+              {user && (
+                <Link href="/shoppers/favorites" className="relative z-[60]">
+                  <div className="h-9 w-9 rounded-full bg-[#e94e1b] hover:bg-[#d13f16] flex items-center justify-center text-white transition-colors">
+                    <span className="text-sm font-semibold">
+                      {getUserInitials()}
+                    </span>
+                  </div>
+                </Link>
               )}
-            </button>
+              <button
+                onClick={toggleMobileMenu}
+                className="relative z-[60] p-2 text-[#1E3A5F] hover:bg-gray-200 rounded-md transition-colors"
+                aria-label="Toggle mobile menu"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
