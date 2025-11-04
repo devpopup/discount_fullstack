@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="footer-column">
             <h3 className="text-lg font-semibold mb-4 text-white">About</h3>
             <a
-              href="#"
+              href="/terms-and-conditions"
               className="text-blue-200 hover:text-white transition-colors text-sm block"
             >
               Company information
@@ -23,7 +23,7 @@ export default function Footer() {
           <div className="footer-column">
             <h3 className="text-lg font-semibold mb-4 text-white">Legal</h3>
             <a
-              href="#"
+              href="/privacy-policy"
               className="text-blue-200 hover:text-white transition-colors text-sm block"
             >
               Privacy policy
