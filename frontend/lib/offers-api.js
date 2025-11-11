@@ -154,6 +154,57 @@ export async function getExpiringSoonOffers({ hours = 24, limit = 10, offset = 0
 }
 
 /**
+ * Get all offers with pagination
+ * @param {number} page - Page number (1-based)
+ * @param {number} size - Number of items per page
+ */
+export async function getAllOffers({ page = 1, size = 20, categoryId = null } = {}) {
+  try {
+    const params = new URLSearchParams({
+      sort_by: 'created_at',
+      sort_order: 'desc',
+      page: page.toString(),
+      size: size.toString()
+    })
+
+    if (categoryId) {
+      params.append('category_id', categoryId)
+    }
+
+    const data = await makeOfferRequest(`/customer/offers/search?${params}`)
+
+    return {
+      offers: data.offers || [],
+      pagination: data.pagination || {
+        page,
+        size,
+        total: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false
+      },
+      error: null
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching all offers:', error)
+    }
+    return {
+      offers: [],
+      pagination: {
+        page: 1,
+        size: 20,
+        total: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false
+      },
+      error: error.message
+    }
+  }
+}
+
+/**
  * Search offers with various filters
  */
 export async function searchOffers({
@@ -172,25 +223,25 @@ export async function searchOffers({
       page: page.toString(),
       size: size.toString()
     })
-    
+
     if (query) {
       params.append('q', query)
     }
-    
+
     if (categoryId) {
       params.append('category_id', categoryId)
     }
-    
+
     if (businessId) {
       params.append('business_id', businessId)
     }
 
     const data = await makeOfferRequest(`/customer/offers/search?${params}`)
-    return { 
-      offers: data.offers || [], 
+    return {
+      offers: data.offers || [],
       totalCount: data.total_count || 0,
       hasMore: data.has_more || false,
-      error: null 
+      error: null
     }
   } catch (error) {
     console.error('Error searching offers:', error)

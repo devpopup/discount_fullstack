@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Offer } from '../types/offer';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.47;
@@ -14,10 +16,33 @@ const CARD_WIDTH = Dimensions.get('window').width * 0.47;
 interface DealCardProps {
   deal: Offer;
   onPress: () => void;
+  onLike?: (offerId: string) => void;
+  onClaim?: (offerId: string) => void;
+  isLiked?: boolean;
 }
 
-export default function DealCard({ deal, onPress }: DealCardProps) {
-  const formatDistance = (distance: number | null): string => {
+export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = false }: DealCardProps) {
+  const [liked, setLiked] = useState(isLiked);
+
+  const handleLike = (e: any) => {
+    e.stopPropagation();
+    setLiked(!liked);
+    if (onLike) {
+      onLike(deal.id);
+    }
+  };
+
+  const handleClaim = (e: any) => {
+    e.stopPropagation();
+    if (onClaim) {
+      onClaim(deal.id);
+    }
+  };
+
+  // Debug: Log deal distance
+  console.log(`DealCard render - Offer ${deal.id}: distance = ${deal.distance}`);
+
+  const formatDistance = (distance: number | null | undefined): string => {
     if (!distance) return '';
     if (distance < 1) {
       return `${Math.round(distance * 1000)}m away`;
@@ -59,6 +84,40 @@ export default function DealCard({ deal, onPress }: DealCardProps) {
         <View style={styles.discountBadge}>
           <Text style={styles.discountText}>{deal.discount}%</Text>
           <Text style={styles.offText}>OFF</Text>
+        </View>
+
+        {/* Distance Badge */}
+        {(deal.distance !== null && deal.distance !== undefined && deal.distance > 0) && (
+          <View style={styles.distanceBadge}>
+            <Ionicons name="location" size={12} color="#fff" />
+            <Text style={styles.distanceText}>{formatDistance(deal.distance)}</Text>
+          </View>
+        )}
+
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleLike}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={liked ? 'heart' : 'heart-outline'}
+              size={20}
+              color={liked ? '#e94e1b' : '#fff'}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleClaim}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="ticket-outline"
+              size={20}
+              color="#fff"
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -111,9 +170,13 @@ export default function DealCard({ deal, onPress }: DealCardProps) {
   );
 }
 
+const CARD_HEIGHT = 280;
+const IMAGE_HEIGHT = CARD_HEIGHT * 0.65; // 65% of card height
+
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
+    height: CARD_HEIGHT,
     backgroundColor: '#fff',
     borderRadius: 15,
     marginRight: 15,
@@ -126,7 +189,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 140,
+    height: IMAGE_HEIGHT,
     position: 'relative',
   },
   image: {
@@ -135,26 +198,68 @@ const styles = StyleSheet.create({
   },
   discountBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 10,
+    right: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#e94e1b',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   discountText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
+    lineHeight: 18,
   },
   offText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 8,
+    fontWeight: '600',
+    lineHeight: 10,
+  },
+  distanceBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  distanceText: {
+    color: '#fff',
+    fontSize: 11,
     fontWeight: '600',
   },
+  actionButtons: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: {
+    flex: 1,
     padding: 12,
+    justifyContent: 'space-between',
   },
   businessName: {
     fontSize: 12,

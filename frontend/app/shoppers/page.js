@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button'
 import DealCard from '@/components/DealCard'
 import Navbar from '@/components/Navbar'
 import Featured from '@/components/Featured'
-import { MapPin, TrendingUp, Clock, ArrowRight, Loader2, ChevronRight } from 'lucide-react'
+import { MapPin, TrendingUp, Clock, ArrowRight, Loader2, ChevronRight, Grid } from 'lucide-react'
 import {
   getUserLocation,
   getDefaultLocation,
   getFavoritedOfferIds,
-  getClaimedOfferIds
+  getClaimedOfferIds,
+  getAllOffers
 } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
 import { useNearbyOffers, useTrendingOffers, useExpiringSoonOffers } from '@/hooks/useOffers'
@@ -93,6 +94,8 @@ export default function ShoppersHome() {
   const [userLocation, setUserLocation] = useState(null)
   const [favoritedIds, setFavoritedIds] = useState(new Set())
   const [claimedIds, setClaimedIds] = useState(new Set())
+  const [allDeals, setAllDeals] = useState([])
+  const [allDealsLoading, setAllDealsLoading] = useState(false)
   const { user } = useAuth()
 
   // Use React Query hooks for data fetching with automatic caching
@@ -148,6 +151,32 @@ export default function ShoppersHome() {
 
     loadUserData()
   }, [user])
+
+  // Fetch all deals
+  useEffect(() => {
+    const loadAllDeals = async () => {
+      setAllDealsLoading(true)
+      try {
+        console.log('🔄 Fetching all deals...')
+        const result = await getAllOffers({ page: 1, size: 4 })
+        console.log('📦 All deals result:', result)
+        console.log('📊 All deals offers:', result.offers)
+        console.log('📄 All deals pagination:', result.pagination)
+        if (result.error) {
+          console.error('❌ Error loading all deals:', result.error)
+        } else {
+          console.log(`✅ Successfully loaded ${result.offers.length} deals`)
+          setAllDeals(result.offers)
+        }
+      } catch (error) {
+        console.error('❌ Exception loading all deals:', error)
+      } finally {
+        setAllDealsLoading(false)
+      }
+    }
+
+    loadAllDeals()
+  }, [])
 
   // Handle favorite state changes
   const handleFavoriteChange = (offerId, isFavorited) => {
@@ -227,6 +256,22 @@ export default function ShoppersHome() {
                 deals={nearbyDeals}
                 sectionType="nearby"
                 icon={MapPin}
+                userLocation={userLocation}
+                favoritedIds={favoritedIds}
+                claimedIds={claimedIds}
+                onFavoriteChange={handleFavoriteChange}
+                onClaimChange={handleClaimChange}
+              />
+            </div>
+
+            {/* All Deals */}
+            <div id="all-deals">
+              <DealsSection
+                title="All Deals"
+                description="Browse all available offers from local businesses"
+                deals={allDeals}
+                sectionType="all"
+                icon={Grid}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
                 claimedIds={claimedIds}

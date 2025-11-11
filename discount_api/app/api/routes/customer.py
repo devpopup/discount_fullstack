@@ -178,25 +178,35 @@ async def search_offers(
         
         if available_only:
             # Only offers that haven't reached max claims
-            query = query.or_("max_claims.is.null,current_claims.lt.max_claims")
-        
+            # Filter in Python after fetching due to Supabase limitations
+            pass
+
         # Apply sorting
         sort_direction = "asc" if sort_order == "asc" else "desc"
         query = query.order(sort_by, desc=(sort_direction == "desc"))
-        
+
         # Apply pagination
         offset = (page - 1) * size
         query = query.range(offset, offset + size - 1)
-        
+
         result = query.execute()
-        
+
         total = result.count if result.count else 0
         has_next = (page * size) < total
-        
+
         # Transform data to include business info
         offers = []
         for offer in result.data:
             offer_data = offer.copy()
+
+            # Filter by availability if requested
+            if available_only:
+                max_claims = offer_data.get('max_claims')
+                current_claims = offer_data.get('current_claims', 0)
+                # Only include if max_claims is None (unlimited) or current_claims < max_claims
+                if max_claims is not None and current_claims >= max_claims:
+                    continue
+
             if 'businesses' in offer_data:
                 offer_data['business'] = offer_data['businesses']
                 del offer_data['businesses']
@@ -1517,7 +1527,8 @@ async def search_offers(
         
         if available_only:
             # Only show offers that still have claims available
-            query = query.or_("max_claims.is.null,current_claims.lt.max_claims")
+            # Supabase doesn't support complex OR conditions well, so we'll filter in Python after
+            pass
         
         # Apply sorting
         desc_order = sort_order == "desc"
@@ -1536,7 +1547,15 @@ async def search_offers(
         enhanced_offers = []
         for offer in result.data:
             offer_data = convert_decimals_to_float(offer)
-            
+
+            # Filter by availability if requested
+            if available_only:
+                max_claims = offer_data.get('max_claims')
+                current_claims = offer_data.get('current_claims', 0)
+                # Only include if max_claims is None (unlimited) or current_claims < max_claims
+                if max_claims is not None and current_claims >= max_claims:
+                    continue
+
             # Fix structure for frontend
             if 'products' in offer_data:
                 offer_data['product'] = offer_data['products']
@@ -1544,11 +1563,11 @@ async def search_offers(
             if 'businesses' in offer_data:
                 offer_data['business'] = offer_data['businesses']
                 del offer_data['businesses']
-            
+
             # Add display information
             offer_data['display_text'] = OfferCalculator.get_offer_display_text(offer_data)
             offer_data['conditions_text'] = get_offer_conditions_text(offer_data)
-            
+
             enhanced_offers.append(offer_data)
         
         return {

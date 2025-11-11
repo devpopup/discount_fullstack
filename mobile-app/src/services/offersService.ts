@@ -1,10 +1,12 @@
 import apiClient from './api';
 import { Offer, OffersResponse, Location } from '../types/offer';
+import { calculateDistance } from '../utils/location';
 
 /**
  * Transform API offer data to match our app's structure
+ * If userLocation is provided and distance is missing, it will be calculated
  */
-function transformOfferData(apiOffer: any): Offer {
+function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
   const business = apiOffer.businesses || apiOffer.business || {};
   const product = apiOffer.products || apiOffer.product || {};
   const category = product.categories || {};
@@ -12,6 +14,37 @@ function transformOfferData(apiOffer: any): Offer {
   const offerId = apiOffer.id || apiOffer.offer_id;
   const offerTitle = apiOffer.title || apiOffer.offer_title;
   const offerDescription = apiOffer.description || apiOffer.offer_description;
+
+  // Extract distance - check multiple possible field names
+  let distance = null;
+  if (apiOffer.distance !== undefined && apiOffer.distance !== null) {
+    distance = parseFloat(apiOffer.distance);
+  } else if (apiOffer.distance_km !== undefined && apiOffer.distance_km !== null) {
+    distance = parseFloat(apiOffer.distance_km);
+  }
+
+  // If distance not provided by API but we have coordinates, calculate it client-side
+  if ((distance === null || distance === 0) && userLocation) {
+    const businessLat = parseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude || 0);
+    const businessLng = parseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude || 0);
+
+    if (businessLat && businessLng) {
+      distance = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        businessLat,
+        businessLng
+      );
+      if (distance !== null) {
+        console.log(`Offer ${offerId} - calculated distance: ${distance.toFixed(2)} km`);
+      }
+    }
+  }
+
+  // Log distance for debugging
+  if (distance !== null) {
+    console.log(`Offer ${offerId} has distance: ${distance} km`);
+  }
 
   return {
     id: offerId,
@@ -24,7 +57,7 @@ function transformOfferData(apiOffer: any): Offer {
     discountedPrice: parseFloat(apiOffer.discounted_price || 0),
     category: category.name || product.category || apiOffer.category || apiOffer.category_name || 'General',
     location: business.business_address || business.address || business.city || apiOffer.business_address || apiOffer.address || 'Location not specified',
-    distance: apiOffer.distance || apiOffer.distance_km || null,
+    distance: distance,
     rating: business.rating || apiOffer.rating || null,
     reviewCount: business.review_count || apiOffer.review_count || null,
     expiresAt: apiOffer.expiry_date || apiOffer.offer_expiry_date,
@@ -97,7 +130,11 @@ export async function getNearbyOffers(
     });
 
     const response = await apiClient.get(`/customer/offers/nearby?${params}`);
-    const offers = (response.data.offers || []).map(transformOfferData);
+
+    // Log raw API response for debugging
+    console.log('Nearby offers API response:', JSON.stringify(response.data.offers?.[0], null, 2));
+
+    const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, location));
 
     return {
       offers,
@@ -119,7 +156,8 @@ export async function getNearbyOffers(
  */
 export async function getTrendingOffers(
   limit: number = 10,
-  offset: number = 0
+  offset: number = 0,
+  userLocation?: Location
 ): Promise<OffersResponse> {
   try {
     const params = new URLSearchParams({
@@ -128,7 +166,7 @@ export async function getTrendingOffers(
     });
 
     const response = await apiClient.get(`/customer/offers/trending?${params}`);
-    const offers = (response.data.offers || []).map(transformOfferData);
+    const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, userLocation));
 
     return {
       offers,
@@ -151,7 +189,8 @@ export async function getTrendingOffers(
 export async function getExpiringSoonOffers(
   hours: number = 24,
   limit: number = 10,
-  offset: number = 0
+  offset: number = 0,
+  userLocation?: Location
 ): Promise<OffersResponse> {
   try {
     const params = new URLSearchParams({
@@ -161,7 +200,7 @@ export async function getExpiringSoonOffers(
     });
 
     const response = await apiClient.get(`/customer/offers/expiring-soon?${params}`);
-    const offers = (response.data.offers || []).map(transformOfferData);
+    const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, userLocation));
 
     return {
       offers,

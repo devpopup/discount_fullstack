@@ -4,11 +4,12 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import DealCard from '@/components/DealCard'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2, Filter, Search, MapPin, TrendingUp, Clock } from 'lucide-react'
+import { ArrowLeft, Loader2, Filter, Search, MapPin, TrendingUp, Clock, Grid } from 'lucide-react'
 import {
   getNearbyOffers,
   getTrendingOffers,
   getExpiringSoonOffers,
+  getAllOffers,
   searchOffers,
   transformOfferDataWithDistance,
   getUserLocation,
@@ -24,6 +25,12 @@ const sectionConfig = {
     description: "Discover great offers from businesses in your area",
     icon: MapPin,
     color: "text-blue-600"
+  },
+  all: {
+    title: "All Deals",
+    description: "Browse all available offers from local businesses",
+    icon: Grid,
+    color: "text-[#e94e1b]"
   },
   trending: {
     title: "Trending Deals",
@@ -131,6 +138,17 @@ export default function InfiniteDealsPage({ dealType }) {
               limit,
               offset // Use server-side pagination
             })
+            break
+
+          case 'all':
+            const allResult = await getAllOffers({
+              page: pageNumber,
+              size: limit
+            })
+            result = {
+              offers: allResult.offers,
+              hasMore: allResult.pagination.has_next
+            }
             break
 
           case 'trending':
