@@ -112,7 +112,8 @@ export default function InfiniteDealsPage({ dealType }) {
   }
 
   const loadMoreDeals = useCallback(async (pageNumber, isInitial = false) => {
-    if (loading) return
+    // Only prevent if already loading and NOT initial load
+    if (loading && !isInitial) return
 
     setLoading(true)
     setError(null)
