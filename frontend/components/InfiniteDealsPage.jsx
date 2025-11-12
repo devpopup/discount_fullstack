@@ -49,7 +49,7 @@ const sectionConfig = {
 
 export default function InfiniteDealsPage({ dealType }) {
   const [deals, setDeals] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // Start with loading true
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1) // API uses 1-based pagination
   const [searchQuery, setSearchQuery] = useState('')

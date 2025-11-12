@@ -118,7 +118,7 @@ export default function ShoppersHome() {
   const [favoritedIds, setFavoritedIds] = useState(new Set())
   const [claimedIds, setClaimedIds] = useState(new Set())
   const [allDeals, setAllDeals] = useState([])
-  const [allDealsLoading, setAllDealsLoading] = useState(false)
+  const [allDealsLoading, setAllDealsLoading] = useState(true) // Start with loading true
   const [cardsToShow, setCardsToShow] = useState(4)
   const { user } = useAuth()
 
