@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import DealCard from '@/components/DealCard'
+import Navbar from '@/components/Navbar'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, Filter, Search, MapPin, TrendingUp, Clock, Grid } from 'lucide-react'
 import {
@@ -69,18 +70,19 @@ export default function InfiniteDealsPage({ dealType }) {
         setFavoritedIds(favIds)
       }
 
-      if (dealType === 'nearby') {
-        try {
-          const location = await getUserLocation()
-          setUserLocation(location)
-        } catch (locationError) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Using default location:', locationError.message)
-          }
-          setUserLocation(getDefaultLocation())
+      // Get user location for all deal types (needed for distance calculation)
+      try {
+        const location = await getUserLocation()
+        setUserLocation(location)
+      } catch (locationError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Using default location:', locationError.message)
         }
-      } else {
-        // For non-nearby types, load immediately
+        setUserLocation(getDefaultLocation())
+      }
+
+      // For non-nearby types, load deals immediately (don't wait for location)
+      if (dealType !== 'nearby') {
         loadMoreDeals(1, true)
       }
     }
@@ -224,6 +226,9 @@ export default function InfiniteDealsPage({ dealType }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <Navbar />
+
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

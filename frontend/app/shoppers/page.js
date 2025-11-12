@@ -12,7 +12,8 @@ import {
   getDefaultLocation,
   getFavoritedOfferIds,
   getClaimedOfferIds,
-  getAllOffers
+  getAllOffers,
+  transformOfferDataWithDistance
 } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
 import { useNearbyOffers, useTrendingOffers, useExpiringSoonOffers } from '@/hooks/useOffers'
@@ -20,6 +21,21 @@ import { useNearbyOffers, useTrendingOffers, useExpiringSoonOffers } from '@/hoo
 
 function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange }) {
   const scrollContainerRef = useRef(null)
+  const [showScrollButton, setShowScrollButton] = useState(false)
+
+  // Check if container is scrollable
+  useEffect(() => {
+    const checkScrollable = () => {
+      if (scrollContainerRef.current) {
+        const isScrollable = scrollContainerRef.current.scrollWidth > scrollContainerRef.current.clientWidth
+        setShowScrollButton(isScrollable)
+      }
+    }
+
+    checkScrollable()
+    window.addEventListener('resize', checkScrollable)
+    return () => window.removeEventListener('resize', checkScrollable)
+  }, [deals])
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
@@ -69,8 +85,8 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
             ))}
           </div>
 
-          {/* Chevron button */}
-          {deals.length > 4 && (
+          {/* Chevron button - only show if container is scrollable */}
+          {showScrollButton && (
             <button
               onClick={scrollRight}
               className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
@@ -96,19 +112,38 @@ export default function ShoppersHome() {
   const [claimedIds, setClaimedIds] = useState(new Set())
   const [allDeals, setAllDeals] = useState([])
   const [allDealsLoading, setAllDealsLoading] = useState(false)
+  const [cardsToShow, setCardsToShow] = useState(4)
   const { user } = useAuth()
+
+  // Calculate number of cards based on screen width
+  useEffect(() => {
+    const calculateCards = () => {
+      const width = window.innerWidth
+      // Card width is 160px + 12px gap (3px on each side)
+      const cardWidth = 160 + 12
+      // Max container width is 7xl (80rem = 1280px), with padding
+      const containerPadding = 64 // 32px on each side for lg:px-8
+      const availableWidth = Math.min(width - containerPadding, 1280)
+      const cards = Math.max(3, Math.floor(availableWidth / cardWidth))
+      setCardsToShow(cards)
+    }
+
+    calculateCards()
+    window.addEventListener('resize', calculateCards)
+    return () => window.removeEventListener('resize', calculateCards)
+  }, [])
 
   // Use React Query hooks for data fetching with automatic caching
   const { data: nearbyData, isLoading: nearbyLoading, error: nearbyError } = useNearbyOffers(
     userLocation,
-    { limit: 4, enabled: !!userLocation }
+    { limit: cardsToShow, enabled: !!userLocation }
   )
   const { data: trendingData, isLoading: trendingLoading, error: trendingError } = useTrendingOffers({
-    limit: 4,
+    limit: cardsToShow,
     userLocation
   })
   const { data: expiringData, isLoading: expiringLoading, error: expiringError } = useExpiringSoonOffers({
-    limit: 4,
+    limit: cardsToShow,
     userLocation
   })
 
@@ -152,21 +187,30 @@ export default function ShoppersHome() {
     loadUserData()
   }, [user])
 
-  // Fetch all deals
+  // Fetch all deals - runs when component mounts or userLocation/cardsToShow changes
   useEffect(() => {
+    // Only fetch if we have a location and cardsToShow is calculated
+    if (!userLocation || !cardsToShow) return
+
     const loadAllDeals = async () => {
       setAllDealsLoading(true)
       try {
         console.log('🔄 Fetching all deals...')
-        const result = await getAllOffers({ page: 1, size: 4 })
+        const result = await getAllOffers({ page: 1, size: cardsToShow })
         console.log('📦 All deals result:', result)
-        console.log('📊 All deals offers:', result.offers)
+        console.log('📊 All deals offers (raw):', result.offers)
         console.log('📄 All deals pagination:', result.pagination)
         if (result.error) {
           console.error('❌ Error loading all deals:', result.error)
         } else {
-          console.log(`✅ Successfully loaded ${result.offers.length} deals`)
-          setAllDeals(result.offers)
+          // Transform the offers with distance calculation
+          const transformedOffers = result.offers
+            .map(offer => transformOfferDataWithDistance(offer, userLocation))
+            .filter(offer => offer && offer.id)
+
+          console.log('📊 All deals offers (transformed):', transformedOffers)
+          console.log(`✅ Successfully loaded ${transformedOffers.length} deals`)
+          setAllDeals(transformedOffers)
         }
       } catch (error) {
         console.error('❌ Exception loading all deals:', error)
@@ -176,7 +220,7 @@ export default function ShoppersHome() {
     }
 
     loadAllDeals()
-  }, [])
+  }, [userLocation?.lat, userLocation?.lng, cardsToShow])
 
   // Handle favorite state changes
   const handleFavoriteChange = (offerId, isFavorited) => {

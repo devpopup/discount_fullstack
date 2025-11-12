@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
-  Home: undefined;
+  MainTabs: undefined;
   SignIn: undefined;
   SignUp: undefined;
 };
@@ -43,8 +43,12 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
       const result = await signIn({ email, password });
 
       if (result.success) {
-        Alert.alert('Success', 'Signed in successfully!');
-        navigation.navigate('Home');
+        // Navigate back to previous screen or go to MainTabs
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        } else {
+          navigation.navigate('MainTabs');
+        }
       } else {
         Alert.alert('Error', result.error || 'Failed to sign in');
       }

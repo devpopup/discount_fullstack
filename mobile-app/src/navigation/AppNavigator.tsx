@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import HomeScreen from '../screens/HomeScreen';
+import TabNavigator from './TabNavigator';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import DiscountDetailsScreen from '../screens/DiscountDetailsScreen';
 import SignInScreen from '../screens/SignInScreen';
@@ -10,7 +10,7 @@ import SignUpScreen from '../screens/SignUpScreen';
 import DealsListScreen from '../screens/DealsListScreen';
 
 export type RootStackParamList = {
-  Home: undefined;
+  MainTabs: undefined;
   QRScanner: undefined;
   DiscountDetails: { offerId: string };
   SignIn: undefined;
@@ -24,20 +24,20 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="MainTabs"
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#007AFF',
+            backgroundColor: '#fff',
           },
-          headerTintColor: '#fff',
+          headerTintColor: '#e94e1b',
           headerTitleStyle: {
             fontWeight: 'bold',
           },
         }}
       >
         <Stack.Screen
-          name="Home"
-          component={HomeScreen}
+          name="MainTabs"
+          component={TabNavigator}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -51,17 +51,26 @@ export default function AppNavigator() {
         <Stack.Screen
           name="DiscountDetails"
           component={DiscountDetailsScreen}
-          options={{ title: 'Discount Details' }}
+          options={{
+            title: 'Discount Details',
+            headerBackTitle: 'Back',
+          }}
         />
         <Stack.Screen
           name="SignIn"
           component={SignInScreen}
-          options={{ title: 'Sign In' }}
+          options={{
+            title: 'Sign In',
+            headerBackTitle: 'Back',
+          }}
         />
         <Stack.Screen
           name="SignUp"
           component={SignUpScreen}
-          options={{ title: 'Sign Up' }}
+          options={{
+            title: 'Sign Up',
+            headerBackTitle: 'Back',
+          }}
         />
         <Stack.Screen
           name="DealsList"
@@ -69,7 +78,8 @@ export default function AppNavigator() {
           options={({ route }) => ({
             title: route.params.type === 'nearby' ? 'Deals Near You' :
                    route.params.type === 'trending' ? 'Trending Deals' :
-                   'Expiring Soon'
+                   'Expiring Soon',
+            headerBackTitle: 'Back',
           })}
         />
       </Stack.Navigator>

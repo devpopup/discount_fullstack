@@ -69,7 +69,7 @@ async def search_products(
     try:
         # Build query - only active products
         query = supabase.table("products").select(
-            "*, categories(*), businesses!inner(business_name, is_verified, avatar_url)", 
+            "*, categories(*), businesses!inner(business_name, is_verified, avatar_url, latitude, longitude)",
             count="exact"
         ).eq("is_active", True)
         
@@ -149,7 +149,7 @@ async def search_offers(
         
         # Build query - only active offers within date range
         query = supabase.table("offers").select(
-             "*, products!product_id(*, categories(*)), businesses!inner(business_name, is_verified, avatar_url)",  
+             "*, products!product_id(*, categories(*)), businesses!inner(business_name, is_verified, avatar_url, latitude, longitude)",
             count="exact"
         ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time)
 
@@ -1501,7 +1501,7 @@ async def search_offers(
         
         # Build query - only active offers within date range
         query = supabase.table("offers").select(
-            "*, products!product_id(*, categories(*)), businesses!inner(business_name, is_verified, avatar_url)",  
+            "*, products!product_id(*, categories(*)), businesses!inner(business_name, is_verified, avatar_url, latitude, longitude)",
             count="exact"
         ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time)
 

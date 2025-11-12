@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
-  Home: undefined;
+  MainTabs: undefined;
   SignIn: undefined;
   SignUp: undefined;
 };
@@ -62,7 +62,16 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
 
       if (result.success) {
         Alert.alert('Success', 'Account created successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('Home') }
+          {
+            text: 'OK',
+            onPress: () => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MainTabs');
+              }
+            }
+          }
         ]);
       } else {
         Alert.alert('Error', result.error || 'Failed to create account');

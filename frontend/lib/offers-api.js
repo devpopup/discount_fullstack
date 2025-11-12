@@ -173,6 +173,7 @@ export async function getAllOffers({ page = 1, size = 20, categoryId = null } = 
 
     const data = await makeOfferRequest(`/customer/offers/search?${params}`)
 
+    // Return raw offers like other functions - transformation happens in the component
     return {
       offers: data.offers || [],
       pagination: data.pagination || {
@@ -293,12 +294,17 @@ export function transformOfferData(apiOffer) {
   const product = apiOffer.products || apiOffer.product || {}
   const category = product.categories || {}
 
-  // Debug logging for images (development only)
+  // Debug logging for images and prices (development only)
   if (process.env.NODE_ENV === 'development') {
     console.log('transformOfferData - apiOffer.id:', apiOffer.id)
     console.log('transformOfferData - product:', product)
     console.log('transformOfferData - product.image_url:', product?.image_url)
     console.log('transformOfferData - apiOffer.images:', apiOffer.images)
+    console.log('transformOfferData - original_price:', apiOffer.original_price)
+    console.log('transformOfferData - discounted_price:', apiOffer.discounted_price)
+    console.log('transformOfferData - discount_type:', apiOffer.discount_type)
+    console.log('transformOfferData - discount_value:', apiOffer.discount_value)
+    console.log('transformOfferData - expiry_date:', apiOffer.expiry_date)
   }
 
   // Handle both regular API format and RPC function format (nearby offers)
@@ -454,8 +460,16 @@ export function transformOfferDataWithDistance(apiOffer, userLocation = null) {
   // If distance is not already provided and we have both user and business location
   if (!transformedOffer.distance && userLocation) {
     const business = apiOffer.businesses || apiOffer.business || {}
-    const businessLat = business.latitude || apiOffer.latitude
-    const businessLng = business.longitude || apiOffer.longitude
+    const businessLat = business.latitude || apiOffer.business_latitude || apiOffer.latitude
+    const businessLng = business.longitude || apiOffer.business_longitude || apiOffer.longitude
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('transformOfferDataWithDistance - offer:', apiOffer.id)
+      console.log('transformOfferDataWithDistance - userLocation:', userLocation)
+      console.log('transformOfferDataWithDistance - businessLat:', businessLat)
+      console.log('transformOfferDataWithDistance - businessLng:', businessLng)
+      console.log('transformOfferDataWithDistance - business obj:', business)
+    }
 
     if (businessLat && businessLng) {
       const distance = calculateDistance(
@@ -465,6 +479,14 @@ export function transformOfferDataWithDistance(apiOffer, userLocation = null) {
         parseFloat(businessLng)
       )
       transformedOffer.distance = distance
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('transformOfferDataWithDistance - calculated distance:', distance)
+      }
+    } else {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('transformOfferDataWithDistance - Missing coordinates for offer:', apiOffer.id)
+      }
     }
   }
 
