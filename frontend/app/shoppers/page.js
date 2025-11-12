@@ -19,7 +19,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNearbyOffers, useTrendingOffers, useExpiringSoonOffers } from '@/hooks/useOffers'
 
 
-function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange }) {
+function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange, loading = false }) {
   const scrollContainerRef = useRef(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
 
@@ -64,7 +64,14 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
         </Link>
       </div>
 
-      {deals.length > 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-8 bg-gray-50 rounded-lg">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-[#e94e1b] mx-auto mb-4" />
+            <p className="text-gray-600">Loading {title.toLowerCase()}...</p>
+          </div>
+        </div>
+      ) : deals.length > 0 ? (
         <div className="relative">
           {/* Horizontal scrollable container */}
           <div
@@ -259,20 +266,10 @@ export default function ShoppersHome() {
       <Navbar />
 
       {/* Featured Hero Section - Full width, outside main container */}
-      {!loading && !error && <Featured />}
+      {!error && <Featured />}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-[#e94e1b] mx-auto mb-4" />
-              <p className="text-gray-600">Loading amazing deals for you...</p>
-            </div>
-          </div>
-        )}
-
         {/* Error State */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
@@ -288,8 +285,8 @@ export default function ShoppersHome() {
           </div>
         )}
 
-        {/* Content - only show when not loading */}
-        {!loading && !error && (
+        {/* Content */}
+        {!error && (
           <>
 
             {/* Deals Near You */}
@@ -305,6 +302,7 @@ export default function ShoppersHome() {
                 claimedIds={claimedIds}
                 onFavoriteChange={handleFavoriteChange}
                 onClaimChange={handleClaimChange}
+                loading={nearbyLoading}
               />
             </div>
 
@@ -321,6 +319,7 @@ export default function ShoppersHome() {
                 claimedIds={claimedIds}
                 onFavoriteChange={handleFavoriteChange}
                 onClaimChange={handleClaimChange}
+                loading={allDealsLoading}
               />
             </div>
 
@@ -337,6 +336,7 @@ export default function ShoppersHome() {
                 claimedIds={claimedIds}
                 onFavoriteChange={handleFavoriteChange}
                 onClaimChange={handleClaimChange}
+                loading={trendingLoading}
               />
             </div>
 
@@ -352,6 +352,7 @@ export default function ShoppersHome() {
               claimedIds={claimedIds}
               onFavoriteChange={handleFavoriteChange}
               onClaimChange={handleClaimChange}
+              loading={expiringLoading}
             />
 
             {/* Call to Action */}

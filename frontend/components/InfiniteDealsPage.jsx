@@ -297,7 +297,18 @@ export default function InfiniteDealsPage({ dealType }) {
 
         {!error && (
           <>
-            {filteredDeals.length > 0 ? (
+            {/* Initial Loading State */}
+            {loading && filteredDeals.length === 0 && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-[#e94e1b] mx-auto mb-4" />
+                  <p className="text-gray-600">Loading deals...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Deals Grid */}
+            {filteredDeals.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-1">
                 {filteredDeals.map((deal, index) => (
                   <DealCard
@@ -309,7 +320,10 @@ export default function InfiniteDealsPage({ dealType }) {
                   />
                 ))}
               </div>
-            ) : !loading && (
+            )}
+
+            {/* No Deals Found State */}
+            {!loading && filteredDeals.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
@@ -322,7 +336,7 @@ export default function InfiniteDealsPage({ dealType }) {
                   }
                 </p>
                 {searchQuery && (
-                  <Button 
+                  <Button
                     onClick={handleSearchReset}
                     variant="outline"
                     className="text-[#e94e1b] border-[#e94e1b] hover:bg-[#e94e1b] hover:text-white"
