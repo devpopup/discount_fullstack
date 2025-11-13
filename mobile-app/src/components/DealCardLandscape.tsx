@@ -6,14 +6,13 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Offer } from '../types/offer';
 
-const CARD_WIDTH = Dimensions.get('window').width * 0.385;
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
-interface DealCardProps {
+interface DealCardLandscapeProps {
   deal: Offer;
   onPress: () => void;
   onLike?: (offerId: string) => void;
@@ -21,7 +20,7 @@ interface DealCardProps {
   isLiked?: boolean;
 }
 
-export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = false }: DealCardProps) {
+export default function DealCardLandscape({ deal, onPress, onLike, onClaim, isLiked = false }: DealCardLandscapeProps) {
   const [liked, setLiked] = useState(isLiked);
 
   const handleLike = (e: any) => {
@@ -38,9 +37,6 @@ export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = fal
       onClaim(deal.id);
     }
   };
-
-  // Debug: Log deal distance
-  console.log(`DealCard render - Offer ${deal.id}: distance = ${deal.distance}`);
 
   const formatDistance = (distance: number | null | undefined): string => {
     if (!distance) return '';
@@ -93,32 +89,6 @@ export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = fal
             <Text style={styles.distanceText}>{formatDistance(deal.distance)}</Text>
           </View>
         )}
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleLike}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={liked ? 'heart' : 'heart-outline'}
-              size={16}
-              color={liked ? '#e94e1b' : '#fff'}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleClaim}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="ticket-outline"
-              size={16}
-              color="#fff"
-            />
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Content Section */}
@@ -154,37 +124,54 @@ export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = fal
           )}
         </View>
 
-        {/* Category Badge */}
-        {/* {deal.category && (
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText} numberOfLines={1}>{deal.category}</Text>
-          </View>
-        )} */}
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleLike}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={liked ? 'heart' : 'heart-outline'}
+              size={18}
+              color={liked ? '#e94e1b' : '#666'}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleClaim}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="ticket-outline"
+              size={18}
+              color="#666"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-const CARD_HEIGHT = 320;
-const IMAGE_HEIGHT = CARD_HEIGHT * 0.65; // 65% of card height
-
 const styles = StyleSheet.create({
   card: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
+    width: SCREEN_WIDTH - 30,
+    height: 140,
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginRight: 12,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
     overflow: 'hidden',
+    flexDirection: 'row',
   },
   imageContainer: {
-    width: '100%',
-    height: IMAGE_HEIGHT,
+    width: 140,
+    height: '100%',
     position: 'relative',
   },
   image: {
@@ -236,41 +223,24 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
   },
-  actionButtons: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    flexDirection: 'row',
-    gap: 6,
-  },
-  actionButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   content: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    paddingBottom: 10,
+    padding: 12,
     justifyContent: 'space-between',
   },
   businessName: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#666',
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 6,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   priceRow: {
     flexDirection: 'row',
@@ -278,39 +248,42 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   discountedPrice: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#e94e1b',
-    marginRight: 6,
+    marginRight: 8,
   },
   originalPrice: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#999',
     textDecorationLine: 'line-through',
   },
   infoRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   infoItem: {
     marginRight: 10,
     marginBottom: 3,
   },
   infoText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
   },
-  categoryBadge: {
-    alignSelf: 'flex-start',
+  actionButtons: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#f0f0f0',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  categoryText: {
-    fontSize: 10,
-    color: '#666',
-    fontWeight: '600',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

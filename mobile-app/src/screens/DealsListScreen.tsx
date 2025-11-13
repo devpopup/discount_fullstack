@@ -7,22 +7,27 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import DealCard from '../components/DealCard';
+import DealCardLandscape from '../components/DealCardLandscape';
 import {
   getNearbyOffers,
   getTrendingOffers,
   getExpiringSoonOffers,
+  getAllOffers,
 } from '../services/offersService';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
+import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   Home: undefined;
-  DealsList: { type: 'nearby' | 'trending' | 'expiring' };
+  DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
   DiscountDetails: { offerId: string };
+  SignIn: undefined;
+  SignUp: undefined;
 };
 
 type DealsListNavigationProp = NativeStackNavigationProp<RootStackParamList, 'DealsList'>;
@@ -35,6 +40,7 @@ interface DealsListScreenProps {
 
 export default function DealsListScreen({ navigation, route }: DealsListScreenProps) {
   const { type } = route.params;
+  const { isAuthenticated } = useAuth();
   const [deals, setDeals] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,11 +80,14 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
         case 'nearby':
           result = await getNearbyOffers(location, 10, LIMIT, currentOffset);
           break;
+        case 'all':
+          result = await getAllOffers(Math.floor(currentOffset / LIMIT) + 1, LIMIT, location);
+          break;
         case 'trending':
-          result = await getTrendingOffers(LIMIT, currentOffset);
+          result = await getTrendingOffers(LIMIT, currentOffset, location);
           break;
         case 'expiring':
-          result = await getExpiringSoonOffers(24, LIMIT, currentOffset);
+          result = await getExpiringSoonOffers(24, LIMIT, currentOffset, location);
           break;
       }
 
@@ -120,10 +129,49 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
     navigation.navigate('DiscountDetails', { offerId: deal.id });
   };
 
+  const promptSignIn = (action: string) => {
+    Alert.alert(
+      'Sign In Required',
+      `You need to sign in to ${action} offers.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign In',
+          onPress: () => navigation.navigate('SignIn'),
+        },
+        {
+          text: 'Sign Up',
+          onPress: () => navigation.navigate('SignUp'),
+        },
+      ]
+    );
+  };
+
+  const handleLike = (offerId: string) => {
+    if (!isAuthenticated) {
+      promptSignIn('like');
+      return;
+    }
+    // TODO: Implement like API call
+    console.log('Like offer:', offerId);
+  };
+
+  const handleClaim = (offerId: string) => {
+    if (!isAuthenticated) {
+      promptSignIn('claim');
+      return;
+    }
+    // TODO: Implement claim API call
+    Alert.alert('Success', 'Offer claimed! Check your Claims tab to view it.');
+    console.log('Claim offer:', offerId);
+  };
+
   const getTitle = () => {
     switch (type) {
       case 'nearby':
         return 'Deals Near You';
+      case 'all':
+        return 'All Deals';
       case 'trending':
         return 'Trending Deals';
       case 'expiring':
@@ -132,9 +180,12 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
   };
 
   const renderItem = ({ item }: { item: Offer }) => (
-    <View style={styles.cardContainer}>
-      <DealCard deal={item} onPress={() => handleDealPress(item)} />
-    </View>
+    <DealCardLandscape
+      deal={item}
+      onPress={() => handleDealPress(item)}
+      onLike={handleLike}
+      onClaim={handleClaim}
+    />
   );
 
   const renderFooter = () => {
@@ -170,9 +221,7 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
         data={deals}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        numColumns={2}
         contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.columnWrapper}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#e94e1b']} />
         }
@@ -202,16 +251,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   listContent: {
-    padding: 10,
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    marginBottom: 15,
-  },
-  cardContainer: {
-    flex: 1,
-    maxWidth: '48%',
+    padding: 15,
   },
   footerLoader: {
     paddingVertical: 20,

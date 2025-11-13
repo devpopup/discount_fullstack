@@ -353,3 +353,40 @@ export async function getClaimedOfferIds(): Promise<Set<string>> {
     return new Set();
   }
 }
+
+/**
+ * Get all offers with optional filtering
+ */
+export async function getAllOffers(
+  page: number = 1,
+  size: number = 20,
+  userLocation?: Location
+): Promise<OffersResponse> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+      sort_by: 'created_at',
+      sort_order: 'desc'
+    });
+
+    const response = await apiClient.get(`/customer/offers/search?${params}`);
+    const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, userLocation));
+
+    const pagination = response.data.pagination || {};
+    const hasMore = pagination.has_next || false;
+
+    return {
+      offers,
+      hasMore,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error fetching all offers:', error);
+    return {
+      offers: [],
+      hasMore: false,
+      error: error.message || 'Failed to fetch all offers'
+    };
+  }
+}

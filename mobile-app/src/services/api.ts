@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
 // Using ngrok tunnel to access local backend from mobile device
-const API_BASE_URL = 'https://858447379145.ngrok-free.app/api/v1';
+const API_BASE_URL = 'https://247ef35bdbf5.ngrok-free.app/api/v1';
 const TOKEN_KEY = '@auth_token';
 
 // Create axios instance

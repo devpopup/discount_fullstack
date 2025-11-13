@@ -7,15 +7,19 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import DealCard from '../components/DealCard';
 import { getNearbyOffers } from '../services/offersService';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
+import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   DiscountDetails: { offerId: string };
+  SignIn: undefined;
+  SignUp: undefined;
 };
 
 type NearbyScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -25,6 +29,7 @@ interface NearbyScreenProps {
 }
 
 export default function NearbyScreen({ navigation }: NearbyScreenProps) {
+  const { isAuthenticated } = useAuth();
   const [userLocation, setUserLocation] = useState<Location | null>(null);
   const [deals, setDeals] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,9 +103,51 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
     navigation.navigate('DiscountDetails', { offerId: deal.id });
   };
 
+  const promptSignIn = (action: string) => {
+    Alert.alert(
+      'Sign In Required',
+      `You need to sign in to ${action} offers.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign In',
+          onPress: () => navigation.navigate('SignIn'),
+        },
+        {
+          text: 'Sign Up',
+          onPress: () => navigation.navigate('SignUp'),
+        },
+      ]
+    );
+  };
+
+  const handleLike = (offerId: string) => {
+    if (!isAuthenticated) {
+      promptSignIn('like');
+      return;
+    }
+    // TODO: Implement like API call
+    console.log('Like offer:', offerId);
+  };
+
+  const handleClaim = (offerId: string) => {
+    if (!isAuthenticated) {
+      promptSignIn('claim');
+      return;
+    }
+    // TODO: Implement claim API call
+    Alert.alert('Success', 'Offer claimed! Check your Claims tab to view it.');
+    console.log('Claim offer:', offerId);
+  };
+
   const renderItem = ({ item }: { item: Offer }) => (
     <View style={styles.cardContainer}>
-      <DealCard deal={item} onPress={() => handleDealPress(item)} />
+      <DealCard
+        deal={item}
+        onPress={() => handleDealPress(item)}
+        onLike={handleLike}
+        onClaim={handleClaim}
+      />
     </View>
   );
 

@@ -16,6 +16,7 @@ import {
   getNearbyOffers,
   getTrendingOffers,
   getExpiringSoonOffers,
+  getAllOffers,
 } from '../services/offersService';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
@@ -27,7 +28,7 @@ type RootStackParamList = {
   DiscountDetails: { offerId: string };
   SignIn: undefined;
   SignUp: undefined;
-  DealsList: { type: 'nearby' | 'trending' | 'expiring' };
+  DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
 };
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -134,11 +135,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { isAuthenticated } = useAuth();
   const [userLocation, setUserLocation] = useState<Location | null>(null);
   const [nearbyDeals, setNearbyDeals] = useState<Offer[]>([]);
+  const [allDeals, setAllDeals] = useState<Offer[]>([]);
   const [trendingDeals, setTrendingDeals] = useState<Offer[]>([]);
   const [expiringDeals, setExpiringDeals] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(true);
+  const [allDealsLoading, setAllDealsLoading] = useState(true);
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [expiringLoading, setExpiringLoading] = useState(true);
 
@@ -163,6 +166,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     setLoading(true);
     await Promise.all([
       loadNearbyDeals(location),
+      loadAllOffersDeals(location),
       loadTrendingDeals(location),
       loadExpiringDeals(location),
     ]);
@@ -182,6 +186,22 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       console.error('Error loading nearby deals:', error);
     } finally {
       setNearbyLoading(false);
+    }
+  };
+
+  const loadAllOffersDeals = async (location: Location) => {
+    setAllDealsLoading(true);
+    try {
+      const result = await getAllOffers(1, 4, location);
+      if (result.error) {
+        console.error('Error loading all deals:', result.error);
+      } else {
+        setAllDeals(result.offers);
+      }
+    } catch (error) {
+      console.error('Error loading all deals:', error);
+    } finally {
+      setAllDealsLoading(false);
     }
   };
 
@@ -292,6 +312,20 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           onViewMore={() => navigation.navigate('DealsList', { type: 'nearby' })}
         />
       )}
+
+      {/* All Deals */}
+      <DealsSection
+        title="All Deals"
+        description="Browse all available offers and deals"
+        deals={allDeals}
+        loading={allDealsLoading}
+        iconName="grid"
+        iconColor="#2196F3"
+        onDealPress={handleDealPress}
+        onLike={handleLike}
+        onClaim={handleClaim}
+        onViewMore={() => navigation.navigate('DealsList', { type: 'all' })}
+      />
 
       {/* Trending Deals */}
       <DealsSection

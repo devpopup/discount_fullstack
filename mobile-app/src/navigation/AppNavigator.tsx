@@ -15,7 +15,7 @@ export type RootStackParamList = {
   DiscountDetails: { offerId: string };
   SignIn: undefined;
   SignUp: undefined;
-  DealsList: { type: 'nearby' | 'trending' | 'expiring' };
+  DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -77,6 +77,7 @@ export default function AppNavigator() {
           component={DealsListScreen}
           options={({ route }) => ({
             title: route.params.type === 'nearby' ? 'Deals Near You' :
+                   route.params.type === 'all' ? 'All Deals' :
                    route.params.type === 'trending' ? 'Trending Deals' :
                    'Expiring Soon',
             headerBackTitle: 'Back',
