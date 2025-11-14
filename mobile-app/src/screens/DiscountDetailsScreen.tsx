@@ -8,17 +8,23 @@ import {
   ScrollView,
   Image,
   Alert,
+  Share,
+  Linking,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { getOfferById, claimOffer, unclaimOffer } from '../services/offersService';
+import { getOfferById, claimOffer, unclaimOffer, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds, getClaimedOfferIds } from '../services/offersService';
 import { Offer } from '../types/offer';
+import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   Home: undefined;
   QRScanner: undefined;
   DiscountDetails: { offerId: string };
+  SignIn: undefined;
+  SignUp: undefined;
 };
 
 type DiscountDetailsNavigationProp = NativeStackNavigationProp<
@@ -38,11 +44,15 @@ export default function DiscountDetailsScreen({
   route,
 }: DiscountDetailsScreenProps) {
   const { offerId } = route.params;
+  const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [offer, setOffer] = useState<Offer | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isClaimed, setIsClaimed] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [togglingFavorite, setTogglingFavorite] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
     fetchOfferDetails();
@@ -59,6 +69,12 @@ export default function DiscountDetailsScreen({
         setError(result.error);
       } else if (result.offer) {
         setOffer(result.offer);
+
+        // Check if offer is claimed and favorited
+        if (isAuthenticated) {
+          checkIfClaimed();
+          checkIfFavorited();
+        }
       } else {
         setError('Offer not found');
       }
@@ -70,16 +86,38 @@ export default function DiscountDetailsScreen({
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading discount...</Text>
-      </View>
-    );
-  }
+  const checkIfClaimed = async () => {
+    try {
+      const claimedIds = await getClaimedOfferIds();
+      setIsClaimed(claimedIds.has(offerId));
+    } catch (err) {
+      console.error('Error checking claim status:', err);
+    }
+  };
+
+  const checkIfFavorited = async () => {
+    try {
+      const favoritedIds = await getFavoritedOfferIds();
+      setIsFavorited(favoritedIds.has(offerId));
+    } catch (err) {
+      console.error('Error checking favorite status:', err);
+    }
+  };
 
   const handleClaimOffer = async () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Sign In Required',
+        'You need to sign in to claim offers.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('SignIn') },
+          { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
+        ]
+      );
+      return;
+    }
+
     if (!offer) return;
 
     setClaiming(true);
@@ -93,12 +131,12 @@ export default function DiscountDetailsScreen({
           Alert.alert('Success', 'Offer unclaimed successfully!');
         }
       } else {
-        const result = await claimOffer(offer.id);
+        const result = await claimOffer(offer.id, 'in_store');
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
           setIsClaimed(true);
-          Alert.alert('Success', 'Offer claimed! Show this to the cashier.');
+          Alert.alert('Success', 'Offer claimed! Visit the store to redeem.');
         }
       }
     } catch (err) {
@@ -108,105 +146,332 @@ export default function DiscountDetailsScreen({
     }
   };
 
+  const handleFavoriteToggle = async () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Sign In Required',
+        'You need to sign in to save favorites.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('SignIn') },
+          { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
+        ]
+      );
+      return;
+    }
+
+    setTogglingFavorite(true);
+    try {
+      if (isFavorited) {
+        const result = await removeOfferFromFavorites(offerId);
+        if (result.success) {
+          setIsFavorited(false);
+          Alert.alert('Success', 'Removed from favorites');
+        } else {
+          Alert.alert('Error', result.error || 'Failed to remove from favorites');
+        }
+      } else {
+        const result = await saveOfferToFavorites(offerId);
+        if (result.success) {
+          setIsFavorited(true);
+          Alert.alert('Success', 'Added to favorites');
+        } else {
+          Alert.alert('Error', result.error || 'Failed to save to favorites');
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to update favorites');
+    } finally {
+      setTogglingFavorite(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!offer) return;
+
+    try {
+      await Share.share({
+        message: `Check out this offer: ${offer.title} - ${offer.discount}% OFF at ${offer.businessName}`,
+        title: offer.title,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const handleGoToWebsite = () => {
+    const website = offer?.business?.business_website || offer?.business?.website;
+    if (website) {
+      Linking.openURL(website);
+    } else {
+      Alert.alert('No Website', 'This business does not have a website listed.');
+    }
+  };
+
+  const handleCall = () => {
+    const phone = offer?.business?.phone_number || offer?.business?.phone;
+    if (phone) {
+      Linking.openURL(`tel:${phone}`);
+    }
+  };
+
+  const calculateTimeRemaining = (expiresAt?: string): string => {
+    if (!expiresAt) return 'No expiry';
+
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diff = expiry.getTime() - now.getTime();
+
+    if (diff <= 0) return 'Expired';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} remaining`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} remaining`;
+    return 'Ending soon';
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#e94e1b" />
+        <Text style={styles.loadingText}>Loading offer details...</Text>
+      </View>
+    );
+  }
+
   if (error || !offer) {
     return (
       <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle-outline" size={64} color="#e74c3c" />
         <Text style={styles.errorText}>{error || 'Offer not found'}</Text>
         <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Home')}
+          style={styles.errorButton}
+          onPress={() => navigation.goBack()}
         >
-          <Text style={styles.buttonText}>Back to Home</Text>
+          <Text style={styles.errorButtonText}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const imageUrl = offer.images && offer.images.length > 0
-    ? offer.images[0]
-    : 'https://via.placeholder.com/400x200?text=No+Image';
+  const images = offer.images || [];
+  const imageUrl = images.length > 0 ? images[selectedImage] : 'https://via.placeholder.com/400x200?text=No+Image';
+  const website = offer.business?.business_website || offer.business?.website;
+  const phone = offer.business?.phone_number || offer.business?.phone;
 
   return (
     <ScrollView style={styles.container}>
-      {/* Image Header */}
-      <Image
-        source={{ uri: imageUrl }}
-        style={styles.headerImage}
-        resizeMode="cover"
-      />
+      {/* Image Section */}
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.headerImage}
+          resizeMode="cover"
+        />
+
+        {/* Discount Badge on Image */}
+        <View style={styles.discountBadgeOverlay}>
+          <Text style={styles.badgeDiscountText}>{offer.discount}%</Text>
+          <Text style={styles.badgeOffText}>OFF</Text>
+        </View>
+
+        {/* Image Thumbnails */}
+        {images.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.thumbnailContainer}
+            contentContainerStyle={styles.thumbnailContent}
+          >
+            {images.map((img, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setSelectedImage(index)}
+                style={[
+                  styles.thumbnail,
+                  selectedImage === index && styles.thumbnailActive
+                ]}
+              >
+                <Image
+                  source={{ uri: img }}
+                  style={styles.thumbnailImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+      </View>
 
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.businessName}>{offer.businessName}</Text>
-          <View style={styles.percentageBadge}>
-            <Text style={styles.percentageText}>{offer.discount}%</Text>
-            <Text style={styles.offText}>OFF</Text>
-          </View>
-        </View>
-
-        <View style={styles.discountCard}>
-          <Text style={styles.discountTitle}>{offer.title}</Text>
-          <Text style={styles.discountDescription}>
-            {offer.description}
-          </Text>
-
-          {/* Price */}
-          <View style={styles.priceContainer}>
-            <Text style={styles.discountedPrice}>
-              ${offer.discountedPrice.toFixed(2)}
-            </Text>
-            {offer.originalPrice > 0 && (
-              <Text style={styles.originalPrice}>
-                ${offer.originalPrice.toFixed(2)}
-              </Text>
+        {/* Title and Basic Info */}
+        <View style={styles.headerSection}>
+          <Text style={styles.title}>{offer.title}</Text>
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Ionicons name="time-outline" size={16} color="#666" />
+              <Text style={styles.metaText}>{calculateTimeRemaining(offer.expiresAt)}</Text>
+            </View>
+            {offer.claimedCount !== undefined && offer.maxClaims && (
+              <View style={styles.metaItem}>
+                <Ionicons name="pricetag-outline" size={16} color="#666" />
+                <Text style={styles.metaText}>{offer.claimedCount}/{offer.maxClaims} claimed</Text>
+              </View>
             )}
           </View>
-
-          {/* Location */}
-          {offer.location && (
-            <View style={styles.locationContainer}>
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.locationText}>{offer.location}</Text>
-            </View>
-          )}
-
-          {offer.expiresAt && (
-            <View style={styles.validityContainer}>
-              <Text style={styles.validityLabel}>Expires:</Text>
-              <Text style={styles.validityDate}>
-                {new Date(offer.expiresAt).toLocaleDateString()}
-              </Text>
-            </View>
-          )}
         </View>
 
-        <TouchableOpacity
-          style={[styles.claimButton, isClaimed && styles.claimedButton]}
-          onPress={handleClaimOffer}
-          disabled={claiming}
-        >
-          {claiming ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.claimButtonText}>
-              {isClaimed ? 'Unclaim Offer' : 'Claim Offer'}
-            </Text>
+        {/* Price Section */}
+        <View style={styles.priceSection}>
+          <View style={styles.priceRow}>
+            <Text style={styles.discountedPrice}>${offer.discountedPrice.toFixed(2)}</Text>
+            {offer.originalPrice && offer.originalPrice > 0 && (
+              <>
+                <Text style={styles.originalPrice}>${offer.originalPrice.toFixed(2)}</Text>
+                <Text style={styles.savings}>
+                  Save ${(offer.originalPrice - offer.discountedPrice).toFixed(2)}
+                </Text>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionSection}>
+          <TouchableOpacity
+            style={[styles.claimButton, isClaimed && styles.claimedButton]}
+            onPress={handleClaimOffer}
+            disabled={claiming}
+          >
+            {claiming ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name={isClaimed ? "checkmark-circle" : "storefront"} size={20} color="#fff" />
+                <Text style={styles.claimButtonText}>
+                  {isClaimed ? 'Unclaim Offer' : 'Claim In Store'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {website && (
+            <TouchableOpacity style={styles.websiteButton} onPress={handleGoToWebsite}>
+              <Ionicons name="globe-outline" size={20} color="#e94e1b" />
+              <Text style={styles.websiteButtonText}>Go to Website</Text>
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.scanAgainButton}
-          onPress={() => navigation.navigate('QRScanner')}
-        >
-          <Text style={styles.scanAgainButtonText}>Scan Another QR Code</Text>
-        </TouchableOpacity>
+          <View style={styles.iconButtonRow}>
+            <TouchableOpacity
+              style={[styles.iconButton, isFavorited && styles.iconButtonFavorited]}
+              onPress={handleFavoriteToggle}
+              disabled={togglingFavorite}
+            >
+              <Ionicons
+                name={isFavorited ? "heart" : "heart-outline"}
+                size={24}
+                color={isFavorited ? "#e74c3c" : "#666"}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
+              <Ionicons name="share-social-outline" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Text style={styles.homeButtonText}>Back to Home</Text>
-        </TouchableOpacity>
+        {/* Description */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About this offer</Text>
+          <Text style={styles.description}>
+            {offer.description || 'No description available.'}
+          </Text>
+        </View>
+
+        {/* Terms & Conditions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Terms & Conditions</Text>
+          <View style={styles.termsList}>
+            <View style={styles.termItem}>
+              <Text style={styles.termBullet}>•</Text>
+              <Text style={styles.termText}>
+                Offer valid until {new Date(offer.expiresAt || '').toLocaleDateString()}
+              </Text>
+            </View>
+            {offer.maxClaims && (
+              <View style={styles.termItem}>
+                <Text style={styles.termBullet}>•</Text>
+                <Text style={styles.termText}>Limited to {offer.maxClaims} total claims</Text>
+              </View>
+            )}
+            <View style={styles.termItem}>
+              <Text style={styles.termBullet}>•</Text>
+              <Text style={styles.termText}>Must be presented at time of purchase</Text>
+            </View>
+            <View style={styles.termItem}>
+              <Text style={styles.termBullet}>•</Text>
+              <Text style={styles.termText}>Cannot be combined with other offers</Text>
+            </View>
+            <View style={styles.termItem}>
+              <Text style={styles.termBullet}>•</Text>
+              <Text style={styles.termText}>Subject to availability</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Business Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Business Information</Text>
+
+          <View style={styles.businessInfo}>
+            <Text style={styles.businessName}>{offer.businessName}</Text>
+
+            {/* Address */}
+            <View style={styles.infoRow}>
+              <Ionicons name="location-outline" size={20} color="#666" />
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoText}>{offer.location}</Text>
+                {offer.distance && (
+                  <Text style={styles.distanceText}>
+                    {offer.distance < 1
+                      ? `${Math.round(offer.distance * 1000)}m away`
+                      : `${offer.distance.toFixed(1)}km away`}
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            {/* Phone */}
+            {phone && (
+              <TouchableOpacity style={styles.infoRow} onPress={handleCall}>
+                <Ionicons name="call-outline" size={20} color="#666" />
+                <Text style={[styles.infoText, styles.linkText]}>{phone}</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Website */}
+            {website && (
+              <TouchableOpacity style={styles.infoRow} onPress={handleGoToWebsite}>
+                <Ionicons name="globe-outline" size={20} color="#666" />
+                <Text style={[styles.infoText, styles.linkText]} numberOfLines={1}>
+                  {website}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Category */}
+        {offer.category && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Category</Text>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{offer.category}</Text>
+            </View>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -217,177 +482,268 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  headerImage: {
-    width: '100%',
-    height: 250,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 15,
-  },
-  discountedPrice: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#e94e1b',
-    marginRight: 10,
-  },
-  originalPrice: {
-    fontSize: 18,
-    color: '#999',
-    textDecorationLine: 'line-through',
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  locationIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#666',
-    flex: 1,
-  },
-  claimedButton: {
-    backgroundColor: '#4CAF50',
-  },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#f5f5f5',
   },
-  content: {
-    padding: 20,
+  imageContainer: {
+    position: 'relative',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 20,
+  headerImage: {
+    width: '100%',
+    height: 300,
   },
-  businessName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-  },
-  percentageBadge: {
-    backgroundColor: '#4CAF50',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  discountBadgeOverlay: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    backgroundColor: '#e74c3c',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: 4,
     elevation: 5,
   },
-  percentageText: {
-    fontSize: 36,
+  badgeDiscountText: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    lineHeight: 28,
   },
-  offText: {
-    fontSize: 18,
+  badgeOffText: {
+    fontSize: 12,
     fontWeight: '600',
     color: '#fff',
+    lineHeight: 14,
   },
-  discountCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 20,
+  thumbnailContainer: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
+  },
+  thumbnailContent: {
+    paddingHorizontal: 10,
+    gap: 8,
+  },
+  thumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  thumbnailActive: {
+    borderColor: '#e94e1b',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  content: {
+    padding: 16,
+  },
+  headerSection: {
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
-  discountTitle: {
-    fontSize: 24,
+  title: {
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 10,
   },
-  discountDescription: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  validityContainer: {
+  metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    flexWrap: 'wrap',
+    gap: 16,
   },
-  validityLabel: {
-    fontSize: 14,
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 13,
     color: '#666',
   },
-  validityDate: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  qrDataContainer: {
+  priceSection: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  qrDataLabel: {
-    fontSize: 12,
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  discountedPrice: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#e94e1b',
+  },
+  originalPrice: {
+    fontSize: 20,
     color: '#999',
-    marginBottom: 5,
+    textDecorationLine: 'line-through',
   },
-  qrData: {
-    fontSize: 14,
-    color: '#333',
-    fontFamily: 'monospace',
+  savings: {
+    fontSize: 16,
+    color: '#27ae60',
+    fontWeight: '600',
+  },
+  actionSection: {
+    marginBottom: 20,
   },
   claimButton: {
-    backgroundColor: '#007AFF',
-    padding: 18,
-    borderRadius: 10,
+    backgroundColor: '#e94e1b',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 10,
+    marginBottom: 12,
+    gap: 8,
+  },
+  claimedButton: {
+    backgroundColor: '#27ae60',
   },
   claimButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  scanAgainButton: {
+  websiteButton: {
     backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: '#e94e1b',
+    gap: 8,
   },
-  scanAgainButtonText: {
-    color: '#007AFF',
+  websiteButtonText: {
+    color: '#e94e1b',
     fontSize: 16,
     fontWeight: '600',
   },
-  homeButton: {
-    padding: 15,
-    alignItems: 'center',
+  iconButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  homeButtonText: {
+  iconButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  iconButtonFavorited: {
+    backgroundColor: '#fee',
+    borderColor: '#e74c3c',
+  },
+  section: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  description: {
+    fontSize: 15,
     color: '#666',
-    fontSize: 16,
+    lineHeight: 22,
+  },
+  termsList: {
+    gap: 8,
+  },
+  termItem: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  termBullet: {
+    fontSize: 15,
+    color: '#666',
+    width: 10,
+  },
+  termText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  businessInfo: {
+    gap: 12,
+  },
+  businessName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+  },
+  linkText: {
+    color: '#e94e1b',
+  },
+  distanceText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  categoryText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
   },
   loadingText: {
     marginTop: 10,
@@ -395,18 +751,19 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   errorText: {
-    fontSize: 18,
-    color: '#f44336',
+    fontSize: 16,
+    color: '#e74c3c',
+    marginTop: 16,
     marginBottom: 20,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: '#007AFF',
+  errorButton: {
+    backgroundColor: '#e94e1b',
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 8,
   },
-  buttonText: {
+  errorButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
