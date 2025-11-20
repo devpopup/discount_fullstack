@@ -17,10 +17,12 @@ interface DealCardLandscapeProps {
   onPress: () => void;
   onLike?: (offerId: string) => void;
   onClaim?: (offerId: string) => void;
+  onLocationPress?: () => void;
   isLiked?: boolean;
+  hideBusinessInfo?: boolean;
 }
 
-export default function DealCardLandscape({ deal, onPress, onLike, onClaim, isLiked = false }: DealCardLandscapeProps) {
+export default function DealCardLandscape({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
   const [liked, setLiked] = useState(isLiked);
 
   const handleLike = (e: any) => {
@@ -35,6 +37,13 @@ export default function DealCardLandscape({ deal, onPress, onLike, onClaim, isLi
     e.stopPropagation();
     if (onClaim) {
       onClaim(deal.id);
+    }
+  };
+
+  const handleLocationPress = (e: any) => {
+    e.stopPropagation();
+    if (onLocationPress) {
+      onLocationPress();
     }
   };
 
@@ -94,9 +103,23 @@ export default function DealCardLandscape({ deal, onPress, onLike, onClaim, isLi
       {/* Content Section */}
       <View style={styles.content}>
         {/* Business Name */}
-        <Text style={styles.businessName} numberOfLines={1}>
-          {deal.businessName}
-        </Text>
+        {!hideBusinessInfo && (
+          <Text style={styles.businessName} numberOfLines={1}>
+            {deal.businessName}
+          </Text>
+        )}
+
+        {/* Location */}
+        {!hideBusinessInfo && deal.location && onLocationPress && (
+          <TouchableOpacity onPress={handleLocationPress} activeOpacity={0.7}>
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={12} color="#666" />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {deal.location}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Title */}
         <Text style={styles.title} numberOfLines={2}>
@@ -234,6 +257,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
     textTransform: 'uppercase',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  locationText: {
+    fontSize: 11,
+    color: '#666',
+    flex: 1,
   },
   title: {
     fontSize: 15,

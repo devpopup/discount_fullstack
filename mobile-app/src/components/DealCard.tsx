@@ -18,10 +18,11 @@ interface DealCardProps {
   onPress: () => void;
   onLike?: (offerId: string) => void;
   onClaim?: (offerId: string) => void;
+  onLocationPress?: () => void;
   isLiked?: boolean;
 }
 
-export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = false }: DealCardProps) {
+export default function DealCard({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false }: DealCardProps) {
   const [liked, setLiked] = useState(isLiked);
 
   const handleLike = (e: any) => {
@@ -36,6 +37,13 @@ export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = fal
     e.stopPropagation();
     if (onClaim) {
       onClaim(deal.id);
+    }
+  };
+
+  const handleLocationPress = (e: any) => {
+    e.stopPropagation();
+    if (onLocationPress) {
+      onLocationPress();
     }
   };
 
@@ -127,6 +135,18 @@ export default function DealCard({ deal, onPress, onLike, onClaim, isLiked = fal
         <Text style={styles.businessName} numberOfLines={1}>
           {deal.businessName}
         </Text>
+
+        {/* Location */}
+        {deal.location && onLocationPress && (
+          <TouchableOpacity onPress={handleLocationPress} activeOpacity={0.7}>
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={12} color="#666" />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {deal.location}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Title */}
         <Text style={styles.title} numberOfLines={2}>
@@ -264,6 +284,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 2,
     textTransform: 'uppercase',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  locationText: {
+    fontSize: 10,
+    color: '#666',
+    flex: 1,
   },
   title: {
     fontSize: 13,

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile-app",
+    "name": "PopupReach",
     "slug": "mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,18 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.popupreach.mobile",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to notify you about nearby offers.",
+        "NSLocationWhenInUseUsageDescription": "We need your location to show you nearby offers.",
+        "NSLocationAlwaysUsageDescription": "We need your location even when the app is closed to notify you about nearby offers."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +32,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.popupreach.mobile",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,7 +55,27 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#e94e1b"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow PopupReach to use your location to notify you about nearby offers.",
+          "locationAlwaysPermission": "Allow PopupReach to use your location to notify you about nearby offers even when the app is not in use.",
+          "locationWhenInUsePermission": "Allow PopupReach to use your location to show you nearby offers."
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d929c313-bab1-4359-b601-23a9399ba6c3"
+      }
+    }
   }
 }

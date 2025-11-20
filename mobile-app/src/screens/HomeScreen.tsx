@@ -21,6 +21,12 @@ import {
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
+import {
+  requestNotificationPermissions,
+  setupNotificationListeners,
+} from '../services/notificationService';
+import { setupGeofences } from '../services/geofencingService';
+import { registerBackgroundOfferCheck } from '../services/offerMonitoringService';
 
 type RootStackParamList = {
   Home: undefined;
@@ -29,6 +35,7 @@ type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
   DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
+  NotificationSettings: undefined;
 };
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -149,6 +156,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     initializeLocation();
   }, []);
 
+  useEffect(() => {
+    initializeNotifications();
+  }, [nearbyDeals]);
+
   const initializeLocation = async () => {
     try {
       const location = await getUserLocation();
@@ -159,6 +170,42 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       const defaultLocation = getDefaultLocation();
       setUserLocation(defaultLocation);
       await loadAllDeals(defaultLocation);
+    }
+  };
+
+  const initializeNotifications = async () => {
+    try {
+      // Request notification permissions
+      const hasPermission = await requestNotificationPermissions();
+
+      if (hasPermission) {
+        // Setup notification listeners
+        const cleanup = setupNotificationListeners(
+          // Handle notification received while app is open
+          (notification) => {
+            console.log('Notification received:', notification);
+          },
+          // Handle notification tapped
+          (response) => {
+            const data = response.notification.request.content.data as { offerId?: string; type?: string };
+            if (data?.offerId) {
+              navigation.navigate('DiscountDetails', { offerId: data.offerId });
+            }
+          }
+        );
+
+        // Setup geofences for nearby offers (500m radius)
+        if (nearbyDeals.length > 0) {
+          await setupGeofences(nearbyDeals, 0.5);
+        }
+
+        // Register background monitoring for expiring/limited offers
+        await registerBackgroundOfferCheck();
+
+        return cleanup;
+      }
+    } catch (error) {
+      console.error('Error initializing notifications:', error);
     }
   };
 
@@ -356,15 +403,18 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       />
 
       {/* Call to Action */}
-      <View style={styles.ctaContainer}>
+      {/* <View style={styles.ctaContainer}>
         <Text style={styles.ctaTitle}>Never Miss a Deal Again</Text>
         <Text style={styles.ctaDescription}>
           Enable notifications to get alerts about new deals from your favorite businesses
         </Text>
-        <TouchableOpacity style={styles.ctaButton}>
+        <TouchableOpacity
+          style={styles.ctaButton}
+          onPress={() => navigation.navigate('NotificationSettings')}
+        >
           <Text style={styles.ctaButtonText}>Enable Notifications</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
         {/* Bottom Spacing */}
         <View style={{ height: 40 }} />

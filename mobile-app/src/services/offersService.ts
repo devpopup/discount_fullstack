@@ -309,6 +309,44 @@ export async function removeOfferFromFavorites(offerId: string): Promise<{ succe
 }
 
 /**
+ * Get favorite offers with full details
+ */
+export async function getFavoriteOffers(
+  page: number = 1,
+  size: number = 50,
+  userLocation?: Location
+): Promise<OffersResponse> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+
+    const response = await apiClient.get(`/customer/saved-offers?${params}`);
+
+    const offers = (response.data.saved_offers || [])
+      .map((savedOffer: any) => {
+        const offer = savedOffer.offers || savedOffer.offer;
+        return transformOfferData(offer, userLocation);
+      })
+      .filter((offer: any) => offer && offer.id);
+
+    return {
+      offers,
+      hasMore: response.data.pagination?.has_next || false,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error fetching favorite offers:', error);
+    return {
+      offers: [],
+      hasMore: false,
+      error: error.message || 'Failed to fetch favorite offers'
+    };
+  }
+}
+
+/**
  * Get favorited offer IDs
  */
 export async function getFavoritedOfferIds(): Promise<Set<string>> {
@@ -328,6 +366,41 @@ export async function getFavoritedOfferIds(): Promise<Set<string>> {
   } catch (error: any) {
     console.error('Error fetching favorited offer IDs:', error);
     return new Set();
+  }
+}
+
+/**
+ * Get claimed offers with full details
+ */
+export async function getClaimedOffers(
+  page: number = 1,
+  size: number = 20,
+  claimType?: 'online' | 'in_store'
+): Promise<{ claimedOffers: any[]; hasMore: boolean; error: string | null }> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+
+    if (claimType) {
+      params.append('claim_type', claimType);
+    }
+
+    const response = await apiClient.get(`/customer/claimed-offers?${params}`);
+
+    return {
+      claimedOffers: response.data.claimed_offers || [],
+      hasMore: response.data.pagination?.has_next || false,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error fetching claimed offers:', error);
+    return {
+      claimedOffers: [],
+      hasMore: false,
+      error: error.message || 'Failed to fetch claimed offers'
+    };
   }
 }
 

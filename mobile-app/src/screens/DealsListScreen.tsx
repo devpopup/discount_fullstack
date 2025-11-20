@@ -48,7 +48,7 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
   const [hasMore, setHasMore] = useState(true);
   const [userLocation, setUserLocation] = useState<Location | null>(null);
   const [offset, setOffset] = useState(0);
-  const LIMIT = 10;
+  const LIMIT = 20;
 
   useEffect(() => {
     initializeLocation();
@@ -95,7 +95,12 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
         console.error('Error loading deals:', result.error);
       } else {
         if (append) {
-          setDeals(prev => [...prev, ...result.offers]);
+          // Filter out duplicates before adding new deals
+          setDeals(prev => {
+            const existingIds = new Set(prev.map(d => d.id));
+            const newDeals = result.offers.filter(offer => !existingIds.has(offer.id));
+            return [...prev, ...newDeals];
+          });
         } else {
           setDeals(result.offers);
         }
@@ -189,10 +194,26 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
   );
 
   const renderFooter = () => {
-    if (!loadingMore) return null;
+    if (!hasMore) return null;
+
+    if (loadingMore) {
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="small" color="#e94e1b" />
+          <Text style={styles.loadingMoreText}>Loading more deals...</Text>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#e94e1b" />
+        <TouchableOpacity
+          style={styles.loadMoreButton}
+          onPress={handleLoadMore}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.loadMoreButtonText}>Load More Deals</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -225,8 +246,6 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#e94e1b']} />
         }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
       />
@@ -256,6 +275,28 @@ const styles = StyleSheet.create({
   footerLoader: {
     paddingVertical: 20,
     alignItems: 'center',
+  },
+  loadingMoreText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
+  },
+  loadMoreButton: {
+    backgroundColor: '#e94e1b',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  loadMoreButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   emptyContainer: {
     flex: 1,

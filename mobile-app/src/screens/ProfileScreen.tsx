@@ -13,6 +13,10 @@ import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   SignIn: undefined;
+  NotificationSettings: undefined;
+  Favorites: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
 };
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -94,12 +98,18 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Saved Offers</Text>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('Favorites')}
+        >
+          <Text style={styles.optionText}>Favorites</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('NotificationSettings')}
+        >
           <Text style={styles.optionText}>Notifications</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
@@ -117,12 +127,18 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('TermsOfService')}
+        >
           <Text style={styles.optionText}>Terms of Service</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('PrivacyPolicy')}
+        >
           <Text style={styles.optionText}>Privacy Policy</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>

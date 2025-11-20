@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
 import NearbyScreen from '../screens/NearbyScreen';
 import ClaimsScreen from '../screens/ClaimsScreen';
@@ -17,14 +18,18 @@ interface TabHeaderProps {
 }
 
 function TabHeader({ title, showSearch, onSearchPress }: TabHeaderProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>PopupReach</Text>
-      {showSearch && (
-        <TouchableOpacity style={styles.searchButton} onPress={onSearchPress}>
-          <Ionicons name="search-outline" size={24} color="#333" />
-        </TouchableOpacity>
-      )}
+    <View style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={styles.headerContent}>
+        <Text style={styles.headerTitle}>PopupReach</Text>
+        {showSearch && (
+          <TouchableOpacity style={styles.searchButton} onPress={onSearchPress}>
+            <Ionicons name="search-outline" size={24} color="#333" />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -111,12 +116,6 @@ export default function TabNavigator() {
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
@@ -125,6 +124,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 4,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    minHeight: 44,
   },
   headerTitle: {
     fontSize: 22,

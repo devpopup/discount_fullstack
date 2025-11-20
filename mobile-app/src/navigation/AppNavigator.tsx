@@ -8,6 +8,10 @@ import DiscountDetailsScreen from '../screens/DiscountDetailsScreen';
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import DealsListScreen from '../screens/DealsListScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -16,6 +20,10 @@ export type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
   DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
+  NotificationSettings: undefined;
+  Favorites: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,9 +37,11 @@ export default function AppNavigator() {
           headerStyle: {
             backgroundColor: '#fff',
           },
+          headerShadowVisible: true,
           headerTintColor: '#e94e1b',
           headerTitleStyle: {
             fontWeight: 'bold',
+            fontSize: 18,
           },
         }}
       >
@@ -82,6 +92,38 @@ export default function AppNavigator() {
                    'Expiring Soon',
             headerBackTitle: 'Back',
           })}
+        />
+        <Stack.Screen
+          name="NotificationSettings"
+          component={NotificationSettingsScreen}
+          options={{
+            title: 'Notification Settings',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="Favorites"
+          component={FavoritesScreen}
+          options={{
+            title: 'Favorites',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="TermsOfService"
+          component={TermsOfServiceScreen}
+          options={{
+            title: 'Terms of Service',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicyScreen}
+          options={{
+            title: 'Privacy Policy',
+            headerBackTitle: 'Back',
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
