@@ -7,12 +7,14 @@ import {
   ScrollView,
   Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   SignIn: undefined;
+  EditProfile: undefined;
   NotificationSettings: undefined;
   Favorites: undefined;
   TermsOfService: undefined;
@@ -54,6 +56,18 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const handleHelpSupport = () => {
+    const email = 'info@popupreach.com';
+    const subject = 'PopupReach Support Request';
+    const body = `Hi PopupReach Support Team,\n\nI need help with:\n\n[Please describe your issue here]\n\n---\nUser: ${user?.email || 'Not signed in'}\nApp Version: 1.0.0`;
+
+    const mailto = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    Linking.openURL(mailto).catch((err) => {
+      Alert.alert('Error', 'Unable to open email client. Please email us at info@popupreach.com');
+    });
+  };
+
   if (!isAuthenticated || !user) {
     return (
       <View style={styles.container}>
@@ -93,7 +107,10 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
       {/* Profile Options */}
       <View style={styles.section}>
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => navigation.navigate('EditProfile')}
+        >
           <Text style={styles.optionText}>Edit Profile</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
@@ -113,16 +130,14 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <Text style={styles.optionText}>Notifications</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.option}>
-          <Text style={styles.optionText}>Privacy Settings</Text>
-          <Text style={styles.optionArrow}>›</Text>
-        </TouchableOpacity>
       </View>
 
       {/* About Section */}
       <View style={styles.section}>
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity
+          style={styles.option}
+          onPress={handleHelpSupport}
+        >
           <Text style={styles.optionText}>Help & Support</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>

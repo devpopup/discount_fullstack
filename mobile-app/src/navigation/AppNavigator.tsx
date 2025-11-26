@@ -10,6 +10,7 @@ import SignUpScreen from '../screens/SignUpScreen';
 import DealsListScreen from '../screens/DealsListScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
   NotificationSettings: undefined;
   Favorites: undefined;
+  EditProfile: undefined;
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
 };
@@ -106,6 +108,14 @@ export default function AppNavigator() {
           component={FavoritesScreen}
           options={{
             title: 'Favorites',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfileScreen}
+          options={{
+            title: 'Edit Profile',
             headerBackTitle: 'Back',
           }}
         />

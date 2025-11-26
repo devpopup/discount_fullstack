@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Offer } from '../types/offer';
 
@@ -22,7 +22,7 @@ interface DealCardLandscapeProps {
   hideBusinessInfo?: boolean;
 }
 
-export default function DealCardLandscape({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
+function DealCardLandscape({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
   const [liked, setLiked] = useState(isLiked);
 
   const handleLike = (e: any) => {
@@ -83,7 +83,9 @@ export default function DealCardLandscape({ deal, onPress, onLike, onClaim, onLo
         <Image
           source={{ uri: imageUrl }}
           style={styles.image}
-          resizeMode="cover"
+          contentFit="cover"
+          transition={200}
+          cachePolicy="memory-disk"
         />
         {/* Discount Badge */}
         <View style={styles.discountBadge}>
@@ -176,6 +178,8 @@ export default function DealCardLandscape({ deal, onPress, onLike, onClaim, onLo
     </TouchableOpacity>
   );
 }
+
+export default React.memo(DealCardLandscape);
 
 const styles = StyleSheet.create({
   card: {

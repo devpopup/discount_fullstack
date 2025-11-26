@@ -2,17 +2,15 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
-// Using ngrok tunnel to access local backend from mobile device
-const API_BASE_URL = 'https://cc2cb379ec20.ngrok-free.app/api/v1';
+const API_BASE_URL = 'https://discount-fullstack.onrender.com/api/v1';
 const TOKEN_KEY = '@auth_token';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
   },
 });
 

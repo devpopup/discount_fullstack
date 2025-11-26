@@ -24,13 +24,7 @@ import {
   registerBackgroundOfferCheck,
   unregisterBackgroundOfferCheck,
   isBackgroundCheckActive,
-  manualOfferCheck,
 } from '../services/offerMonitoringService';
-import {
-  sendProximityAlert,
-  sendExpiringAlert,
-  sendLimitedQuantityAlert,
-} from '../services/notificationService';
 
 export default function NotificationSettingsScreen() {
   const [settings, setSettings] = useState<NotificationSettings>({
@@ -61,59 +55,6 @@ export default function NotificationSettingsScreen() {
       console.error('Error loading settings:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleTestProximity = async () => {
-    try {
-      await sendProximityAlert(
-        'test-offer-1',
-        '50% Off Pizza',
-        'Pizza Palace',
-        50,
-        0.3
-      );
-      Alert.alert('Success', 'Test proximity notification sent!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to send test notification');
-    }
-  };
-
-  const handleTestExpiring = async () => {
-    try {
-      await sendExpiringAlert(
-        'test-offer-2',
-        'Free Burger Deal',
-        'Burger King',
-        1.5
-      );
-      Alert.alert('Success', 'Test expiring notification sent!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to send test notification');
-    }
-  };
-
-  const handleTestLimited = async () => {
-    try {
-      await sendLimitedQuantityAlert(
-        'test-offer-3',
-        'Premium Coffee',
-        'Starbucks',
-        3
-      );
-      Alert.alert('Success', 'Test limited quantity notification sent!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to send test notification');
-    }
-  };
-
-  const handleManualCheck = async () => {
-    try {
-      Alert.alert('Running...', 'Checking your claimed and favorited offers for updates...');
-      await manualOfferCheck();
-      Alert.alert('Complete', 'Manual offer check completed! Check your notifications.');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to run manual check');
     }
   };
 
@@ -293,34 +234,6 @@ export default function NotificationSettingsScreen() {
           You can adjust these settings anytime.
         </Text>
       </View>
-
-      {/* Test Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Test Notifications</Text>
-        <Text style={styles.sectionDescription}>
-          Send test notifications to verify everything is working
-        </Text>
-
-        <TouchableOpacity style={styles.testButton} onPress={handleTestProximity}>
-          <Ionicons name="location" size={20} color="#fff" />
-          <Text style={styles.testButtonText}>Test Proximity Alert</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.testButton} onPress={handleTestExpiring}>
-          <Ionicons name="time" size={20} color="#fff" />
-          <Text style={styles.testButtonText}>Test Expiring Alert</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.testButton} onPress={handleTestLimited}>
-          <Ionicons name="flame" size={20} color="#fff" />
-          <Text style={styles.testButtonText}>Test Limited Quantity Alert</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.testButton, styles.manualCheckButton]} onPress={handleManualCheck}>
-          <Ionicons name="refresh" size={20} color="#fff" />
-          <Text style={styles.testButtonText}>Run Manual Offer Check</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
   );
 }
@@ -425,25 +338,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     lineHeight: 20,
-  },
-  testButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#e94e1b',
-    marginHorizontal: 20,
-    marginVertical: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    gap: 10,
-  },
-  manualCheckButton: {
-    backgroundColor: '#4CAF50',
-  },
-  testButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
   },
 });

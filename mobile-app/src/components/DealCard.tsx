@@ -4,10 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
-  Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Offer } from '../types/offer';
 
@@ -22,7 +21,7 @@ interface DealCardProps {
   isLiked?: boolean;
 }
 
-export default function DealCard({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false }: DealCardProps) {
+function DealCard({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false }: DealCardProps) {
   const [liked, setLiked] = useState(isLiked);
 
   const handleLike = (e: any) => {
@@ -46,9 +45,6 @@ export default function DealCard({ deal, onPress, onLike, onClaim, onLocationPre
       onLocationPress();
     }
   };
-
-  // Debug: Log deal distance
-  console.log(`DealCard render - Offer ${deal.id}: distance = ${deal.distance}`);
 
   const formatDistance = (distance: number | null | undefined): string => {
     if (!distance) return '';
@@ -86,7 +82,9 @@ export default function DealCard({ deal, onPress, onLike, onClaim, onLocationPre
         <Image
           source={{ uri: imageUrl }}
           style={styles.image}
-          resizeMode="cover"
+          contentFit="cover"
+          transition={200}
+          cachePolicy="memory-disk"
         />
         {/* Discount Badge */}
         <View style={styles.discountBadge}>
@@ -184,6 +182,8 @@ export default function DealCard({ deal, onPress, onLike, onClaim, onLocationPre
     </TouchableOpacity>
   );
 }
+
+export default React.memo(DealCard);
 
 const CARD_HEIGHT = 320;
 const IMAGE_HEIGHT = CARD_HEIGHT * 0.65; // 65% of card height

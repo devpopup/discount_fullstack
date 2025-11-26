@@ -35,15 +35,7 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
         businessLat,
         businessLng
       );
-      if (distance !== null) {
-        console.log(`Offer ${offerId} - calculated distance: ${distance.toFixed(2)} km`);
-      }
     }
-  }
-
-  // Log distance for debugging
-  if (distance !== null) {
-    console.log(`Offer ${offerId} has distance: ${distance} km`);
   }
 
   return {
@@ -130,9 +122,6 @@ export async function getNearbyOffers(
     });
 
     const response = await apiClient.get(`/customer/offers/nearby?${params}`);
-
-    // Log raw API response for debugging
-    console.log('Nearby offers API response:', JSON.stringify(response.data.offers?.[0], null, 2));
 
     const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, location));
 
