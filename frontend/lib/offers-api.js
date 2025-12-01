@@ -296,15 +296,6 @@ export function transformOfferData(apiOffer) {
 
   // Debug logging for images and prices (development only)
   if (process.env.NODE_ENV === 'development') {
-    console.log('transformOfferData - apiOffer.id:', apiOffer.id)
-    console.log('transformOfferData - product:', product)
-    console.log('transformOfferData - product.image_url:', product?.image_url)
-    console.log('transformOfferData - apiOffer.images:', apiOffer.images)
-    console.log('transformOfferData - original_price:', apiOffer.original_price)
-    console.log('transformOfferData - discounted_price:', apiOffer.discounted_price)
-    console.log('transformOfferData - discount_type:', apiOffer.discount_type)
-    console.log('transformOfferData - discount_value:', apiOffer.discount_value)
-    console.log('transformOfferData - expiry_date:', apiOffer.expiry_date)
   }
 
   // Handle both regular API format and RPC function format (nearby offers)
@@ -357,7 +348,6 @@ function constructImageUrl(imagePath) {
   // Construct Supabase storage URL
   const fullUrl = `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${imagePath}`
   if (process.env.NODE_ENV === 'development') {
-    console.log('constructImageUrl - input:', imagePath, 'output:', fullUrl)
   }
   return fullUrl
 }
@@ -464,11 +454,6 @@ export function transformOfferDataWithDistance(apiOffer, userLocation = null) {
     const businessLng = business.longitude || apiOffer.business_longitude || apiOffer.longitude
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('transformOfferDataWithDistance - offer:', apiOffer.id)
-      console.log('transformOfferDataWithDistance - userLocation:', userLocation)
-      console.log('transformOfferDataWithDistance - businessLat:', businessLat)
-      console.log('transformOfferDataWithDistance - businessLng:', businessLng)
-      console.log('transformOfferDataWithDistance - business obj:', business)
     }
 
     if (businessLat && businessLng) {
@@ -481,7 +466,6 @@ export function transformOfferDataWithDistance(apiOffer, userLocation = null) {
       transformedOffer.distance = distance
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('transformOfferDataWithDistance - calculated distance:', distance)
       }
     } else {
       if (process.env.NODE_ENV === 'development') {
@@ -648,10 +632,11 @@ export async function getClaimedOfferIds() {
 /**
  * Claim an offer
  */
-export async function claimOffer(offerId, claimType = 'in_store', redirectUrl = null) {
+export async function claimOffer(offerId, claimType = 'in_store', quantity = 1, redirectUrl = null) {
   try {
     const requestBody = {
-      claim_type: claimType
+      claim_type: claimType,
+      quantity: quantity
     }
 
     if (redirectUrl) {

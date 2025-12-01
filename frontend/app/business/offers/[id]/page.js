@@ -69,6 +69,7 @@ export default function OfferDetailPage() {
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
     isDeleting: false,
+    hasClaims: false,
   });
 
   useEffect(() => {
@@ -170,9 +171,11 @@ export default function OfferDetailPage() {
 
   // Delete offer with confirmation
   const openDeleteDialog = () => {
+    const hasClaimsValue = offer?.total_units_claimed && offer.total_units_claimed > 0;
     setDeleteDialog({
       isOpen: true,
       isDeleting: false,
+      hasClaims: hasClaimsValue,
     });
   };
 
@@ -181,9 +184,11 @@ export default function OfferDetailPage() {
       setDeleteDialog({
         isOpen: false,
         isDeleting: false,
+        hasClaims: false,
       });
     }
   };
+
 
   const handleConfirmDelete = async () => {
     try {
@@ -533,11 +538,16 @@ export default function OfferDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Total Claims</span>
+                  <span className="text-sm text-gray-600">Units Claimed</span>
                 </div>
                 <span className="font-semibold">
-                  {offer.current_claims || 0}
+                  {offer.total_units_claimed || 0}
                   {offer.max_claims ? ` / ${offer.max_claims}` : ""}
+                  {offer.max_claims && (
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({offer.max_claims - (offer.total_units_claimed || 0)} available)
+                    </span>
+                  )}
                 </span>
               </div>
 
@@ -739,39 +749,65 @@ export default function OfferDetailPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Trash className="h-5 w-5 text-red-600" />
-              Delete Offer
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>"{offer.title}"</strong>?
-              This action cannot be undone and will permanently remove the offer
-              and all associated claims.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={closeDeleteDialog}
-              disabled={deleteDialog.isDeleting}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={deleteDialog.isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {deleteDialog.isDeleting ? (
+              {deleteDialog.hasClaims ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
+                  <AlertCircle className="h-5 w-5 text-yellow-600" />
+                  Cannot Delete Offer
                 </>
               ) : (
                 <>
-                  <Trash className="h-4 w-4 mr-2" />
+                  <Trash className="h-5 w-5 text-red-600" />
                   Delete Offer
                 </>
               )}
-            </AlertDialogAction>
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {deleteDialog.hasClaims ? (
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div>
+                    This offer has <strong>{offer?.total_units_claimed || 0} unit(s) claimed</strong> and cannot be deleted.
+                  </div>
+                  <div>
+                    You can <strong>pause</strong> this offer instead to prevent new claims while keeping existing claims active.
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Are you sure you want to delete <strong>"{offer?.title}"</strong>?
+                  This action cannot be undone.
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            {deleteDialog.hasClaims ? (
+              <AlertDialogCancel className="w-full">
+                OK
+              </AlertDialogCancel>
+            ) : (
+              <>
+                <AlertDialogCancel disabled={deleteDialog.isDeleting}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleConfirmDelete}
+                  disabled={deleteDialog.isDeleting}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {deleteDialog.isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash className="h-4 w-4 mr-2" />
+                      Delete Offer
+                    </>
+                  )}
+                </AlertDialogAction>
+              </>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

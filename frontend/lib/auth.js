@@ -167,8 +167,6 @@ export async function signUp(userData) {
  */
 export async function registerBusiness(businessData) {
   try {
-    console.log('Registering business with data:', businessData)
-    
     // Use the business-specific registration endpoint
     const response = await fetch(`${API_BASE_URL}/business/register-complete`, {
       method: 'POST',
@@ -179,7 +177,6 @@ export async function registerBusiness(businessData) {
     })
 
     const data = await response.json()
-    console.log('Business registration response:', data)
 
     if (!response.ok) {
       if (data.detail) {

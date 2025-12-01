@@ -40,7 +40,6 @@ export default function FavoritesPage() {
         location = await getUserLocation()
         setUserLocation(location)
       } catch (locationError) {
-        console.log('Using default location:', locationError.message)
       }
 
       // Fetch favorites
@@ -59,16 +58,11 @@ export default function FavoritesPage() {
           const offer = savedOffer.offers || savedOffer
 
           // Debug: log the offer structure to see what we're getting
-          console.log('Saved offer structure:', savedOffer)
-          console.log('Extracted offer:', offer)
-          console.log('Offer product/products:', offer.product, offer.products)
-          console.log('Offer product_id:', offer.product_id)
 
           return transformOfferDataWithDistance(offer, location)
         })
         .filter(offer => offer && offer.id)
 
-      console.log('Transformed favorites:', transformedOffers)
       setFavorites(transformedOffers)
     } catch (err) {
       console.error('Error loading favorites:', err)

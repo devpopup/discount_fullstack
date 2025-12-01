@@ -19,8 +19,9 @@ import {
   ExternalLink,
   Loader2
 } from 'lucide-react'
-import { getOfferById, claimOffer, unclaimOffer, getClaimedOfferIds, getFavoritedOfferIds, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
+import { getOfferById, getFavoritedOfferIds, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
+import { useClaims } from '@/context/ClaimContext'
 import { toast } from 'sonner'
 
 export default function OfferDetailsPage({ params }) {
@@ -30,15 +31,23 @@ export default function OfferDetailsPage({ params }) {
 
   const router = useRouter()
   const { user } = useAuth()
+  const {
+    getTotalQuantityClaimed,
+    canClaimMore,
+    hasUnredeemedClaims,
+    canUnclaim,
+    claimOffer,
+    unclaimOffer
+  } = useClaims()
   const [offer, setOffer] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedImage, setSelectedImage] = useState(0)
-  const [isClaimed, setIsClaimed] = useState(false)
   const [claiming, setClaiming] = useState(false)
   const [claimError, setClaimError] = useState(null)
   const [isFavorited, setIsFavorited] = useState(false)
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
+  const [quantity, setQuantity] = useState(1)
 
   useEffect(() => {
     if (offerId) {
@@ -58,9 +67,8 @@ export default function OfferDetailsPage({ params }) {
       } else if (result.offer) {
         setOffer(result.offer)
 
-        // Check if offer is claimed and favorited (if user is logged in)
+        // Check if offer is favorited (if user is logged in)
         if (user) {
-          checkIfClaimed()
           checkIfFavorited()
         }
       } else {
@@ -71,15 +79,6 @@ export default function OfferDetailsPage({ params }) {
       setError('Failed to load offer details')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const checkIfClaimed = async () => {
-    try {
-      const claimedIds = await getClaimedOfferIds()
-      setIsClaimed(claimedIds.has(offerId))
-    } catch (err) {
-      console.error('Error checking claim status:', err)
     }
   }
 
@@ -100,40 +99,76 @@ export default function OfferDetailsPage({ params }) {
       return
     }
 
-    setClaiming(true)
-    setClaimError(null)
+    const totalClaimed = getTotalQuantityClaimed(offerId)
+    const userCanClaim = canClaimMore(offerId, offer.max_claims_per_user)
+    const hasUnredeemed = hasUnredeemedClaims(offerId)
 
-    try {
-      if (isClaimed) {
-        // Unclaim the offer
-        const result = await unclaimOffer(offerId)
+    // Determine action: claim, unclaim, or maxed
+    const shouldUnclaim = !userCanClaim && hasUnredeemed
 
-        if (result.success) {
-          toast.success('Offer unclaimed successfully!')
-          setIsClaimed(false)
-        } else {
-          setClaimError(result.error || 'Failed to unclaim offer. Please try again.')
-          toast.error(result.error || 'Failed to unclaim offer. Please try again.')
-        }
-      } else {
-        // Claim the offer
-        const result = await claimOffer(offerId, 'in_store')
+    if (shouldUnclaim) {
+      // User wants to unclaim
+      if (!canUnclaim(offerId)) {
+        const errorMsg = 'Cannot unclaim - all claims have been redeemed'
+        setClaimError(errorMsg)
+        toast.error(errorMsg)
+        return
+      }
 
-        if (result.success) {
-          toast.success('Offer claimed successfully! Visit the store to redeem.')
-          setIsClaimed(true)
-        } else {
-          setClaimError(result.error || 'Failed to claim offer. Please try again.')
-          toast.error(result.error || 'Failed to claim offer. Please try again.')
+      setClaiming(true)
+      setClaimError(null)
+
+      try {
+        await unclaimOffer(offerId)
+        toast.success('Offer unclaimed successfully!')
+      } catch (err) {
+        console.error('Error unclaiming offer:', err)
+        const errorMsg = err.message || 'Failed to unclaim offer.'
+        setClaimError(errorMsg)
+        toast.error(errorMsg)
+      } finally {
+        setClaiming(false)
+      }
+    } else {
+      // User wants to claim (or claim more)
+      // Validate total quantity (existing + new) against max_claims_per_user
+      if (offer.max_claims_per_user) {
+        const totalAfterClaim = totalClaimed + quantity
+        if (totalAfterClaim > offer.max_claims_per_user) {
+          const remaining = offer.max_claims_per_user - totalClaimed
+          const errorMsg = remaining > 0
+            ? `You've used ${totalClaimed} of ${offer.max_claims_per_user} units. Only ${remaining} unit${remaining > 1 ? 's' : ''} remaining in your quota.`
+            : `You've reached your quota limit (${offer.max_claims_per_user} units) for this offer.`
+          setClaimError(errorMsg)
+          toast.error(errorMsg)
+          return
         }
       }
-    } catch (err) {
-      console.error('Error toggling claim:', err)
-      const errorMsg = isClaimed ? 'Failed to unclaim offer.' : 'Failed to claim offer.'
-      setClaimError(errorMsg)
-      toast.error(errorMsg)
-    } finally {
-      setClaiming(false)
+
+      setClaiming(true)
+      setClaimError(null)
+
+      try {
+        await claimOffer(offerId, 'in_store', quantity)
+
+        // Success message
+        let message = `Offer claimed successfully! (${quantity} unit${quantity > 1 ? 's' : ''}) Visit the store to redeem.`
+        if (totalClaimed > 0 && offer.max_claims_per_user) {
+          message = `Claimed ${quantity} more unit${quantity > 1 ? 's' : ''}! Quota used: ${totalClaimed + quantity}/${offer.max_claims_per_user}. Visit the store to redeem.`
+        } else if (totalClaimed > 0) {
+          message = `Claimed ${quantity} more unit${quantity > 1 ? 's' : ''}! Total: ${totalClaimed + quantity}. Visit the store to redeem.`
+        }
+
+        toast.success(message)
+        setQuantity(1) // Reset quantity after claiming
+      } catch (err) {
+        console.error('Error claiming offer:', err)
+        const errorMsg = err.message || 'Failed to claim offer.'
+        setClaimError(errorMsg)
+        toast.error(errorMsg)
+      } finally {
+        setClaiming(false)
+      }
     }
   }
 
@@ -360,10 +395,10 @@ export default function OfferDetailsPage({ params }) {
                     <Clock className="w-4 h-4" />
                     {calculateTimeRemaining(offer.expiresAt)}
                   </div>
-                  {offer.claimedCount !== undefined && offer.maxClaims && (
+                  {offer.maxClaims && (
                     <div className="flex items-center gap-1">
                       <Tag className="w-4 h-4" />
-                      {offer.claimedCount}/{offer.maxClaims} claimed
+                      {getTotalQuantityClaimed(offerId)}/{offer.maxClaims - (offer.currentClaims || 0)} available
                     </div>
                   )}
                 </div>
@@ -404,6 +439,11 @@ export default function OfferDetailsPage({ params }) {
                   {offer.maxClaims && (
                     <li>Limited to {offer.maxClaims} total claims</li>
                   )}
+                  {offer.max_claims_per_user && (
+                    <li className="font-medium text-[#e94e1b]">
+                      Quota limit: {offer.max_claims_per_user} unit{offer.max_claims_per_user > 1 ? 's' : ''} per customer
+                    </li>
+                  )}
                   <li>Must be presented at time of purchase</li>
                   <li>Cannot be combined with other offers</li>
                   <li>Subject to availability</li>
@@ -422,29 +462,94 @@ export default function OfferDetailsPage({ params }) {
                 </div>
               )}
 
+              {/* Quantity Selector */}
+              {canClaimMore(offerId, offer.max_claims_per_user) && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quantity to Claim
+                    {offer.max_claims_per_user && (
+                      <span className="text-gray-500 ml-1">
+                        (Your quota: {getTotalQuantityClaimed(offerId)}/{offer.max_claims_per_user} units used)
+                      </span>
+                    )}
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100}
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1
+                        const max = offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100
+                        setQuantity(Math.min(max, Math.max(1, val)))
+                      }}
+                      className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1b] focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const max = offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100
+                        setQuantity(Math.min(max, quantity + 1))
+                      }}
+                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                      disabled={offer.max_claims_per_user && (getTotalQuantityClaimed(offerId) + quantity) >= offer.max_claims_per_user}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {offer.max_claims_per_user && getTotalQuantityClaimed(offerId) > 0
+                      ? `Remaining quota: ${offer.max_claims_per_user - getTotalQuantityClaimed(offerId)} units`
+                      : 'Select how many units you want to claim'}
+                  </p>
+                </div>
+              )}
+
               <Button
                 onClick={handleClaimInStore}
-                disabled={claiming}
+                disabled={claiming || (!canClaimMore(offerId, offer.max_claims_per_user) && !hasUnredeemedClaims(offerId))}
                 className={`w-full py-6 text-lg font-semibold ${
-                  isClaimed
-                    ? 'bg-green-600 hover:bg-green-700'
+                  !canClaimMore(offerId, offer.max_claims_per_user) && !hasUnredeemedClaims(offerId)
+                    ? 'bg-gray-500 opacity-70 cursor-not-allowed'
+                    : !canClaimMore(offerId, offer.max_claims_per_user) && hasUnredeemedClaims(offerId)
+                    ? 'bg-amber-600 hover:bg-amber-700'
                     : 'bg-[#e94e1b] hover:bg-[#d13f16]'
                 } text-white`}
               >
                 {claiming ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {isClaimed ? 'Unclaiming...' : 'Claiming...'}
+                    {!canClaimMore(offerId, offer.max_claims_per_user) && hasUnredeemedClaims(offerId) ? 'Unclaiming...' : 'Claiming...'}
                   </>
-                ) : isClaimed ? (
-                  <>
-                    <Store className="w-5 h-5 mr-2" />
-                    Unclaim Offer
-                  </>
+                ) : !canClaimMore(offerId, offer.max_claims_per_user) ? (
+                  hasUnredeemedClaims(offerId) ? (
+                    <>
+                      <Store className="w-5 h-5 mr-2" />
+                      Unclaim One
+                    </>
+                  ) : (
+                    <>
+                      <Store className="w-5 h-5 mr-2" />
+                      Quota Full ({getTotalQuantityClaimed(offerId)}/{offer.max_claims_per_user} units)
+                    </>
+                  )
                 ) : (
                   <>
                     <Store className="w-5 h-5 mr-2" />
-                    Claim In Store
+                    {getTotalQuantityClaimed(offerId) > 0 && offer.max_claims_per_user
+                      ? `Claim More • ${getTotalQuantityClaimed(offerId)}/${offer.max_claims_per_user} units used`
+                      : getTotalQuantityClaimed(offerId) > 0
+                      ? `Claim More • ${getTotalQuantityClaimed(offerId)} units claimed`
+                      : 'Claim In Store'}
                   </>
                 )}
               </Button>

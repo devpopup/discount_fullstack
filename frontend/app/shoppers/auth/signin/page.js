@@ -48,7 +48,6 @@ export default function ShopperSignin() {
     setError('')
 
     try {
-      console.log('Starting login process...')
       
       const result = await signIn({ email, password })
       
@@ -68,7 +67,6 @@ export default function ShopperSignin() {
         return
       }
 
-      console.log('Login successful, user:', result.user)
       login(result.user)
       
       setTimeout(() => {

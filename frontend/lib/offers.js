@@ -7,7 +7,6 @@ import { makeAuthenticatedRequest } from './auth'
  */
 export async function createOffer(offerData) {
   try {
-    console.log('Creating offer with data:', offerData)
     
     const response = await makeAuthenticatedRequest('/business/offers', {
       method: 'POST',
@@ -33,7 +32,6 @@ export async function createOffer(offerData) {
     }
     
     const data = await response.json()
-    console.log('Offer created successfully:', data)
     
     return { success: true, offer: data.offer || data }
   } catch (error) {
@@ -47,7 +45,6 @@ export async function createOffer(offerData) {
  */
 export async function updateOffer(offerId, offerData) {
   try {
-    console.log('Updating offer:', offerId, 'with data:', offerData)
     
     const response = await makeAuthenticatedRequest(`/business/offers/${offerId}`, {
       method: 'PATCH',
@@ -73,7 +70,6 @@ export async function updateOffer(offerId, offerData) {
     }
     
     const data = await response.json()
-    console.log('Offer updated successfully:', data)
     
     return { success: true, offer: data.offer || data }
   } catch (error) {
@@ -87,7 +83,6 @@ export async function updateOffer(offerId, offerData) {
  */
 export async function deleteOffer(offerId) {
   try {
-    console.log('Deleting offer:', offerId)
     
     const response = await makeAuthenticatedRequest(`/business/offers/${offerId}`, {
       method: 'DELETE',
@@ -100,7 +95,6 @@ export async function deleteOffer(offerId) {
     }
     
     const data = await response.json()
-    console.log('Offer deleted successfully:', data)
     
     return { success: true, message: data.message || 'Offer deleted successfully' }
   } catch (error) {
@@ -114,7 +108,6 @@ export async function deleteOffer(offerId) {
  */
 export async function pauseOffer(offerId) {
   try {
-    console.log('Pausing offer:', offerId)
     
     const response = await makeAuthenticatedRequest(`/business/offers/${offerId}/status`, {
       method: 'PATCH',
@@ -128,7 +121,6 @@ export async function pauseOffer(offerId) {
     }
     
     const result = await response.json()
-    console.log('Offer paused successfully:', result)
     return { success: true, offer: result.offer }
   } catch (error) {
     console.error('Pause offer error:', error)
@@ -141,7 +133,6 @@ export async function pauseOffer(offerId) {
  */
 export async function resumeOffer(offerId) {
   try {
-    console.log('Resuming offer:', offerId)
     
     const response = await makeAuthenticatedRequest(`/business/offers/${offerId}/status`, {
       method: 'PATCH',
@@ -155,7 +146,6 @@ export async function resumeOffer(offerId) {
     }
     
     const result = await response.json()
-    console.log('Offer resumed successfully:', result)
     return { success: true, offer: result.offer }
   } catch (error) {
     console.error('Resume offer error:', error)
@@ -236,8 +226,7 @@ export async function getOffers(params = {}) {
  */
 export async function uploadOfferImage(imageFile) {
   try {
-    console.log('Uploading offer image file:', imageFile.name, imageFile.size, 'bytes')
-    
+
     const formData = new FormData()
     formData.append('image', imageFile)
 
@@ -263,16 +252,87 @@ export async function uploadOfferImage(imageFile) {
     }
 
     const data = await response.json()
-    console.log('Offer image uploaded successfully:', data)
-    
-    return { 
-      success: true, 
-      path: data.path, 
+
+    return {
+      success: true,
+      path: data.path,
       url: data.url,
       compression_info: data.compression_info
     }
   } catch (error) {
     console.error('Upload offer image error:', error)
     return { error: 'Network error. Please try again.' }
+  }
+}
+
+/**
+ * Verify a claim code for redemption
+ */
+export async function verifyClaimCode(claimCode) {
+  try {
+
+    const response = await makeAuthenticatedRequest('/business/redeem/verify', {
+      method: 'POST',
+      body: JSON.stringify({
+        claim_identifier: claimCode,
+        verification_type: 'claim_id'
+      }),
+    })
+
+    if (!response || !response.ok) {
+      const data = await response?.json()
+      console.error('Claim verification failed:', data)
+      return {
+        success: false,
+        error: data?.detail || data?.error_message || 'Failed to verify claim code'
+      }
+    }
+
+    const data = await response.json()
+
+    return {
+      success: data.is_valid,
+      claim: data.claim_details,
+      error: data.error_message
+    }
+  } catch (error) {
+    console.error('Verify claim error:', error)
+    return { success: false, error: 'Network error. Please try again.' }
+  }
+}
+
+/**
+ * Complete redemption of a claim
+ */
+export async function redeemClaim(claimCode, notes = '') {
+  try {
+
+    const response = await makeAuthenticatedRequest('/business/redeem/complete', {
+      method: 'POST',
+      body: JSON.stringify({
+        claim_id: claimCode,
+        redemption_notes: notes
+      }),
+    })
+
+    if (!response || !response.ok) {
+      const data = await response?.json()
+      console.error('Claim redemption failed:', data)
+      return {
+        success: false,
+        error: data?.detail || data?.message || 'Failed to redeem claim'
+      }
+    }
+
+    const data = await response.json()
+
+    return {
+      success: data.success,
+      message: data.message,
+      redemption: data.redemption_details
+    }
+  } catch (error) {
+    console.error('Redeem claim error:', error)
+    return { success: false, error: 'Network error. Please try again.' }
   }
 }

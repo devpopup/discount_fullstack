@@ -75,9 +75,6 @@ export default function InfiniteDealsPage({ dealType }) {
         const location = await getUserLocation()
         setUserLocation(location)
       } catch (locationError) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Using default location:', locationError.message)
-        }
         setUserLocation(getDefaultLocation())
       }
 
@@ -318,6 +315,7 @@ export default function InfiniteDealsPage({ dealType }) {
                     userLocation={userLocation}
                     isFavorited={favoritedIds.has(deal.id)}
                     onFavoriteChange={handleFavoriteChange}
+                    priority={index < 6}
                   />
                 ))}
               </div>

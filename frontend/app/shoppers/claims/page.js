@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2, CheckCircle, Clock, AlertCircle, Store, X } from 'lucide-react'
+import { ArrowLeft, Loader2, CheckCircle, Clock, AlertCircle, Store, X, Ticket, Copy } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { getClaimedOffers, unclaimOffer } from '@/lib/offers-api'
+import { useClaims } from '@/context/ClaimContext'
+import { getClaimedOffers } from '@/lib/offers-api'
 import { toast } from 'sonner'
 import Navbar from '@/components/Navbar'
 
@@ -17,6 +18,7 @@ export default function ClaimedOffersPage() {
   const [filter, setFilter] = useState('pending') // 'all', 'pending', 'redeemed'
   const [unclaimingId, setUnclaimingId] = useState(null)
   const { user } = useAuth()
+  const { unclaimOffer, refreshClaims, canUnclaim } = useClaims()
 
   useEffect(() => {
     if (user) {
@@ -30,11 +32,6 @@ export default function ClaimedOffersPage() {
     try {
       const redeemedOnly = filter === 'redeemed' ? true : filter === 'pending' ? false : null
       const result = await getClaimedOffers({ page: 1, size: 50, redeemed_only: redeemedOnly })
-      console.log('Claims result:', result)
-      if (result.claimed_offers && result.claimed_offers.length > 0) {
-        console.log('First claim structure:', result.claimed_offers[0])
-        console.log('First claim offer:', result.claimed_offers[0].offer || result.claimed_offers[0].offers)
-      }
       setClaims(result.claimed_offers || [])
     } catch (err) {
       console.error('Error loading claimed offers:', err)
@@ -80,24 +77,31 @@ export default function ClaimedOffersPage() {
   const handleUnclaim = async (offerId, claimId) => {
     if (unclaimingId) return // Prevent multiple simultaneous unclaims
 
+    // Check if the claim can be unclaimed using the context
+    if (!canUnclaim(offerId)) {
+      toast.error('Cannot unclaim an offer that has already been redeemed')
+      return
+    }
+
     setUnclaimingId(claimId)
 
     try {
-      const result = await unclaimOffer(offerId)
+      await unclaimOffer(offerId)
+      toast.success('Offer unclaimed successfully!')
 
-      if (result.success) {
-        toast.success('Offer unclaimed successfully!')
-        // Remove the claim from the list
-        setClaims(prevClaims => prevClaims.filter(claim => claim.id !== claimId))
-      } else {
-        toast.error(result.error || 'Failed to unclaim offer')
-      }
+      // Refresh the claims list from the server
+      await loadClaims()
     } catch (err) {
       console.error('Error unclaiming offer:', err)
-      toast.error('Failed to unclaim offer')
+      toast.error(err.message || 'Failed to unclaim offer')
     } finally {
       setUnclaimingId(null)
     }
+  }
+
+  const copyClaimCode = (code) => {
+    navigator.clipboard.writeText(code)
+    toast.success('Claim code copied to clipboard!')
   }
 
   const filteredClaims = claims.filter(claim => {
@@ -314,12 +318,40 @@ export default function ClaimedOffersPage() {
                           </div>
                         )}
 
+                        {/* Claim Code Display */}
+                        {!claim.is_redeemed && claim.unique_claim_id && (
+                          <div className="mt-3 p-4 bg-gradient-to-br from-[#e94e1b] to-[#d13f16] rounded-lg border-2 border-[#e94e1b] shadow-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Ticket className="w-5 h-5 text-white" />
+                                <span className="text-sm font-semibold text-white">Your Redemption Code</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyClaimCode(claim.unique_claim_id)}
+                                className="h-8 px-2 text-white hover:bg-white/20"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <div className="bg-white rounded-md p-3 text-center">
+                              <p className="text-3xl font-bold font-mono tracking-widest text-gray-900 select-all">
+                                {claim.unique_claim_id}
+                              </p>
+                            </div>
+                            <p className="text-xs text-white/90 mt-2 text-center">
+                              Show this code to the merchant at checkout
+                            </p>
+                          </div>
+                        )}
+
                         {/* Redemption Instructions & Unclaim Button */}
-                        {!claim.is_redeemed && (
+                        {!claim.is_redeemed && !claim.redeemed_at && (
                           <>
                             <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                               <p className="text-sm text-blue-900">
-                                <strong>To redeem:</strong> Visit the store and show this claimed offer to the merchant
+                                <strong>To redeem:</strong> Visit the store and show your redemption code to the merchant
                               </p>
                             </div>
                             <div className="mt-3">
@@ -327,8 +359,8 @@ export default function ClaimedOffersPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleUnclaim(offer?.id, claim.id)}
-                                disabled={unclaimingId === claim.id}
-                                className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                disabled={unclaimingId === claim.id || claim.is_redeemed}
+                                className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                               >
                                 {unclaimingId === claim.id ? (
                                   <>

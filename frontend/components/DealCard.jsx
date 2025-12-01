@@ -4,9 +4,8 @@ import { useState, useEffect, memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Tag, Heart, Store } from 'lucide-react'
-import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites, claimOffer, unclaimOffer } from '@/lib/offers-api'
+import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
-import { useClaims } from '@/context/ClaimsContext'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import {
@@ -20,19 +19,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useRouter } from 'next/navigation'
+import ClaimModal from '@/components/ClaimModal'
 
-function DealCard({ deal, userLocation = null, className = "", isFavorited: initialFavorited = false, onFavoriteChange, isClaimed: initialClaimed = false, onClaimChange }) {
+function DealCard({ deal, userLocation = null, className = "", isFavorited: initialFavorited = false, onFavoriteChange, isClaimed: initialClaimed = false, onClaimChange, priority = false }) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited)
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
-  const [isClaiming, setIsClaiming] = useState(false)
+  const [showClaimModal, setShowClaimModal] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [authAction, setAuthAction] = useState('') // 'favorite' or 'claim'
   const { user } = useAuth()
-  const { claimedIds, loading: claimsLoading, addClaim, removeClaim } = useClaims()
   const router = useRouter()
-
-  // Get claimed status from context (overrides prop)
-  const isClaimed = claimedIds.has(deal.id)
   const {
     title,
     description,
@@ -155,8 +151,8 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     }
   }
 
-  // Handle claim toggle
-  const handleClaimClick = async (e) => {
+  // Handle claim button click - open modal
+  const handleClaimClick = (e) => {
     e.preventDefault() // Prevent navigation to offer details
     e.stopPropagation()
 
@@ -167,61 +163,8 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
       return
     }
 
-    setIsClaiming(true)
-
-    try {
-      if (isClaimed) {
-        // Unclaim the offer
-        const result = await unclaimOffer(deal.id)
-        if (result.success) {
-          toast.success('Offer unclaimed successfully!')
-          removeClaim(deal.id)
-          if (onClaimChange) {
-            onClaimChange(deal.id, false)
-          }
-        } else {
-          toast.error(result.error || 'Failed to unclaim offer')
-        }
-      } else {
-        // Claim the offer
-        const result = await claimOffer(deal.id, 'in_store')
-        if (result.success) {
-          toast.success('Offer claimed successfully!')
-          addClaim(deal.id)
-          if (onClaimChange) {
-            onClaimChange(deal.id, true)
-          }
-        } else {
-          // Check if error is "already claimed" and update state accordingly
-          const errorLower = (result.error || '').toLowerCase()
-          if (errorLower.includes('already claimed')) {
-            toast.info('This offer is already claimed')
-            addClaim(deal.id)
-            if (onClaimChange) {
-              onClaimChange(deal.id, true)
-            }
-          } else if (errorLower.includes('maximum claims')) {
-            toast.error('This offer has reached its maximum claims')
-          } else {
-            toast.error(result.error || 'Failed to claim offer')
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error toggling claim:', error)
-      // Check if error is "already claimed" and update state accordingly
-      if (error.message && error.message.includes('already claimed')) {
-        toast.info('This offer is already claimed')
-        addClaim(deal.id)
-        if (onClaimChange) {
-          onClaimChange(deal.id, true)
-        }
-      } else {
-        toast.error('Failed to update claim status')
-      }
-    } finally {
-      setIsClaiming(false)
-    }
+    // Open claim modal
+    setShowClaimModal(true)
   }
 
   if (!deal?.id) {
@@ -251,12 +194,10 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
           <Image
             src={images[0]}
             alt={title || 'Product'}
-            width={160}
-            height={150}
+            fill
             className="object-cover"
-            style={{ width: '100%', height: '100%' }}
-            sizes="160px"
-            priority={false}
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 200px"
+            priority={priority}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
@@ -341,26 +282,22 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
         {/* Claim Button */}
         <Button
           onClick={handleClaimClick}
-          disabled={isClaiming}
           size="sm"
-          className={`w-full ${isClaimed ? 'bg-green-600 hover:bg-green-700' : 'bg-[#e94e1b] hover:bg-[#d13f16]'} text-white text-xs py-1`}
+          className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white text-xs py-1"
         >
-          {isClaiming ? (
-            isClaimed ? 'Unclaiming...' : 'Claiming...'
-          ) : isClaimed ? (
-            <>
-              <Store className="w-3 h-3 mr-1" />
-              Unclaim
-            </>
-          ) : (
-            <>
-              <Store className="w-3 h-3 mr-1" />
-              Claim
-            </>
-          )}
+          <Store className="w-3 h-3 mr-1" />
+          Claim
         </Button>
       </div>
     </Link>
+
+    {/* Claim Modal */}
+    <ClaimModal
+      isOpen={showClaimModal}
+      onClose={() => setShowClaimModal(false)}
+      offer={deal}
+      onClaimSuccess={onClaimChange}
+    />
 
     {/* Auth Dialog */}
     <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>

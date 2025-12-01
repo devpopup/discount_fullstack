@@ -48,8 +48,6 @@ export default function BusinessLogin() {
     setError('')
 
     try {
-      console.log('Starting login process...')
-      
       const result = await signIn({ email, password })
       
       if (result.error) {
@@ -69,7 +67,6 @@ export default function BusinessLogin() {
         return
       }
 
-      console.log('Login successful, user:', result.user)
       login(result.user)
       
       setTimeout(() => {

@@ -383,10 +383,10 @@ export default function ProductOffersPage() {
     >
       {/* Back Button */}
       <div className="mb-6">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={handleBackToProducts}
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
+          className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Products
@@ -480,7 +480,7 @@ export default function ProductOffersPage() {
             variant="outline"
             size="sm"
             onClick={() => handleSort('created_at')}
-            className="text-sm"
+            className="text-sm bg-white text-black border-gray-300 hover:bg-gray-100"
           >
             Date {getSortIcon('created_at')}
           </Button>
@@ -488,7 +488,7 @@ export default function ProductOffersPage() {
             variant="outline"
             size="sm"
             onClick={() => handleSort('title')}
-            className="text-sm"
+            className="text-sm bg-white text-black border-gray-300 hover:bg-gray-100"
           >
             Title {getSortIcon('title')}
           </Button>
@@ -496,7 +496,7 @@ export default function ProductOffersPage() {
             variant="outline"
             size="sm"
             onClick={() => handleSort('discount_value')}
-            className="text-sm"
+            className="text-sm bg-white text-black border-gray-300 hover:bg-gray-100"
           >
             Discount {getSortIcon('discount_value')}
           </Button>
@@ -504,7 +504,7 @@ export default function ProductOffersPage() {
             variant="outline"
             size="sm"
             onClick={() => handleSort('status')}
-            className="text-sm"
+            className="text-sm bg-white text-black border-gray-300 hover:bg-gray-100"
           >
             Status {getSortIcon('status')}
           </Button>
@@ -608,11 +608,11 @@ export default function ProductOffersPage() {
                   </div>
 
                   {/* Offer Details */}
-                  <div className="px-4 pb-4 flex flex-col flex-grow">
+                  <div className="px-4 pt-4 pb-4 flex flex-col flex-grow">
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="font-semibold text-gray-900 line-clamp-2">{offer.title}</h3>
                     </div>
-                    
+
                     {offer.description && (
                       <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                         {offer.description}

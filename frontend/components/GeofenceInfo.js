@@ -2,11 +2,9 @@
 
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
-import { 
+import {
   MapPin,
-  Radar,
-  Zap,
-  DollarSign
+  Radar
 } from 'lucide-react'
 
 export default function GeofenceInfo({ offer, showAll = false, className = "" }) {
@@ -38,12 +36,6 @@ export default function GeofenceInfo({ offer, showAll = false, className = "" })
           <MapPin className="h-3 w-3" />
           {getRadiusDisplay(offer.geofence_radius)}
         </Badge>
-        {offer.auto_advertise && (
-          <Badge variant="outline" className="flex items-center gap-1 text-xs bg-yellow-50 border-yellow-200 text-yellow-700">
-            <Zap className="h-3 w-3" />
-            Auto-Ad
-          </Badge>
-        )}
       </div>
     )
   }
@@ -77,35 +69,6 @@ export default function GeofenceInfo({ offer, showAll = false, className = "" })
           </p>
         </div>
       </div>
-
-      {/* Auto-Advertise Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-gray-500" />
-          <span className="text-sm text-gray-600">Auto-Advertise</span>
-        </div>
-        <Badge 
-          className={offer.auto_advertise 
-            ? "bg-yellow-100 text-yellow-700 border-yellow-200" 
-            : "bg-gray-100 text-gray-500 border-gray-200"
-          }
-        >
-          {offer.auto_advertise ? 'Active' : 'Disabled'}
-        </Badge>
-      </div>
-
-      {/* Daily Budget - Only show if auto-advertise is enabled */}
-      {offer.auto_advertise && offer.daily_ad_budget && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600">Daily Budget</span>
-          </div>
-          <span className="text-sm font-medium text-green-600">
-            ${parseFloat(offer.daily_ad_budget).toFixed(2)}/day
-          </span>
-        </div>
-      )}
     </div>
   )
 }

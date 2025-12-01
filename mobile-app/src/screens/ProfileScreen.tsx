@@ -107,6 +107,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
       {/* Profile Options */}
       <View style={styles.section}>
+        {/* Edit Profile - Temporarily hidden
         <TouchableOpacity
           style={styles.option}
           onPress={() => navigation.navigate('EditProfile')}
@@ -114,6 +115,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <Text style={styles.optionText}>Edit Profile</Text>
           <Text style={styles.optionArrow}>›</Text>
         </TouchableOpacity>
+        */}
 
         <TouchableOpacity
           style={styles.option}

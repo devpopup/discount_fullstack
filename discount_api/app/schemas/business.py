@@ -158,6 +158,8 @@ class OfferBase(BaseModel):
     start_date: datetime
     expiry_date: datetime
     max_claims: Optional[int] = Field(None, gt=0)
+    max_claims_per_user: Optional[int] = Field(None, gt=0, description="Maximum units a single user can claim for this offer")
+    min_claims_per_customer: Optional[int] = Field(None, gt=0, description="Minimum units required per claim")
     terms_conditions: Optional[str] = Field(None, max_length=2000)
     product_id: Optional[uuid.UUID] = None
 
@@ -198,6 +200,8 @@ class OfferUpdate(BaseModel):
     start_date: Optional[datetime] = None
     expiry_date: Optional[datetime] = None
     max_claims: Optional[int] = Field(None, gt=0)
+    max_claims_per_user: Optional[int] = Field(None, gt=0, description="Maximum units a single user can claim for this offer")
+    min_claims_per_customer: Optional[int] = Field(None, gt=0, description="Minimum units required per claim")
     terms_conditions: Optional[str] = Field(None, max_length=2000)
     product_id: Optional[uuid.UUID] = None
     is_active: Optional[bool] = None
@@ -627,9 +631,11 @@ class OfferBase(BaseModel):
     start_date: datetime
     expiry_date: datetime
     max_claims: Optional[int] = Field(None, gt=0)
+    max_claims_per_user: Optional[int] = Field(None, gt=0, description="Maximum units a single user can claim for this offer")
+    min_claims_per_customer: Optional[int] = Field(None, gt=0, description="Minimum units required per claim")
     terms_conditions: Optional[str] = Field(None, max_length=2000)
     product_id: Optional[uuid.UUID] = None
-    
+
     # New fields for different offer types
     minimum_purchase_amount: Optional[float] = Field(None, ge=0, description="Minimum purchase required (for minimum_purchase offers)")
     minimum_quantity: Optional[int] = Field(None, gt=0, description="Minimum quantity required (for quantity_discount offers)")
@@ -728,10 +734,12 @@ class OfferUpdate(BaseModel):
     start_date: Optional[datetime] = None
     expiry_date: Optional[datetime] = None
     max_claims: Optional[int] = Field(None, gt=0)
+    max_claims_per_user: Optional[int] = Field(None, gt=0, description="Maximum units a single user can claim for this offer")
+    min_claims_per_customer: Optional[int] = Field(None, gt=0, description="Minimum units required per claim")
     terms_conditions: Optional[str] = Field(None, max_length=2000)
     product_id: Optional[uuid.UUID] = None
     is_active: Optional[bool] = None
-    
+
     # New fields for different offer types
     minimum_purchase_amount: Optional[float] = Field(None, ge=0)
     minimum_quantity: Optional[int] = Field(None, gt=0)

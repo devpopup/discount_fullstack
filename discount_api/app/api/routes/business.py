@@ -113,12 +113,12 @@ async def list_my_products(
         processed_products = []
         for product in result.data:
             product_data = convert_decimals_to_float(product)
-            
+
             # Add business info to each product
             product_data["business"] = {
                 "business_name": business_name
             }
-            
+
             # Ensure category data is properly structured
             if product_data.get("categories"):
                 # If categories is returned as object, keep it
@@ -127,7 +127,11 @@ async def list_my_products(
                 # If no category, set default
                 product_data["category"] = None
                 product_data["categories"] = None
-            
+
+            # Get count of active offers for this product
+            active_offers_result = supabase_admin.table("offers").select("id", count="exact").eq("product_id", product['id']).eq("is_active", True).execute()
+            product_data["active_offers_count"] = active_offers_result.count or 0
+
             processed_products.append(product_data)
         
         total = result.count if result.count else 0
@@ -1295,6 +1299,12 @@ async def list_my_offers(
             if 'products' in offer_data:
                 offer_data['product'] = offer_data['products']
                 del offer_data['products']
+
+            # Calculate total units claimed for this offer
+            claims_result = supabase_admin.table("claimed_offers").select("quantity").eq("offer_id", offer['id']).execute()
+            total_units_claimed = sum(claim.get("quantity", 1) for claim in (claims_result.data or []))
+            offer_data['total_units_claimed'] = total_units_claimed
+
             offers_data.append(offer_data)
         
         return {
@@ -1465,6 +1475,7 @@ async def create_offer(
             "start_date": offer_data["start_date"],
             "expiry_date": offer_data["expiry_date"],
             "max_claims": int(offer_data["max_claims"]) if offer_data.get("max_claims") else None,
+            "max_claims_per_user": int(offer_data["max_claims_per_user"]) if offer_data.get("max_claims_per_user") else None,
             "current_claims": 0,
             "is_active": offer_data.get("is_active", True),
             "terms_conditions": offer_data.get("terms_conditions"),
@@ -1557,7 +1568,12 @@ async def get_offer(
         if 'products' in offer_data:
             offer_data['product'] = offer_data['products']
             del offer_data['products']
-        
+
+        # Calculate total units claimed (sum of quantities from all claims)
+        claims_result = supabase_admin.table("claimed_offers").select("quantity").eq("offer_id", offer_id).execute()
+        total_units_claimed = sum(claim.get("quantity", 1) for claim in (claims_result.data or []))
+        offer_data['total_units_claimed'] = total_units_claimed
+
         return {"offer": offer_data}
         
     except HTTPException:
@@ -1615,6 +1631,7 @@ async def update_offer(
             "start_date": "start_date",
             "expiry_date": "expiry_date",
             "max_claims": "max_claims",
+            "max_claims_per_user": "max_claims_per_user",
             "is_active": "is_active",
             "terms_conditions": "terms_conditions",
             # Geofence and advertising fields
@@ -1640,7 +1657,7 @@ async def update_offer(
                 if db_field in ["discount_value", "minimum_purchase_amount", "get_discount_percentage", "daily_ad_budget"]:
                     if value is not None:
                         update_data[db_field] = float(value)
-                elif db_field in ["minimum_quantity", "buy_quantity", "get_quantity", "max_claims", "geofence_radius"]:
+                elif db_field in ["minimum_quantity", "buy_quantity", "get_quantity", "max_claims", "max_claims_per_user", "geofence_radius"]:
                     if value is not None:
                         update_data[db_field] = int(value)
                 elif db_field in ["geofence_enabled", "auto_advertise"]:
@@ -2159,24 +2176,41 @@ async def delete_offer(
             )
         
         business_id = business_result.data[0]["id"]
-        
+
+        # Check if offer has any claims before attempting deletion
+        claims_check = supabase_admin.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).execute()
+
+        if claims_check.count and claims_check.count > 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot delete offer with existing claims. This offer has {claims_check.count} claim(s). Please contact support if you need to remove this offer."
+            )
+
         # Delete offer
         result = supabase_admin.table("offers").delete().eq("id", offer_id).eq("business_id", business_id).execute()
-        
+
         if not result.data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Offer not found"
             )
-        
+
         return MessageResponse(message="Offer deleted successfully")
-        
+
     except HTTPException:
         raise
     except Exception as e:
+        # Check if it's a foreign key constraint error
+        error_str = str(e)
+        if "violates foreign key constraint" in error_str or "23503" in error_str:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete this offer because it has existing claims. Offers with claims cannot be deleted."
+            )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Offer deletion failed: {str(e)}"
+            detail="Failed to delete offer. Please try again or contact support."
         )
 
 
@@ -2323,6 +2357,7 @@ async def verify_claim_for_redemption(
                 "claim_id": claim_id,
                 "claim_type": claimed_offer.get("claim_type", "in_store"),
                 "claimed_at": claimed_offer["claimed_at"],
+                "quantity": claimed_offer.get("quantity", 1),
                 "customer": {
                     "name": f"{customer.get('first_name', '')} {customer.get('last_name', '')}".strip() or "Customer",
                     "email": customer.get("email"),

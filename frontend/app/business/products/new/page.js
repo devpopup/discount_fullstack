@@ -221,10 +221,10 @@ export default function CreateProductPage() {
       activeTab="products"
     >
       <div className="max-w-7xl mx-auto px-4">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => router.back()}
-          className="mb-4 hover:bg-gray-50"
+          className="mb-4 bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Products

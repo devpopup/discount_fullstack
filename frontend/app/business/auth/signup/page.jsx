@@ -398,15 +398,11 @@ export default function BusinessSignup() {
         }
       });
 
-      console.log("Submitting business registration:", dataToSend);
-
       const result = await registerBusiness(dataToSend);
 
       if (result.error) {
         setError(result.error);
       } else {
-        console.log("Registration successful:", result);
-
         // Show success state on button
         setShowSuccess(true);
 

@@ -8,6 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { 
   DropdownMenu,
@@ -75,6 +85,17 @@ export default function OffersPage() {
   const [pagination, setPagination] = useState({})
   const ITEMS_PER_PAGE = 12
 
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState({
+    isOpen: false,
+    offerId: null,
+    offerTitle: '',
+    canDelete: true,
+    unitsClaimedCount: 0,
+    isDeleting: false
+  })
+
+
   // Offer status calculation to match backend
   const getOfferStatus = (offer) => {
     const now = new Date()
@@ -111,7 +132,6 @@ export default function OffersPage() {
   const fetchOffers = async () => {
     try {
       setError(null)
-      console.log('Fetching offers...')
       
       const params = {
         page: currentPage,
@@ -222,20 +242,66 @@ export default function OffersPage() {
     }
   }
 
-  const handleDelete = async (offerId) => {
-    if (window.confirm('Are you sure you want to delete this offer? This action cannot be undone.')) {
-      try {
-        const result = await deleteOffer(offerId)
-        if (result.success) {
-          await fetchOffers() // Refresh the offers list
-        } else {
-          alert('Failed to delete offer: ' + result.error)
-        }
-      } catch (error) {
-        alert('Error deleting offer')
+  // Open delete dialog
+  const handleDelete = (offerId) => {
+    const offer = offers.find(o => o.id === offerId)
+    if (!offer) return
+
+    // Check if offer has claims
+    const hasClaimsValue = offer.total_units_claimed && offer.total_units_claimed > 0
+
+    // Delay opening the dialog to allow DropdownMenu to close first
+    // This prevents focus trap issues with aria-hidden
+    // 200ms allows for complete animation and focus release
+    setTimeout(() => {
+      setDeleteDialog({
+        isOpen: true,
+        offerId: offerId,
+        offerTitle: offer.title,
+        canDelete: !hasClaimsValue,
+        unitsClaimedCount: offer.total_units_claimed || 0,
+        isDeleting: false
+      })
+    }, 200)
+  }
+
+  // Close delete dialog
+  const closeDeleteDialog = () => {
+    if (deleteDialog.isDeleting) return // Prevent closing while deleting
+
+    setDeleteDialog({
+      isOpen: false,
+      offerId: null,
+      offerTitle: '',
+      canDelete: true,
+      unitsClaimedCount: 0,
+      isDeleting: false
+    })
+  }
+
+  // Confirm delete action
+  const confirmDelete = async () => {
+    if (!deleteDialog.offerId || !deleteDialog.canDelete) return
+
+    try {
+      setDeleteDialog(prev => ({ ...prev, isDeleting: true }))
+
+      const result = await deleteOffer(deleteDialog.offerId)
+
+      if (result.success) {
+        closeDeleteDialog()
+        await fetchOffers() // Refresh the offers list
+      } else {
+        setError('Failed to delete offer: ' + result.error)
+        closeDeleteDialog()
       }
+    } catch (error) {
+      console.error('Error deleting offer:', error)
+      setError('Error deleting offer')
+      closeDeleteDialog()
     }
   }
+
 
   const handleCreateOffer = () => {
     router.push('/business/offers/new')
@@ -479,7 +545,7 @@ export default function OffersPage() {
                   </div>
 
                   {/* Offer Info */}
-                  <div className="px-4 pb-4 flex flex-col flex-grow">
+                  <div className="px-4 pt-4 pb-4 flex flex-col flex-grow">
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="font-semibold text-gray-900 line-clamp-2">{offer.title}</h3>
                     </div>
@@ -507,9 +573,9 @@ export default function OffersPage() {
                         <span className="font-medium">{formatDate(offer.expiry_date)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Claims:</span>
+                        <span className="text-gray-500">Units Claimed:</span>
                         <span className="font-medium">
-                          {offer.current_claims || 0}
+                          {offer.total_units_claimed || 0}
                           {offer.max_claims ? ` / ${offer.max_claims}` : ''}
                         </span>
                       </div>
@@ -634,9 +700,9 @@ export default function OffersPage() {
                             <div className="font-medium">{formatDate(offer.expiry_date)}</div>
                           </div>
                           <div>
-                            <span className="text-gray-500">Claims:</span>
+                            <span className="text-gray-500">Units Claimed:</span>
                             <div className="font-medium">
-                              {offer.current_claims || 0}
+                              {offer.total_units_claimed || 0}
                               {offer.max_claims ? ` / ${offer.max_claims}` : ''}
                             </div>
                           </div>
@@ -718,6 +784,79 @@ export default function OffersPage() {
             Create your first offer
           </Button>
         </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog.isOpen && (
+        <AlertDialog
+          key={`delete-${deleteDialog.offerId}-${deleteDialog.canDelete}`}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open && !deleteDialog.isDeleting) {
+              closeDeleteDialog()
+            }
+          }}
+        >
+        <AlertDialogContent onEscapeKeyDown={(e) => {
+          if (deleteDialog.isDeleting) {
+            e.preventDefault()
+          }
+        }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteDialog.canDelete ? 'Delete Offer' : 'Cannot Delete Offer'}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {deleteDialog.canDelete ? (
+                <div className="text-sm text-muted-foreground">
+                  Are you sure you want to delete <strong>"{deleteDialog.offerTitle}"</strong>?
+                  <br />
+                  This action cannot be undone.
+                </div>
+              ) : (
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div>
+                    This offer has <strong>{deleteDialog.unitsClaimedCount} unit(s) claimed</strong> and cannot be deleted.
+                  </div>
+                  <div>
+                    You can <strong>pause</strong> this offer instead to prevent new claims while keeping existing claims active.
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            {deleteDialog.canDelete ? (
+              <>
+                <AlertDialogCancel onClick={closeDeleteDialog} disabled={deleteDialog.isDeleting}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDelete}
+                  disabled={deleteDialog.isDeleting}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {deleteDialog.isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash className="h-4 w-4 mr-2" />
+                      Delete Offer
+                    </>
+                  )}
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction onClick={closeDeleteDialog} className="bg-gray-600 hover:bg-gray-700">
+                OK
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       )}
     </BusinessLayout>
   )

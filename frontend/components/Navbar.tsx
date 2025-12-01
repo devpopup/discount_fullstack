@@ -87,6 +87,7 @@ export default function Navbar() {
                   width={24}
                   height={24}
                   className="absolute left-0 top-0"
+                  style={{ width: 'auto', height: 'auto' }}
                   priority
                 />
                 <span className="absolute left-[28px] top-[2px] text-2xl font-bold text-[#1E3A5F]">

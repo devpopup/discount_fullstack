@@ -87,13 +87,11 @@ export async function getProduct(productId) {
  */
 export async function createProduct(productData) {
   try {
-    console.log('Creating product with data:', productData)
-    
     const response = await makeAuthenticatedRequest('/business/products', {
       method: 'POST',
       body: JSON.stringify(productData),
     })
-    
+
     if (!response || !response.ok) {
       const data = await response?.json()
       console.error('Product creation failed:', data)
@@ -113,8 +111,7 @@ export async function createProduct(productData) {
     }
     
     const data = await response.json()
-    console.log('Product created successfully:', data)
-    
+
     return { success: true, product: data.product || data }
   } catch (error) {
     console.error('Create product error:', error)
@@ -127,8 +124,6 @@ export async function createProduct(productData) {
  */
 export async function updateProduct(productId, productData) {
   try {
-    console.log('Updating product:', productId, 'with data:', productData)
-    
     const response = await makeAuthenticatedRequest(`/business/products/${productId}`, {
       method: 'PATCH', // FIXED: Changed from PUT to PATCH to match backend
       body: JSON.stringify(productData),
@@ -153,7 +148,6 @@ export async function updateProduct(productId, productData) {
     }
     
     const data = await response.json()
-    console.log('Product updated successfully:', data)
     
     return { success: true, product: data.product || data }
   } catch (error) {
@@ -167,25 +161,37 @@ export async function updateProduct(productId, productData) {
  */
 export async function deleteProduct(productId) {
   try {
-    console.log('Deleting product:', productId)
-    
+
     const response = await makeAuthenticatedRequest(`/business/products/${productId}`, {
       method: 'DELETE',
     })
-    
-    if (!response || !response.ok) {
-      const data = await response?.json()
-      console.error('Product deletion failed:', data)
-      return { error: data?.detail || 'Failed to delete product' }
+
+    if (!response) {
+      return { error: 'No response from server' }
     }
-    
-    const data = await response.json()
-    console.log('Product deleted successfully:', data)
-    
+
+    // Parse response body
+    let data
+    try {
+      data = await response.json()
+    } catch (e) {
+      console.error('Failed to parse response:', e)
+      data = {}
+    }
+
+    if (!response.ok) {
+      console.error('Product deletion failed:', data)
+      return {
+        success: false,
+        error: data?.detail || data?.message || 'Failed to delete product'
+      }
+    }
+
+
     return { success: true, message: data.message || 'Product deleted successfully' }
   } catch (error) {
     console.error('Delete product error:', error)
-    return { error: 'Network error. Please try again.' }
+    return { success: false, error: 'Network error. Please try again.' }
   }
 }
 
@@ -194,7 +200,6 @@ export async function deleteProduct(productId) {
  */
 export async function uploadProductImage(imageFile) {
   try {
-    console.log('Uploading image file:', imageFile.name, imageFile.size, 'bytes')
     
     const formData = new FormData()
     formData.append('image', imageFile)
@@ -221,7 +226,6 @@ export async function uploadProductImage(imageFile) {
     }
 
     const data = await response.json()
-    console.log('Image uploaded successfully:', data)
     
     return { 
       success: true, 

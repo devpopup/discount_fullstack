@@ -101,7 +101,6 @@ export default function SettingsPage() {
           
           if (result.success && result.data) {
             const profileData = result.data
-            console.log('Settings: Profile data received:', profileData)
             setFormData({
               business_name: profileData.business?.business_name || profileData.business_name || user.business_name || '',
               address: profileData.business?.business_address || profileData.address || user.address || '',
@@ -220,7 +219,6 @@ export default function SettingsPage() {
         }
       })
 
-      console.log('Sending business profile update:', apiData)
       const result = await apiRequest(endpoints.businessProfile, {
         method: 'PUT',
         headers: {
@@ -412,7 +410,6 @@ export default function SettingsPage() {
                     value={formData.address}
                     onChange={(value) => handleInputChange('address', value)}
                     onLocationSelect={(location) => {
-                      console.log('Selected location:', location)
                       if (location) {
                         const locationUpdate = {
                           latitude: location.latitude,
@@ -421,14 +418,12 @@ export default function SettingsPage() {
                           place_id: location.place_id,
                           address_components: location.address_components
                         }
-                        console.log('Updating form with location data:', locationUpdate)
                         setFormData(prev => ({
                           ...prev,
                           ...locationUpdate
                         }))
                       } else {
                         // Clear location data when location is null
-                        console.log('Clearing location data')
                         setFormData(prev => ({
                           ...prev,
                           latitude: null,

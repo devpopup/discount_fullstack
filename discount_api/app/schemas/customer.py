@@ -38,6 +38,7 @@ class ClaimOfferRequest(BaseModel):
     """Request schema for claiming an offer"""
     claim_type: str = Field(..., pattern="^(online|in_store)$", description="Type of claim: 'online' or 'in_store'")
     redirect_url: Optional[str] = Field(None, description="Optional redirect URL for online claims")
+    quantity: Optional[int] = Field(1, ge=1, description="Quantity of items to claim (default: 1)")
 
 
 class ClaimInfo(BaseModel):

@@ -5,9 +5,9 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
-import { 
+import {
   BarChart3,
-  Tag, 
+  Tag,
   ShoppingBag,
   TrendingUp,
   Settings,
@@ -16,7 +16,8 @@ import {
   RefreshCw,
   User,
   Menu,
-  X
+  X,
+  Ticket
 } from 'lucide-react'
 
 // Sidebar Navigation Component
@@ -26,6 +27,7 @@ function Sidebar({ activeTab, setActiveTab, onLogout, userInfo, isOpen, onClose,
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/business/dashboard' },
     { id: 'offers', label: 'Offers', icon: Tag, path: '/business/offers' },
+    { id: 'redeem', label: 'Redeem', icon: Ticket, path: '/business/redeem' },
     { id: 'products', label: 'Products', icon: ShoppingBag, path: '/business/products' },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp, path: '/business/analytics' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/business/settings' },
@@ -161,7 +163,7 @@ function TopHeader({ title, subtitle, onRefresh, refreshing, showRefresh = false
               size="sm"
               onClick={onRefresh}
               disabled={refreshing}
-              className="hidden sm:flex items-center space-x-2 border-slate-600 text-slate-400 hover:text-white hover:bg-slate-700"
+              className="hidden sm:flex items-center space-x-2 bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               <span className="hidden lg:inline">Refresh</span>

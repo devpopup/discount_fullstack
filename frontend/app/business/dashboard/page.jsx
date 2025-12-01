@@ -446,8 +446,7 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setError(null)
-      console.log('Fetching dashboard data...')
-      
+
       // Fetch business profile for business name
       const profileResult = await apiRequest(endpoints.businessProfile, {
         method: 'GET'

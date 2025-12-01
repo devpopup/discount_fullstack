@@ -50,6 +50,8 @@ function CreateOfferForm() {
     start_date: '',
     expiry_date: '',
     max_claims: '',
+    max_claims_per_user: '',
+    min_claims_per_customer: '',
     terms_conditions: '',
     minimum_purchase_amount: '',
     minimum_quantity: '',
@@ -200,6 +202,8 @@ function CreateOfferForm() {
         start_date: formData.start_date,
         expiry_date: formData.expiry_date,
         max_claims: formData.max_claims ? parseInt(formData.max_claims) : undefined,
+        max_claims_per_user: formData.max_claims_per_user ? parseInt(formData.max_claims_per_user) : undefined,
+        min_claims_per_customer: formData.min_claims_per_customer ? parseInt(formData.min_claims_per_customer) : undefined,
         terms_conditions: formData.terms_conditions.trim() || undefined,
         // Geofence fields
         geofence_enabled: formData.geofence_enabled,
@@ -295,10 +299,10 @@ function CreateOfferForm() {
       activeTab="offers"
     >
       <div className="max-w-7xl mx-auto px-4">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => router.back()}
-          className="mb-4 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+          className="mb-4 bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
@@ -572,46 +576,80 @@ function CreateOfferForm() {
                   </div>
 
                   {/* Date and Claims Configuration */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-white font-medium text-sm flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Start Date *
-                      </Label>
-                      <Input
-                        name="start_date"
-                        type="date"
-                        value={formData.start_date}
-                        onChange={handleInputChange}
-                        className="bg-[#1e3a5f] border-white/20 text-white h-10"
-                        required
-                      />
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Start Date *
+                        </Label>
+                        <Input
+                          name="start_date"
+                          type="date"
+                          value={formData.start_date}
+                          onChange={handleInputChange}
+                          className="bg-[#1e3a5f] border-white/20 text-white h-10"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          End Date *
+                        </Label>
+                        <Input
+                          name="expiry_date"
+                          type="date"
+                          value={formData.expiry_date}
+                          onChange={handleInputChange}
+                          className="bg-[#1e3a5f] border-white/20 text-white h-10"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm">Maximum Claims (Optional)</Label>
+                        <Input
+                          name="max_claims"
+                          type="number"
+                          min="1"
+                          value={formData.max_claims}
+                          onChange={handleInputChange}
+                          placeholder="Unlimited"
+                          className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 h-10"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-white font-medium text-sm flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        End Date *
-                      </Label>
-                      <Input
-                        name="expiry_date"
-                        type="date"
-                        value={formData.expiry_date}
-                        onChange={handleInputChange}
-                        className="bg-[#1e3a5f] border-white/20 text-white h-10"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white font-medium text-sm">Maximum Claims (Optional)</Label>
-                      <Input
-                        name="max_claims"
-                        type="number"
-                        min="1"
-                        value={formData.max_claims}
-                        onChange={handleInputChange}
-                        placeholder="Unlimited"
-                        className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 h-10"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm">Max Claims Per User (Optional)</Label>
+                        <Input
+                          name="max_claims_per_user"
+                          type="number"
+                          min="1"
+                          value={formData.max_claims_per_user}
+                          onChange={handleInputChange}
+                          placeholder="Unlimited"
+                          className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 h-10"
+                        />
+                        <p className="text-xs text-blue-200">
+                          Maximum units a user can claim
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm">Min Claims Per Customer (Optional)</Label>
+                        <Input
+                          name="min_claims_per_customer"
+                          type="number"
+                          min="1"
+                          value={formData.min_claims_per_customer}
+                          onChange={handleInputChange}
+                          placeholder="1"
+                          className="bg-[#1e3a5f] border-white/20 text-white placeholder:text-gray-400 h-10"
+                        />
+                        <p className="text-xs text-blue-200">
+                          Minimum units required per claim
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -642,7 +680,7 @@ function CreateOfferForm() {
                       type="button"
                       variant="outline"
                       onClick={() => router.back()}
-                      className="flex-1 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 h-11"
+                      className="flex-1 bg-white text-gray-900 border-gray-300 hover:bg-gray-100 h-11"
                       disabled={loading}
                     >
                       Cancel
@@ -716,7 +754,12 @@ function CreateOfferForm() {
                         </p>
                         {formData.max_claims && (
                           <p className="text-xs text-blue-200 mt-1">
-                            Limited to {formData.max_claims} claims
+                            Limited to {formData.max_claims} total claims
+                          </p>
+                        )}
+                        {formData.max_claims_per_user && (
+                          <p className="text-xs text-blue-200 mt-1">
+                            Max {formData.max_claims_per_user} claim(s) per user
                           </p>
                         )}
                       </div>

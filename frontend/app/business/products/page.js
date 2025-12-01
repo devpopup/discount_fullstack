@@ -85,6 +85,8 @@ export default function ProductsPage() {
     isOpen: false,
     productId: null,
     productName: '',
+    canDelete: true,
+    errorMessage: '',
     isDeleting: false
   })
 
@@ -189,12 +191,24 @@ export default function ProductsPage() {
 
   // Open delete confirmation dialog
   const openDeleteDialog = (product) => {
-    setDeleteDialog({
-      isOpen: true,
-      productId: product.id,
-      productName: product.name,
-      isDeleting: false
-    })
+    // Check if product has active offers
+    const hasActiveOffers = product.active_offers_count && product.active_offers_count > 0
+
+    // Delay opening the dialog to allow DropdownMenu to close first
+    // This prevents focus trap issues with aria-hidden
+    // 200ms allows for complete animation and focus release
+    setTimeout(() => {
+      setDeleteDialog({
+        isOpen: true,
+        productId: product.id,
+        productName: product.name,
+        canDelete: !hasActiveOffers,
+        errorMessage: hasActiveOffers
+          ? `This product has ${product.active_offers_count} active offer(s). Please deactivate or delete the offers first.`
+          : '',
+        isDeleting: false
+      })
+    }, 200)
   }
 
   // Close delete dialog
@@ -204,6 +218,8 @@ export default function ProductsPage() {
         isOpen: false,
         productId: null,
         productName: '',
+        canDelete: true,
+        errorMessage: '',
         isDeleting: false
       })
     }
@@ -211,23 +227,34 @@ export default function ProductsPage() {
 
   // Handle actual delete
   const handleConfirmDelete = async () => {
-    if (!deleteDialog.productId) return
+    if (!deleteDialog.productId || !deleteDialog.canDelete) return
 
     try {
       setDeleteDialog(prev => ({ ...prev, isDeleting: true }))
-      
+
       const result = await deleteProduct(deleteDialog.productId)
-      
+
       if (result.success) {
         // Refresh the products list
-        await fetchProducts()
         closeDeleteDialog()
-        
-        // Show success message briefly
+        await fetchProducts()
         setError(null)
       } else {
-        setError('Failed to delete product: ' + (typeof result.error === 'string' ? result.error : 'Unknown error'))
-        closeDeleteDialog()
+        // Check if error is about active offers
+        const errorMsg = typeof result.error === 'string' ? result.error : 'Unknown error'
+
+        if (errorMsg.includes('active offers') || errorMsg.includes('Cannot delete product')) {
+          // Update dialog to show cannot delete message
+          setDeleteDialog(prev => ({
+            ...prev,
+            canDelete: false,
+            errorMessage: errorMsg,
+            isDeleting: false
+          }))
+        } else {
+          setError('Failed to delete product: ' + errorMsg)
+          closeDeleteDialog()
+        }
       }
     } catch (error) {
       console.error('Error deleting product:', error)
@@ -347,7 +374,7 @@ export default function ProductsPage() {
               variant="outline"
               size="sm"
               onClick={() => handleSort('name')}
-              className="text-sm whitespace-nowrap bg-slate-800 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+              className="text-sm whitespace-nowrap bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
             >
               Name {getSortIcon('name')}
             </Button>
@@ -355,7 +382,7 @@ export default function ProductsPage() {
               variant="outline"
               size="sm"
               onClick={() => handleSort('price')}
-              className="text-sm whitespace-nowrap bg-slate-800 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+              className="text-sm whitespace-nowrap bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
             >
               Price {getSortIcon('price')}
             </Button>
@@ -363,7 +390,7 @@ export default function ProductsPage() {
               variant="outline"
               size="sm"
               onClick={() => handleSort('created_at')}
-              className="text-sm whitespace-nowrap bg-slate-800 border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700"
+              className="text-sm whitespace-nowrap bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
             >
               Date {getSortIcon('created_at')}
             </Button>
@@ -398,7 +425,7 @@ export default function ProductsPage() {
         /* Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
-            <Card key={product.id} className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-[420px] flex flex-col overflow-hidden py-0">
+            <Card key={product.id} className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-[360px] flex flex-col overflow-hidden py-0">
               <CardContent className="p-0 flex flex-col h-full">
                 {/* Product Image */}
                 <div className="relative h-48 bg-gray-200 overflow-hidden rounded-t-lg">
@@ -474,7 +501,7 @@ export default function ProductsPage() {
                 </div>
 
                 {/* Product Info */}
-                <div className="px-4 pb-4 flex flex-col flex-grow">
+                <div className="px-4 pt-4 pb-4 flex flex-col flex-grow">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
                   </div>
@@ -685,45 +712,81 @@ export default function ProductsPage() {
       )}
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog.isOpen} onOpenChange={closeDeleteDialog}>
-        <AlertDialogContent>
+      {deleteDialog.isOpen && (
+        <AlertDialog
+          key={`delete-${deleteDialog.productId}-${deleteDialog.canDelete}`}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open && !deleteDialog.isDeleting) {
+              closeDeleteDialog()
+            }
+          }}
+        >
+        <AlertDialogContent onEscapeKeyDown={(e) => {
+          if (deleteDialog.isDeleting) {
+            e.preventDefault()
+          }
+        }}>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Trash className="h-5 w-5 text-red-600" />
-              Delete Product
+              {deleteDialog.canDelete ? 'Delete Product' : 'Cannot Delete Product'}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>"{deleteDialog.productName}"</strong>? 
-              This action cannot be undone and will permanently remove the product and all associated offers.
+            <AlertDialogDescription asChild>
+              {deleteDialog.canDelete ? (
+                <div className="text-sm text-muted-foreground">
+                  Are you sure you want to delete <strong>"{deleteDialog.productName}"</strong>?
+                  <br />
+                  This action cannot be undone and will permanently remove the product and all associated offers.
+                </div>
+              ) : (
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div>
+                    <strong>"{deleteDialog.productName}"</strong> cannot be deleted.
+                  </div>
+                  <div>
+                    {deleteDialog.errorMessage || 'This product has active offers. Please deactivate or delete the offers first.'}
+                  </div>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={closeDeleteDialog}
-              disabled={deleteDialog.isDeleting}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={deleteDialog.isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {deleteDialog.isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete Product
-                </>
-              )}
-            </AlertDialogAction>
+            {deleteDialog.canDelete ? (
+              <>
+                <AlertDialogCancel
+                  onClick={closeDeleteDialog}
+                  disabled={deleteDialog.isDeleting}
+                >
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleConfirmDelete}
+                  disabled={deleteDialog.isDeleting}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {deleteDialog.isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash className="h-4 w-4 mr-2" />
+                      Delete Product
+                    </>
+                  )}
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction onClick={closeDeleteDialog} className="bg-gray-600 hover:bg-gray-700">
+                OK
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      )}
     </BusinessLayout>
   )
 }

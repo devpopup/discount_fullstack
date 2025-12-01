@@ -23,12 +23,8 @@ export async function POST(request) {
     url.searchParams.append('components', 'country:us|country:ca')
     url.searchParams.append('key', apiKey)
 
-    console.log('Making request to Google Places API:', url.toString().replace(apiKey, 'HIDDEN_KEY'))
-
     const response = await fetch(url.toString())
     const data = await response.json()
-
-    console.log('Google Places API response:', { status: data.status, predictions_count: data.predictions?.length, error: data.error_message })
 
     if (data.status === 'OK') {
       return NextResponse.json({ predictions: data.predictions })

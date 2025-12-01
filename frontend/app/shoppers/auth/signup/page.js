@@ -64,7 +64,6 @@ export default function ShopperSignup() {
     }
 
     try {
-      console.log('Starting signup process...')
       
       const signupData = {
         first_name: formData.firstName,
@@ -87,7 +86,6 @@ export default function ShopperSignup() {
         return
       }
 
-      console.log('Signup successful, user:', result.user)
       login(result.user)
       
       setTimeout(() => {

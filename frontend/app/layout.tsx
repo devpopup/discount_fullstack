@@ -42,6 +42,7 @@ import AuthWrapper from '@/components/AuthWrapper'
 import { Toaster } from '@/components/ui/sonner'
 import { ReactQueryProvider } from '@/lib/react-query-provider'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { ClaimProvider } from '@/context/ClaimContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -94,11 +95,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <ErrorBoundary>
           <ReactQueryProvider>
             <AuthWrapper>
-              {children}
+              <ClaimProvider>
+                {children}
+              </ClaimProvider>
             </AuthWrapper>
             <Toaster
               position="top-right"

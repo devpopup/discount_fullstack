@@ -88,6 +88,7 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
                 isClaimed={claimedIds.has(deal.id)}
                 onFavoriteChange={onFavoriteChange}
                 onClaimChange={onClaimChange}
+                priority={index === 0}
               />
             ))}
           </div>
@@ -166,7 +167,6 @@ export default function ShoppersHome() {
         location = await getUserLocation()
       } catch (locationError) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('Using default location:', locationError.message)
         }
       }
       setUserLocation(location)
@@ -202,11 +202,7 @@ export default function ShoppersHome() {
     const loadAllDeals = async () => {
       setAllDealsLoading(true)
       try {
-        console.log('🔄 Fetching all deals...')
         const result = await getAllOffers({ page: 1, size: cardsToShow })
-        console.log('📦 All deals result:', result)
-        console.log('📊 All deals offers (raw):', result.offers)
-        console.log('📄 All deals pagination:', result.pagination)
         if (result.error) {
           console.error('❌ Error loading all deals:', result.error)
         } else {
@@ -215,8 +211,6 @@ export default function ShoppersHome() {
             .map(offer => transformOfferDataWithDistance(offer, userLocation))
             .filter(offer => offer && offer.id)
 
-          console.log('📊 All deals offers (transformed):', transformedOffers)
-          console.log(`✅ Successfully loaded ${transformedOffers.length} deals`)
           setAllDeals(transformedOffers)
         }
       } catch (error) {

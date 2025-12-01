@@ -11,18 +11,9 @@ export async function GET() {
     // Test with a simple, known working query
     const testInput = "New York"
     const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${testInput}&key=${apiKey}`
-    
-    console.log('Testing Google Places API with:', testInput)
-    
+
     const response = await fetch(url)
     const data = await response.json()
-    
-    console.log('Google API test response:', {
-      status: data.status,
-      predictions_count: data.predictions?.length,
-      error_message: data.error_message,
-      first_prediction: data.predictions?.[0]?.description
-    })
 
     return NextResponse.json({
       test_input: testInput,
