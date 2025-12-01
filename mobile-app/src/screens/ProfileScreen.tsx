@@ -19,6 +19,7 @@ type RootStackParamList = {
   Favorites: undefined;
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
+  Redemption: undefined;
 };
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -107,6 +108,17 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
       {/* Profile Options */}
       <View style={styles.section}>
+        {/* Business-only option */}
+        {user.is_business && (
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => navigation.navigate('Redemption')}
+          >
+            <Text style={styles.optionText}>Redeem Offers</Text>
+            <Text style={styles.optionArrow}>›</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Edit Profile - Temporarily hidden
         <TouchableOpacity
           style={styles.option}

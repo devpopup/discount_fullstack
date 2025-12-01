@@ -13,6 +13,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import RedemptionScreen from '../screens/RedemptionScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   EditProfile: undefined;
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
+  Redemption: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -132,6 +134,14 @@ export default function AppNavigator() {
           component={PrivacyPolicyScreen}
           options={{
             title: 'Privacy Policy',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="Redemption"
+          component={RedemptionScreen}
+          options={{
+            title: 'Redeem Offer',
             headerBackTitle: 'Back',
           }}
         />

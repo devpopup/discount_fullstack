@@ -134,6 +134,19 @@ export default function ClaimCard({ claim, onPress, onLocationPress, onUnclaim }
             </TouchableOpacity>
           )}
 
+          {/* Redemption Code - Prominently displayed for unredeemed claims */}
+          {!claim.is_redeemed && claim.unique_claim_id && (
+            <View style={styles.claimCodeBox}>
+              <Text style={styles.claimCodeLabel}>Your Redemption Code</Text>
+              <Text style={styles.claimCodeText} selectable={true}>
+                {claim.unique_claim_id}
+              </Text>
+              <Text style={styles.claimCodeHint}>
+                Show this code to the merchant at checkout
+              </Text>
+            </View>
+          )}
+
           {/* Claimed Date */}
           {claimedDate && (
             <Text style={styles.claimedDate}>
@@ -151,7 +164,7 @@ export default function ClaimCard({ claim, onPress, onLocationPress, onUnclaim }
             <View style={styles.instructionsBox}>
               <Text style={styles.instructionsText}>
                 <Text style={styles.instructionsLabel}>To redeem: </Text>
-                Visit the store and show this claimed offer to the merchant
+                Show your redemption code to the merchant at checkout
               </Text>
             </View>
           )}
@@ -277,6 +290,45 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: '#6b7280',
+  },
+  claimCodeBox: {
+    backgroundColor: '#e94e1b',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#d13f16',
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  claimCodeLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  claimCodeText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    fontFamily: 'monospace',
+    letterSpacing: 6,
+    textAlign: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  claimCodeHint: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   claimedDate: {
     fontSize: 11,

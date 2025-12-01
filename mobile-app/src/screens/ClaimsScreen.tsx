@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -28,9 +28,10 @@ interface ClaimsScreenProps {
 
 export default function ClaimsScreen({ navigation }: ClaimsScreenProps) {
   const { isAuthenticated, user } = useAuth();
-  const [claims, setClaims] = useState<any[]>([]);
+  const [allClaims, setAllClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'redeemed'>('pending');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -38,7 +39,7 @@ export default function ClaimsScreen({ navigation }: ClaimsScreenProps) {
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated]); // Only load on auth change, not filter change
 
   const loadClaims = async () => {
     setLoading(true);
@@ -48,7 +49,8 @@ export default function ClaimsScreen({ navigation }: ClaimsScreenProps) {
         console.error('Error loading claims:', result.error);
         Alert.alert('Error', 'Failed to load your claimed offers');
       } else {
-        setClaims(result.claimedOffers);
+        // Store all claims, filtering happens in useMemo
+        setAllClaims(result.claimedOffers);
       }
     } catch (error) {
       console.error('Error loading claims:', error);
@@ -58,6 +60,16 @@ export default function ClaimsScreen({ navigation }: ClaimsScreenProps) {
       setRefreshing(false);
     }
   };
+
+  // Memoized filtering - only re-computes when allClaims or filter changes
+  const filteredClaims = useMemo(() => {
+    if (filter === 'pending') {
+      return allClaims.filter((claim: any) => !claim.is_redeemed);
+    } else if (filter === 'redeemed') {
+      return allClaims.filter((claim: any) => claim.is_redeemed);
+    }
+    return allClaims; // 'all'
+  }, [allClaims, filter]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -144,14 +156,25 @@ export default function ClaimsScreen({ navigation }: ClaimsScreenProps) {
     );
   }
 
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyTitle}>No claims yet</Text>
-      <Text style={styles.emptyText}>
-        When you claim offers, they will appear here.
-      </Text>
-    </View>
-  );
+  const renderEmpty = () => {
+    let title = 'No claims yet';
+    let message = 'When you claim offers, they will appear here.';
+
+    if (filter === 'pending') {
+      title = 'No pending claims';
+      message = "You don't have any pending claims. Browse deals to claim offers!";
+    } else if (filter === 'redeemed') {
+      title = 'No redeemed claims';
+      message = "You haven't redeemed any offers yet.";
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>{title}</Text>
+        <Text style={styles.emptyText}>{message}</Text>
+      </View>
+    );
+  };
 
   const renderItem = ({ item }: { item: any }) => (
     <ClaimCard
@@ -164,8 +187,38 @@ export default function ClaimsScreen({ navigation }: ClaimsScreenProps) {
 
   return (
     <View style={styles.container}>
+      {/* Filter Buttons */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterButton, filter === 'pending' && styles.filterButtonActive]}
+          onPress={() => setFilter('pending')}
+        >
+          <Text style={[styles.filterButtonText, filter === 'pending' && styles.filterButtonTextActive]}>
+            Pending
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterButton, filter === 'redeemed' && styles.filterButtonActive]}
+          onPress={() => setFilter('redeemed')}
+        >
+          <Text style={[styles.filterButtonText, filter === 'redeemed' && styles.filterButtonTextActive]}>
+            Redeemed
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
+          onPress={() => setFilter('all')}
+        >
+          <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
+            All
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
-        data={claims}
+        data={filteredClaims}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
@@ -182,6 +235,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 15,
+    paddingTop: 15,
+    paddingBottom: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: '#e94e1b',
+    borderColor: '#e94e1b',
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  filterButtonTextActive: {
+    color: '#fff',
   },
   loadingContainer: {
     flex: 1,
