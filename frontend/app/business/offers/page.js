@@ -315,6 +315,16 @@ export default function OffersPage() {
     })
   }
 
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   const getDiscountDisplay = (offer) => {
     if (offer.discount_type === 'percentage') {
       return `${offer.discount_value}% off`
@@ -565,12 +575,12 @@ export default function OffersPage() {
                     {/* Offer Details */}
                     <div className="space-y-2 mb-3">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Start Date:</span>
-                        <span className="font-medium">{formatDate(offer.start_date)}</span>
+                        <span className="text-gray-500">Start:</span>
+                        <span className="font-medium">{formatDateTime(offer.start_date)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">End Date:</span>
-                        <span className="font-medium">{formatDate(offer.expiry_date)}</span>
+                        <span className="text-gray-500">End:</span>
+                        <span className="font-medium">{formatDateTime(offer.expiry_date)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Units Claimed:</span>
@@ -693,11 +703,11 @@ export default function OffersPage() {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3 text-sm">
                           <div>
                             <span className="text-gray-500">Start:</span>
-                            <div className="font-medium">{formatDate(offer.start_date)}</div>
+                            <div className="font-medium">{formatDateTime(offer.start_date)}</div>
                           </div>
                           <div>
                             <span className="text-gray-500">End:</span>
-                            <div className="font-medium">{formatDate(offer.expiry_date)}</div>
+                            <div className="font-medium">{formatDateTime(offer.expiry_date)}</div>
                           </div>
                           <div>
                             <span className="text-gray-500">Units Claimed:</span>

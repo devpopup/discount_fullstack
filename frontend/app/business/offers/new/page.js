@@ -4,6 +4,8 @@ import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import BusinessLayout from '@/components/BusinessLayout'
+import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz'
+import { format } from 'date-fns'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -40,6 +42,9 @@ function CreateOfferForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedProductId = searchParams.get('product_id')
+
+  // Get business timezone (default to America/Toronto if not set)
+  const businessTimezone = user?.business?.timezone || user?.timezone || 'America/Toronto'
   
   const [formData, setFormData] = useState({
     title: '',
@@ -47,8 +52,14 @@ function CreateOfferForm() {
     product_id: preselectedProductId || '',
     discount_type: 'percentage',
     discount_value: '',
-    start_date: '',
-    expiry_date: '',
+    start_date: new Date().toISOString().split('T')[0],
+    expiry_date: (() => {
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      return nextWeek.toISOString().split('T')[0];
+    })(),
+    start_time: '09:00',
+    expiry_time: '17:00',
     max_claims: '',
     max_claims_per_user: '',
     min_claims_per_customer: '',
@@ -72,17 +83,6 @@ function CreateOfferForm() {
     fetchProducts()
   }, [])
 
-  useEffect(() => {
-    const today = new Date()
-    const nextWeek = new Date(today)
-    nextWeek.setDate(today.getDate() + 7)
-    
-    setFormData(prev => ({
-      ...prev,
-      start_date: today.toISOString().split('T')[0],
-      expiry_date: nextWeek.toISOString().split('T')[0]
-    }))
-  }, [])
 
   const fetchProducts = async () => {
     try {
@@ -125,8 +125,8 @@ function CreateOfferForm() {
   }
 
   const validateForm = () => {
-    const requiredFields = ['product_id', 'discount_type', 'start_date', 'expiry_date']
-    
+    const requiredFields = ['product_id', 'discount_type', 'start_date', 'expiry_date', 'start_time', 'expiry_time']
+
     for (const field of requiredFields) {
       if (!formData[field]) {
         setError(`${field.replace('_', ' ')} is required`)
@@ -134,18 +134,17 @@ function CreateOfferForm() {
       }
     }
 
-    const startDate = new Date(formData.start_date + 'T00:00:00')
-    const expiryDate = new Date(formData.expiry_date + 'T00:00:00')
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const startDateTime = new Date(`${formData.start_date}T${formData.start_time}:00`)
+    const expiryDateTime = new Date(`${formData.expiry_date}T${formData.expiry_time}:00`)
+    const now = new Date()
 
-    if (startDate < today) {
-      setError('Start date cannot be in the past')
+    if (startDateTime < now) {
+      setError('Start date/time cannot be in the past')
       return false
     }
 
-    if (expiryDate <= startDate) {
-      setError('Expiry date must be after start date')
+    if (expiryDateTime <= startDateTime) {
+      setError('Expiry date/time must be after start date/time')
       return false
     }
 
@@ -194,13 +193,31 @@ function CreateOfferForm() {
     setSuccess(false)
 
     try {
+      // Convert business timezone date/time to UTC
+      // The input date/time represents a time in the business timezone
+      const startDateTimeStr = `${formData.start_date}T${formData.start_time}:00`
+      const expiryDateTimeStr = `${formData.expiry_date}T${formData.expiry_time}:00`
+
+      // Parse as naive date and then convert to UTC from business timezone
+      const startDateTimeLocal = new Date(startDateTimeStr)
+      const expiryDateTimeLocal = new Date(expiryDateTimeStr)
+
+      // Convert from business timezone to UTC
+      // fromZonedTime treats the input date as if it's in the specified timezone
+      const startDateUTC = fromZonedTime(startDateTimeLocal, businessTimezone)
+      const expiryDateUTC = fromZonedTime(expiryDateTimeLocal, businessTimezone)
+
+      // Format as ISO string
+      const startDateISO = startDateUTC.toISOString()
+      const expiryDateISO = expiryDateUTC.toISOString()
+
       const offerData = {
         title: formData.title.trim() || undefined,
         description: formData.description.trim() || undefined,
         product_id: formData.product_id,
         discount_type: formData.discount_type,
-        start_date: formData.start_date,
-        expiry_date: formData.expiry_date,
+        start_date: startDateISO,
+        expiry_date: expiryDateISO,
         max_claims: formData.max_claims ? parseInt(formData.max_claims) : undefined,
         max_claims_per_user: formData.max_claims_per_user ? parseInt(formData.max_claims_per_user) : undefined,
         min_claims_per_customer: formData.min_claims_per_customer ? parseInt(formData.min_claims_per_customer) : undefined,
@@ -619,6 +636,37 @@ function CreateOfferForm() {
                         />
                       </div>
                     </div>
+
+                    {/* Time Selection Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm">
+                          Start Time *
+                        </Label>
+                        <Input
+                          name="start_time"
+                          type="time"
+                          value={formData.start_time}
+                          onChange={handleInputChange}
+                          className="bg-[#1e3a5f] border-white/20 text-white h-10"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm">
+                          End Time *
+                        </Label>
+                        <Input
+                          name="expiry_time"
+                          type="time"
+                          value={formData.expiry_time}
+                          onChange={handleInputChange}
+                          className="bg-[#1e3a5f] border-white/20 text-white h-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-white font-medium text-sm">Max Claims Per User (Optional)</Label>
@@ -750,7 +798,11 @@ function CreateOfferForm() {
                           Offer Duration
                         </h5>
                         <p className="text-xs text-blue-200">
-                          {new Date(formData.start_date).toLocaleDateString()} - {new Date(formData.expiry_date).toLocaleDateString()}
+                          {formData.start_time && new Date(`${formData.start_date}T${formData.start_time}`).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          {!formData.start_time && new Date(formData.start_date).toLocaleDateString()}
+                          {' - '}
+                          {formData.expiry_time && new Date(`${formData.expiry_date}T${formData.expiry_time}`).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          {!formData.expiry_time && new Date(formData.expiry_date).toLocaleDateString()}
                         </p>
                         {formData.max_claims && (
                           <p className="text-xs text-blue-200 mt-1">

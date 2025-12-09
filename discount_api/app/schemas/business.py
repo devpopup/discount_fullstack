@@ -170,11 +170,20 @@ class OfferBase(BaseModel):
             raise ValueError('Percentage discount cannot exceed 100%')
         return v
 
+    @field_validator('start_date')
+    @classmethod
+    def validate_start_date(cls, v):
+        from datetime import datetime, timezone
+        # Allow a 1-minute grace period for timezone differences
+        if v < datetime.now(timezone.utc):
+            raise ValueError('Start date/time cannot be in the past')
+        return v
+
     @field_validator('expiry_date')
     @classmethod
     def validate_dates(cls, v, info):
         if 'start_date' in info.data and v <= info.data['start_date']:
-            raise ValueError('Expiry date must be after start date')
+            raise ValueError('Expiry date/time must be after start date/time')
         return v
 
     @field_validator('discounted_price')

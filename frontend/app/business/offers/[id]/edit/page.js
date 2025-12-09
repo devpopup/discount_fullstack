@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import BusinessLayout from '@/components/BusinessLayout'
 import LocationAdvertisingControls from '@/components/LocationAdvertisingControls'
+import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz'
+import { format } from 'date-fns'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -49,6 +51,8 @@ export default function EditOfferPage() {
     discount_value: '',
     start_date: '',
     expiry_date: '',
+    start_time: '09:00',
+    expiry_time: '17:00',
     max_claims: '',
     max_claims_per_user: '',
     min_claims_per_customer: '',
@@ -95,14 +99,28 @@ export default function EditOfferPage() {
       
       // Populate form with offer data
       const offer = offerResult.offer
+
+      // Get business timezone (default to America/Toronto if not set)
+      const businessTimezone = user?.business?.timezone || user?.timezone || 'America/Toronto'
+
+      // Convert UTC dates to business timezone for display
+      const startDateUTC = offer.start_date ? new Date(offer.start_date) : new Date()
+      const expiryDateUTC = offer.expiry_date ? new Date(offer.expiry_date) : new Date()
+
+      // Convert to business timezone
+      const startDateLocal = toZonedTime(startDateUTC, businessTimezone)
+      const expiryDateLocal = toZonedTime(expiryDateUTC, businessTimezone)
+
       setFormData({
         title: offer.title || '',
         description: offer.description || '',
         product_id: offer.product_id || '',
         discount_type: offer.discount_type || 'percentage',
         discount_value: offer.discount_value?.toString() || '',
-        start_date: offer.start_date ? offer.start_date.split('T')[0] : '',
-        expiry_date: offer.expiry_date ? offer.expiry_date.split('T')[0] : '',
+        start_date: format(startDateLocal, 'yyyy-MM-dd'),
+        start_time: format(startDateLocal, 'HH:mm'),
+        expiry_date: format(expiryDateLocal, 'yyyy-MM-dd'),
+        expiry_time: format(expiryDateLocal, 'HH:mm'),
         max_claims: offer.max_claims?.toString() || '',
         max_claims_per_user: offer.max_claims_per_user?.toString() || '',
         min_claims_per_customer: offer.min_claims_per_customer?.toString() || '',
@@ -154,8 +172,8 @@ export default function EditOfferPage() {
   }
 
   const validateForm = () => {
-    const requiredFields = ['product_id', 'discount_type', 'start_date', 'expiry_date']
-    
+    const requiredFields = ['product_id', 'discount_type', 'start_date', 'expiry_date', 'start_time', 'expiry_time']
+
     for (const field of requiredFields) {
       if (!formData[field]) {
         setError(`${field.replace('_', ' ')} is required`)
@@ -163,14 +181,12 @@ export default function EditOfferPage() {
       }
     }
 
-    // Validate dates
-    const startDate = new Date(formData.start_date + 'T00:00:00')
-    const expiryDate = new Date(formData.expiry_date + 'T00:00:00')
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Validate dates with time
+    const startDateTime = new Date(`${formData.start_date}T${formData.start_time}:00`)
+    const expiryDateTime = new Date(`${formData.expiry_date}T${formData.expiry_time}:00`)
 
-    if (expiryDate <= startDate) {
-      setError('Expiry date must be after start date')
+    if (expiryDateTime <= startDateTime) {
+      setError('Expiry date/time must be after start date/time')
       return false
     }
 
@@ -241,14 +257,30 @@ export default function EditOfferPage() {
     setSuccess(false)
 
     try {
+      // Get business timezone (default to America/Toronto if not set)
+      const businessTimezone = user?.business?.timezone || user?.timezone || 'America/Toronto'
+
+      // Convert business timezone date/time to UTC
+      const startDateTimeStr = `${formData.start_date}T${formData.start_time}:00`
+      const expiryDateTimeStr = `${formData.expiry_date}T${formData.expiry_time}:00`
+
+      // Parse as naive date and then convert to UTC from business timezone
+      const startDateTimeLocal = new Date(startDateTimeStr)
+      const expiryDateTimeLocal = new Date(expiryDateTimeStr)
+
+      // Convert from business timezone to UTC
+      // fromZonedTime treats the input date as if it's in the specified timezone
+      const startDateUTC = fromZonedTime(startDateTimeLocal, businessTimezone)
+      const expiryDateUTC = fromZonedTime(expiryDateTimeLocal, businessTimezone)
+
       // Prepare offer data
       const offerData = {
         title: formData.title.trim() || undefined,
         description: formData.description.trim() || undefined,
         product_id: formData.product_id,
         discount_type: formData.discount_type,
-        start_date: formData.start_date,
-        expiry_date: formData.expiry_date,
+        start_date: startDateUTC.toISOString(),
+        expiry_date: expiryDateUTC.toISOString(),
         max_claims: formData.max_claims ? parseInt(formData.max_claims) : undefined,
         max_claims_per_user: formData.max_claims_per_user ? parseInt(formData.max_claims_per_user) : undefined,
         min_claims_per_customer: formData.min_claims_per_customer ? parseInt(formData.min_claims_per_customer) : undefined,
@@ -684,6 +716,37 @@ export default function EditOfferPage() {
                         />
                       </div>
                     </div>
+
+                    {/* Time Selection Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm">
+                          Start Time *
+                        </Label>
+                        <Input
+                          name="start_time"
+                          type="time"
+                          value={formData.start_time}
+                          onChange={handleInputChange}
+                          className="bg-[#1e3a5f] border-white/20 text-white h-10"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-white font-medium text-sm">
+                          End Time *
+                        </Label>
+                        <Input
+                          name="expiry_time"
+                          type="time"
+                          value={formData.expiry_time}
+                          onChange={handleInputChange}
+                          className="bg-[#1e3a5f] border-white/20 text-white h-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-white font-medium text-sm">Max Claims Per User (Optional)</Label>
@@ -815,7 +878,11 @@ export default function EditOfferPage() {
                           Offer Duration
                         </h5>
                         <p className="text-xs text-blue-200">
-                          {new Date(formData.start_date).toLocaleDateString()} - {new Date(formData.expiry_date).toLocaleDateString()}
+                          {formData.start_time && new Date(`${formData.start_date}T${formData.start_time}`).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          {!formData.start_time && new Date(formData.start_date).toLocaleDateString()}
+                          {' - '}
+                          {formData.expiry_time && new Date(`${formData.expiry_date}T${formData.expiry_time}`).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          {!formData.expiry_time && new Date(formData.expiry_date).toLocaleDateString()}
                         </p>
                         {formData.max_claims && (
                           <p className="text-xs text-blue-200 mt-1">

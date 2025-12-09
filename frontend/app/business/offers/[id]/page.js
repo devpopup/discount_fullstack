@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import BusinessLayout from "@/components/BusinessLayout";
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
   Card,
   CardContent,
@@ -211,22 +212,22 @@ export default function OfferDetailPage() {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const businessTimezone = user?.business?.timezone || user?.timezone || 'America/Toronto';
+    const date = new Date(dateString);
+    const zonedDate = toZonedTime(date, businessTimezone);
+
+    return zonedDate.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: businessTimezone,
     });
   };
 
   const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const businessTimezone = user?.business?.timezone || user?.timezone || 'America/Toronto';
+    return formatInTimeZone(new Date(dateString), businessTimezone, "MMM d, yyyy 'at' h:mm a");
   };
 
   const getDiscountDisplay = (offer) => {
@@ -554,20 +555,20 @@ export default function OfferDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Start Date</span>
+                  <span className="text-sm text-gray-600">Start Date & Time</span>
                 </div>
                 <span className="text-sm font-medium">
-                  {formatDate(offer.start_date)}
+                  {formatDateTime(offer.start_date)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">End Date</span>
+                  <span className="text-sm text-gray-600">End Date & Time</span>
                 </div>
                 <span className="text-sm font-medium">
-                  {formatDate(offer.expiry_date)}
+                  {formatDateTime(offer.expiry_date)}
                 </span>
               </div>
 

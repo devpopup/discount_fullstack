@@ -10,6 +10,7 @@ import { useClaims } from '@/context/ClaimContext'
 import { getClaimedOffers } from '@/lib/offers-api'
 import { toast } from 'sonner'
 import Navbar from '@/components/Navbar'
+import { formatInTimeZone } from 'date-fns-tz'
 
 export default function ClaimedOffersPage() {
   const [claims, setClaims] = useState([])
@@ -271,8 +272,7 @@ export default function ClaimedOffersPage() {
 
                         {/* Claimed Date */}
                         <div className="text-xs text-gray-500">
-                          Claimed on {new Date(claim.claimed_at).toLocaleDateString()} at{' '}
-                          {new Date(claim.claimed_at).toLocaleTimeString()}
+                          Claimed on {formatInTimeZone(new Date(claim.claimed_at), offer?.business?.timezone || 'America/Toronto', "MMM d, yyyy 'at' h:mm a")}
                         </div>
 
                         {/* Expiry Warning */}
@@ -310,7 +310,7 @@ export default function ClaimedOffersPage() {
                               } else {
                                 return (
                                   <span className="text-gray-600">
-                                    Valid until {expiryDate.toLocaleDateString()}
+                                    Valid until {formatInTimeZone(expiryDate, offer?.business?.timezone || 'America/Toronto', "MMM d, yyyy")}
                                   </span>
                                 )
                               }
@@ -320,28 +320,28 @@ export default function ClaimedOffersPage() {
 
                         {/* Claim Code Display */}
                         {!claim.is_redeemed && claim.unique_claim_id && (
-                          <div className="mt-3 p-4 bg-gradient-to-br from-[#e94e1b] to-[#d13f16] rounded-lg border-2 border-[#e94e1b] shadow-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Ticket className="w-5 h-5 text-white" />
-                                <span className="text-sm font-semibold text-white">Your Redemption Code</span>
+                          <div className="mt-2 p-3 bg-gradient-to-br from-[#e94e1b] to-[#d13f16] rounded-lg border-2 border-[#e94e1b] shadow-md">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <Ticket className="w-4 h-4 text-white" />
+                                <span className="text-xs font-semibold text-white">Redemption Code</span>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => copyClaimCode(claim.unique_claim_id)}
-                                className="h-8 px-2 text-white hover:bg-white/20"
+                                className="h-6 px-1.5 text-white hover:bg-white/20"
                               >
-                                <Copy className="w-4 h-4" />
+                                <Copy className="w-3.5 h-3.5" />
                               </Button>
                             </div>
-                            <div className="bg-white rounded-md p-3 text-center">
-                              <p className="text-3xl font-bold font-mono tracking-widest text-gray-900 select-all">
+                            <div className="bg-white rounded-md p-2 text-center">
+                              <p className="text-2xl font-bold font-mono tracking-wider text-gray-900 select-all">
                                 {claim.unique_claim_id}
                               </p>
                             </div>
-                            <p className="text-xs text-white/90 mt-2 text-center">
-                              Show this code to the merchant at checkout
+                            <p className="text-xs text-white/90 mt-1.5 text-center">
+                              Show this to the merchant
                             </p>
                           </div>
                         )}
@@ -382,7 +382,7 @@ export default function ClaimedOffersPage() {
                         {claim.is_redeemed && claim.redeemed_at && (
                           <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
                             <p className="text-sm text-green-900">
-                              Redeemed on {new Date(claim.redeemed_at).toLocaleDateString()}
+                              Redeemed on {formatInTimeZone(new Date(claim.redeemed_at), offer?.business?.timezone || 'America/Toronto', "MMM d, yyyy")}
                             </p>
                           </div>
                         )}

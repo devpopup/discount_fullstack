@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import BusinessLayout from '@/components/BusinessLayout'
+import { formatInTimeZone } from 'date-fns-tz'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -321,11 +322,13 @@ export default function ProductOffersPage() {
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+    const businessTimezone = user?.business?.timezone || user?.timezone || 'America/Toronto';
+    return formatInTimeZone(new Date(dateString), businessTimezone, "MMM d, yyyy");
+  }
+
+  const formatDateTime = (dateString) => {
+    const businessTimezone = user?.business?.timezone || user?.timezone || 'America/Toronto';
+    return formatInTimeZone(new Date(dateString), businessTimezone, "MMM d, h:mm a");
   }
 
   const getDiscountDisplay = (offer) => {
@@ -623,7 +626,7 @@ export default function ProductOffersPage() {
                     <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        <span>{formatDate(offer.start_date)}</span>
+                        <span>{formatDateTime(offer.start_date)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
