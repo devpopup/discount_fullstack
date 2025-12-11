@@ -4,3 +4,8 @@ popup_users/
 *.pyc
 __pycache__/
 .newprojectpath
+
+# Standalone documentation and SQL files in root
+/*.sql
+/*.md
+!README.md
