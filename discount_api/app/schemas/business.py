@@ -214,27 +214,6 @@ class OfferUpdate(BaseModel):
     terms_conditions: Optional[str] = Field(None, max_length=2000)
     product_id: Optional[uuid.UUID] = None
     is_active: Optional[bool] = None
-
-
-class OfferResponse(OfferBase):
-    model_config = ConfigDict(from_attributes=True)
-    
-    id: uuid.UUID
-    business_id: uuid.UUID
-    current_claims: int
-    is_active: bool
-    created_at: datetime
-    product: Optional[ProductResponse] = None
-    
-    @field_validator('discount_value', 'original_price', 'discounted_price', mode='before')
-    @classmethod
-    def convert_decimal_to_float(cls, v):
-        """Convert Decimal to float for JSON serialization"""
-        if isinstance(v, Decimal):
-            return float(v)
-        return v
-
-
 # ============================================================================
 # LIST RESPONSES
 # ============================================================================
@@ -256,7 +235,7 @@ class ProductListResponse(BaseModel):
 
 
 class OfferListResponse(BaseModel):
-    offers: List[OfferResponse]
+    offers: List['OfferResponse']
     total: int
     page: int
     size: int
@@ -840,3 +819,5 @@ class BusinessSummary(BaseModel):
     business_name: str
     is_verified: bool
     avatar_url: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None

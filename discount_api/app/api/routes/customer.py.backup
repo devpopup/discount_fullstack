@@ -323,10 +323,9 @@ async def get_expiring_offers(
         expiry_threshold = current_time + timedelta(hours=hours)
         
         # Step 1: Get offers WITHOUT product join
-        # IMPORTANT: Only include offers that have already started (start_date <= now)
         query = supabase.table("offers").select(
             "*, businesses!inner(business_name, is_verified, avatar_url, business_address, latitude, longitude)"
-        ).eq("is_active", True).lte("start_date", current_time.isoformat()).gte("expiry_date", current_time.isoformat()).lte("expiry_date", expiry_threshold.isoformat())
+        ).eq("is_active", True).gte("expiry_date", current_time.isoformat()).lte("expiry_date", expiry_threshold.isoformat())
         
         # Sort by expiry date ascending (most urgent first)
         query = query.order("expiry_date", desc=False).limit(limit)
@@ -1666,298 +1665,6 @@ async def search_offers(
         )
 
 
-# ============================================================================
-# UPCOMING OFFERS & REMINDERS
-# ============================================================================
-
-@router.get("/offers/upcoming", response_model=OfferListResponse)
-async def get_upcoming_offers(
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
-    current_user: Optional[UserProfile] = Depends(get_current_user_optional)
-):
-    """Get upcoming/scheduled offers (start_date in the future)"""
-
-    try:
-        now = datetime.now(timezone.utc)
-
-        # Step 1: Query for upcoming offers WITHOUT product join (like trending/expiring endpoints)
-        # Only get offers where start_date is NOT NULL and is in the future
-        query = supabase.table("offers").select(
-            "*, businesses!inner(id, business_name, business_address, avatar_url, is_verified, latitude, longitude, timezone)",
-            count="exact"
-        ).eq("is_active", True).not_.is_("start_date", "null").gt("start_date", now.isoformat())
-
-        # Apply pagination
-        offset = (page - 1) * limit
-        query = query.order("start_date", desc=False).range(offset, offset + limit - 1)
-
-        result = query.execute()
-
-        if not result.data:
-            return {
-                "offers": [],
-                "total": 0,
-                "page": page,
-                "size": limit,
-                "has_next": False
-            }
-
-        total_count = result.count or 0
-
-        # Step 2: Manually fetch product data for each offer (like trending/expiring endpoints)
-        # Business data is already included from the Supabase join above
-        enriched_offers = []
-        for offer in result.data:
-            # Get product data if product_id exists
-            if offer.get('product_id'):
-                try:
-                    product_result = supabase.table("products").select(
-                        "*, categories(*)"
-                    ).eq("id", offer['product_id']).execute()
-
-                    if product_result.data:
-                        # Use 'products' (plural) to match frontend expectations
-                        offer['products'] = product_result.data[0]
-                    else:
-                        offer['products'] = None
-                except Exception as e:
-                    print(f"  Error fetching product for offer {offer.get('id')}: {e}")
-                    offer['products'] = None
-            else:
-                offer['products'] = None
-
-            enriched_offers.append(offer)
-
-        # Step 3: If user is logged in, check which offers they have reminders for
-        reminder_offer_ids = set()
-        if current_user:
-            reminders_result = supabase.table("offer_reminders").select("offer_id").eq(
-                "user_id", str(current_user.id)
-            ).eq("is_active", True).execute()
-
-            if reminders_result.data:
-                reminder_offer_ids = {r['offer_id'] for r in reminders_result.data}
-
-        # Step 4: Transform data and add reminder status
-        offers_data = []
-        for offer in enriched_offers:
-            offer_data = offer.copy()
-
-            # Ensure business data is preserved
-            if 'businesses' in offer_data:
-                offer_data['business'] = offer_data['businesses']
-                # Keep both for compatibility
-
-            # Use 'product' (singular) to match frontend expectations for detail pages
-            # Keep 'products' for compatibility with list views
-            if 'products' in offer_data and offer_data['products']:
-                offer_data['product'] = offer_data['products']
-
-            # Add display information (like search endpoint does)
-            # TEMPORARILY DISABLED FOR DEBUGGING
-            # offer_data['display_text'] = OfferCalculator.get_offer_display_text(offer_data)
-            # offer_data['conditions_text'] = get_offer_conditions_text(offer_data)
-
-            # Add reminder status
-            offer_data['has_reminder'] = offer_data['id'] in reminder_offer_ids
-
-            offers_data.append(offer_data)
-
-        # Convert decimals
-        offers_data = convert_decimals_to_float(offers_data)
-
-        return {
-            "offers": offers_data,
-            "total": total_count,
-            "page": page,
-            "size": limit,
-            "has_next": (offset + limit) < total_count
-        }
-
-    except Exception as e:
-        print(f"Error fetching upcoming offers: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch upcoming offers: {str(e)}"
-        )
-
-
-@router.post("/offers/{offer_id}/remind", response_model=MessageResponse)
-async def set_offer_reminder(
-    offer_id: str,
-    current_user: UserProfile = Depends(get_current_active_user)
-):
-    """Set a reminder for an upcoming offer"""
-    
-    try:
-        # Verify offer exists and is upcoming
-        offer_result = supabase.table("offers").select("*").eq("id", offer_id).execute()
-        
-        if not offer_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Offer not found"
-            )
-        
-        offer = offer_result.data[0]
-        start_date = datetime.fromisoformat(offer['start_date'].replace('Z', '+00:00'))
-        now = datetime.now(timezone.utc)
-        
-        if start_date <= now:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot set reminder for an offer that has already started"
-            )
-        
-        # Check if reminder already exists
-        existing_reminder = supabase.table("offer_reminders").select("*").eq(
-            "user_id", str(current_user.id)
-        ).eq("offer_id", offer_id).execute()
-        
-        if existing_reminder.data:
-            # Reactivate if it exists
-            supabase.table("offer_reminders").update({
-                "is_active": True,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }).eq("id", existing_reminder.data[0]['id']).execute()
-            
-            return {
-                "message": "Reminder reactivated successfully",
-                "success": True
-            }
-        
-        # Create new reminder
-        reminder_data = {
-            "user_id": str(current_user.id),
-            "offer_id": offer_id,
-            "is_active": True,
-            "notify_via_app": True,
-            "notify_via_push": True,
-            "notify_via_email": False
-        }
-        
-        supabase.table("offer_reminders").insert(reminder_data).execute()
-        
-        return {
-            "message": "Reminder set successfully! You'll be notified when this offer goes live.",
-            "success": True
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error setting reminder: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to set reminder: {str(e)}"
-        )
-
-
-@router.delete("/offers/{offer_id}/remind", response_model=MessageResponse)
-async def remove_offer_reminder(
-    offer_id: str,
-    current_user: UserProfile = Depends(get_current_active_user)
-):
-    """Remove a reminder for an upcoming offer"""
-    
-    try:
-        # Find the reminder
-        reminder_result = supabase.table("offer_reminders").select("*").eq(
-            "user_id", str(current_user.id)
-        ).eq("offer_id", offer_id).eq("is_active", True).execute()
-        
-        if not reminder_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reminder not found"
-            )
-        
-        # Deactivate the reminder
-        supabase.table("offer_reminders").update({
-            "is_active": False,
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }).eq("id", reminder_result.data[0]['id']).execute()
-        
-        return {
-            "message": "Reminder removed successfully",
-            "success": True
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error removing reminder: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to remove reminder: {str(e)}"
-        )
-
-
-@router.get("/reminders")
-async def get_my_reminders(
-    current_user: UserProfile = Depends(get_current_active_user)
-):
-    """Get all active reminders for the current user"""
-    
-    try:
-        # Get active reminders with offer details
-        reminders_result = supabase.table("offer_reminders").select(
-            """
-            *,
-            offers(
-                *,
-                products(*),
-                businesses(
-                    business_name,
-                    business_address,
-                    avatar_url,
-                    is_verified,
-                    latitude,
-                    longitude
-                )
-            )
-            """
-        ).eq("user_id", str(current_user.id)).eq("is_active", True).order(
-            "created_at", desc=True
-        ).execute()
-        
-        if not reminders_result.data:
-            return {
-                "reminders": [],
-                "total": 0
-            }
-        
-        # Filter out reminders for offers that have already started or expired
-        now = datetime.now(timezone.utc)
-        active_reminders = []
-        
-        for reminder in reminders_result.data:
-            if reminder.get('offers'):
-                offer = reminder['offers']
-                start_date = datetime.fromisoformat(offer['start_date'].replace('Z', '+00:00'))
-                expiry_date = datetime.fromisoformat(offer['expiry_date'].replace('Z', '+00:00'))
-                
-                # Only include if offer hasn't started yet and hasn't expired
-                if start_date > now and expiry_date > now:
-                    active_reminders.append(reminder)
-        
-        # Convert decimals
-        active_reminders = convert_decimals_to_float(active_reminders)
-        
-        return {
-            "reminders": active_reminders,
-            "total": len(active_reminders)
-        }
-        
-    except Exception as e:
-        print(f"Error fetching reminders: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch reminders: {str(e)}"
-        )
 @router.get("/offers/{offer_id}", response_model=dict)
 async def get_offer_details(
     offer_id: str,
@@ -2168,3 +1875,261 @@ def convert_decimals_to_float(data):
     else:
         return data
 
+# ============================================================================
+# UPCOMING OFFERS & REMINDERS
+# ============================================================================
+
+@router.get("/offers/upcoming", response_model=OfferListResponse)
+async def get_upcoming_offers(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: Optional[UserProfile] = Depends(get_current_user_optional)
+):
+    """Get upcoming/scheduled offers (start_date in the future)"""
+    
+    try:
+        now = datetime.now(timezone.utc)
+        
+        # Query for upcoming offers
+        query = supabase.table("offers").select(
+            """
+            *,
+            products(*),
+            businesses!inner(
+                id,
+                business_name,
+                business_address,
+                avatar_url,
+                is_verified,
+                latitude,
+                longitude,
+                timezone
+            )
+            """,
+            count="exact"
+        ).eq("is_active", True).gt("start_date", now.isoformat())
+        
+        # Apply pagination
+        offset = (page - 1) * limit
+        query = query.order("start_date", desc=False).range(offset, offset + limit - 1)
+        
+        result = query.execute()
+        
+        if not result.data:
+            return {
+                "offers": [],
+                "total": 0,
+                "page": page,
+                "size": limit,
+                "has_next": False
+            }
+        
+        offers_data = result.data
+        total_count = result.count or 0
+        
+        # If user is logged in, check which offers they have reminders for
+        reminder_offer_ids = set()
+        if current_user:
+            reminders_result = supabase.table("offer_reminders").select("offer_id").eq(
+                "user_id", str(current_user.id)
+            ).eq("is_active", True).execute()
+            
+            if reminders_result.data:
+                reminder_offer_ids = {r['offer_id'] for r in reminders_result.data}
+        
+        # Add reminder status to each offer
+        for offer in offers_data:
+            offer['has_reminder'] = offer['id'] in reminder_offer_ids
+        
+        # Convert decimals
+        offers_data = convert_decimals_to_float(offers_data)
+        
+        return {
+            "offers": offers_data,
+            "total": total_count,
+            "page": page,
+            "size": limit,
+            "has_next": (offset + limit) < total_count
+        }
+        
+    except Exception as e:
+        print(f"Error fetching upcoming offers: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch upcoming offers: {str(e)}"
+        )
+
+
+@router.post("/offers/{offer_id}/remind", response_model=MessageResponse)
+async def set_offer_reminder(
+    offer_id: str,
+    current_user: UserProfile = Depends(get_current_active_user)
+):
+    """Set a reminder for an upcoming offer"""
+    
+    try:
+        # Verify offer exists and is upcoming
+        offer_result = supabase.table("offers").select("*").eq("id", offer_id).execute()
+        
+        if not offer_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Offer not found"
+            )
+        
+        offer = offer_result.data[0]
+        start_date = datetime.fromisoformat(offer['start_date'].replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        
+        if start_date <= now:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot set reminder for an offer that has already started"
+            )
+        
+        # Check if reminder already exists
+        existing_reminder = supabase.table("offer_reminders").select("*").eq(
+            "user_id", str(current_user.id)
+        ).eq("offer_id", offer_id).execute()
+        
+        if existing_reminder.data:
+            # Reactivate if it exists
+            supabase.table("offer_reminders").update({
+                "is_active": True,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }).eq("id", existing_reminder.data[0]['id']).execute()
+            
+            return {
+                "message": "Reminder reactivated successfully",
+                "success": True
+            }
+        
+        # Create new reminder
+        reminder_data = {
+            "user_id": str(current_user.id),
+            "offer_id": offer_id,
+            "is_active": True,
+            "notify_via_app": True,
+            "notify_via_push": True,
+            "notify_via_email": False
+        }
+        
+        supabase.table("offer_reminders").insert(reminder_data).execute()
+        
+        return {
+            "message": "Reminder set successfully! You'll be notified when this offer goes live.",
+            "success": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error setting reminder: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to set reminder: {str(e)}"
+        )
+
+
+@router.delete("/offers/{offer_id}/remind", response_model=MessageResponse)
+async def remove_offer_reminder(
+    offer_id: str,
+    current_user: UserProfile = Depends(get_current_active_user)
+):
+    """Remove a reminder for an upcoming offer"""
+    
+    try:
+        # Find the reminder
+        reminder_result = supabase.table("offer_reminders").select("*").eq(
+            "user_id", str(current_user.id)
+        ).eq("offer_id", offer_id).eq("is_active", True).execute()
+        
+        if not reminder_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reminder not found"
+            )
+        
+        # Deactivate the reminder
+        supabase.table("offer_reminders").update({
+            "is_active": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", reminder_result.data[0]['id']).execute()
+        
+        return {
+            "message": "Reminder removed successfully",
+            "success": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error removing reminder: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to remove reminder: {str(e)}"
+        )
+
+
+@router.get("/reminders")
+async def get_my_reminders(
+    current_user: UserProfile = Depends(get_current_active_user)
+):
+    """Get all active reminders for the current user"""
+    
+    try:
+        # Get active reminders with offer details
+        reminders_result = supabase.table("offer_reminders").select(
+            """
+            *,
+            offers(
+                *,
+                products(*),
+                businesses(
+                    business_name,
+                    business_address,
+                    avatar_url,
+                    is_verified,
+                    latitude,
+                    longitude
+                )
+            )
+            """
+        ).eq("user_id", str(current_user.id)).eq("is_active", True).order(
+            "created_at", desc=True
+        ).execute()
+        
+        if not reminders_result.data:
+            return {
+                "reminders": [],
+                "total": 0
+            }
+        
+        # Filter out reminders for offers that have already started or expired
+        now = datetime.now(timezone.utc)
+        active_reminders = []
+        
+        for reminder in reminders_result.data:
+            if reminder.get('offers'):
+                offer = reminder['offers']
+                start_date = datetime.fromisoformat(offer['start_date'].replace('Z', '+00:00'))
+                expiry_date = datetime.fromisoformat(offer['expiry_date'].replace('Z', '+00:00'))
+                
+                # Only include if offer hasn't started yet and hasn't expired
+                if start_date > now and expiry_date > now:
+                    active_reminders.append(reminder)
+        
+        # Convert decimals
+        active_reminders = convert_decimals_to_float(active_reminders)
+        
+        return {
+            "reminders": active_reminders,
+            "total": len(active_reminders)
+        }
+        
+    except Exception as e:
+        print(f"Error fetching reminders: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch reminders: {str(e)}"
+        )

@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import DealCard from '@/components/DealCard'
 import Navbar from '@/components/Navbar'
 import Featured from '@/components/Featured'
-import { MapPin, TrendingUp, Clock, ArrowRight, Loader2, ChevronRight, Grid } from 'lucide-react'
+import { MapPin, TrendingUp, Clock, ArrowRight, Loader2, ChevronRight, Grid, Sparkles } from 'lucide-react'
 import {
   getUserLocation,
   getDefaultLocation,
   getFavoritedOfferIds,
   getClaimedOfferIds,
   getAllOffers,
+  getUpcomingOffers,
   transformOfferDataWithDistance
 } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
@@ -121,6 +122,8 @@ export default function ShoppersHome() {
   const [allDeals, setAllDeals] = useState([])
   const [allDealsLoading, setAllDealsLoading] = useState(true) // Start with loading true
   const [cardsToShow, setCardsToShow] = useState(4)
+  const [upcomingDeals, setUpcomingDeals] = useState([])
+  const [upcomingLoading, setUpcomingLoading] = useState(false)
   const { user } = useAuth()
 
   // Calculate number of cards based on screen width
@@ -140,6 +143,33 @@ export default function ShoppersHome() {
     window.addEventListener('resize', calculateCards)
     return () => window.removeEventListener('resize', calculateCards)
   }, [])
+
+  // Load upcoming deals
+  useEffect(() => {
+    const loadUpcoming = async () => {
+      // Wait for user location before loading
+      if (!userLocation) return
+
+      setUpcomingLoading(true)
+      try {
+        const result = await getUpcomingOffers({ page: 1, limit: 4 })
+
+        if (result.success) {
+          // Transform the offers with distance calculation
+          const transformedOffers = result.offers
+            .map(offer => transformOfferDataWithDistance(offer, userLocation))
+            .filter(offer => offer && offer.id)
+
+          setUpcomingDeals(transformedOffers)
+        }
+      } catch (error) {
+        console.error('Error loading upcoming offers:', error)
+      } finally {
+        setUpcomingLoading(false)
+      }
+    }
+    loadUpcoming()
+  }, [userLocation])
 
   // Use React Query hooks for data fetching with automatic caching
   const { data: nearbyData, isLoading: nearbyLoading, error: nearbyError } = useNearbyOffers(
@@ -203,8 +233,9 @@ export default function ShoppersHome() {
       setAllDealsLoading(true)
       try {
         const result = await getAllOffers({ page: 1, size: cardsToShow })
+
         if (result.error) {
-          console.error('❌ Error loading all deals:', result.error)
+          console.error('Error loading all deals:', result.error)
         } else {
           // Transform the offers with distance calculation
           const transformedOffers = result.offers
@@ -214,7 +245,7 @@ export default function ShoppersHome() {
           setAllDeals(transformedOffers)
         }
       } catch (error) {
-        console.error('❌ Exception loading all deals:', error)
+        console.error('Exception loading all deals:', error)
       } finally {
         setAllDealsLoading(false)
       }
@@ -282,6 +313,24 @@ export default function ShoppersHome() {
         {/* Content */}
         {!error && (
           <>
+            {/* Coming Soon Section */}
+            {upcomingDeals.length > 0 && (
+              <div id="coming-soon">
+                <DealsSection
+                  title="Coming Soon"
+                  description="Set reminders for upcoming deals"
+                  deals={upcomingDeals}
+                  sectionType="coming-soon"
+                  icon={Sparkles}
+                  userLocation={userLocation}
+                  favoritedIds={favoritedIds}
+                  claimedIds={claimedIds}
+                  onFavoriteChange={handleFavoriteChange}
+                  onClaimChange={handleClaimChange}
+                  loading={upcomingLoading}
+                />
+              </div>
+            )}
 
             {/* Deals Near You */}
             <div id="nearby-deals">
@@ -300,20 +349,20 @@ export default function ShoppersHome() {
               />
             </div>
 
-            {/* All Deals */}
-            <div id="all-deals">
+            {/* Expiring Soon */}
+            <div id="expiring-soon">
               <DealsSection
-                title="All Deals"
-                description="Browse all available offers from local businesses"
-                deals={allDeals}
-                sectionType="all"
-                icon={Grid}
+                title="Expiring Soon"
+                description="Hurry! These deals won't last much longer"
+                deals={expiringSoonDeals}
+                sectionType="expiring"
+                icon={Clock}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
                 claimedIds={claimedIds}
                 onFavoriteChange={handleFavoriteChange}
                 onClaimChange={handleClaimChange}
-                loading={allDealsLoading}
+                loading={expiringLoading}
               />
             </div>
 
@@ -334,20 +383,23 @@ export default function ShoppersHome() {
               />
             </div>
 
-            {/* Expiring Soon */}
-            <DealsSection
-              title="Expiring Soon"
-              description="Hurry! These deals won't last much longer"
-              deals={expiringSoonDeals}
-              sectionType="expiring"
-              icon={Clock}
-              userLocation={userLocation}
-              favoritedIds={favoritedIds}
-              claimedIds={claimedIds}
-              onFavoriteChange={handleFavoriteChange}
-              onClaimChange={handleClaimChange}
-              loading={expiringLoading}
-            />
+            {/* All Deals */}
+            <div id="all-deals">
+              <DealsSection
+                title="All Deals"
+                description="Browse all available offers from local businesses"
+                deals={allDeals}
+                sectionType="all"
+                icon={Grid}
+                userLocation={userLocation}
+                favoritedIds={favoritedIds}
+                claimedIds={claimedIds}
+                onFavoriteChange={handleFavoriteChange}
+                onClaimChange={handleClaimChange}
+                loading={allDealsLoading}
+              />
+            </div>
+
 
             {/* Call to Action */}
             <section className="bg-gradient-to-r from-[#e94e1b] to-red-600 rounded-2xl p-8 text-center text-white">

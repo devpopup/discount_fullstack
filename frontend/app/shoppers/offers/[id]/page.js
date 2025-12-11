@@ -17,9 +17,19 @@ import {
   Store,
   ArrowLeft,
   ExternalLink,
-  Loader2
+  Loader2,
+  Bell,
+  BellOff
 } from 'lucide-react'
-import { getOfferById, getFavoritedOfferIds, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
+import {
+  getOfferById,
+  getFavoritedOfferIds,
+  saveOfferToFavorites,
+  removeOfferFromFavorites,
+  setOfferReminder,
+  removeOfferReminder,
+  getMyReminders
+} from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
 import { useClaims } from '@/context/ClaimContext'
 import { toast } from 'sonner'
@@ -48,6 +58,8 @@ export default function OfferDetailsPage({ params }) {
   const [isFavorited, setIsFavorited] = useState(false)
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
   const [quantity, setQuantity] = useState(1)
+  const [hasReminder, setHasReminder] = useState(false)
+  const [isTogglingReminder, setIsTogglingReminder] = useState(false)
 
   useEffect(() => {
     if (offerId) {
@@ -70,6 +82,12 @@ export default function OfferDetailsPage({ params }) {
         // Check if offer is favorited (if user is logged in)
         if (user) {
           checkIfFavorited()
+
+          // Check if user has a reminder for this offer (if it's upcoming)
+          const isUpcoming = result.offer.start_date && new Date(result.offer.start_date) > new Date()
+          if (isUpcoming) {
+            checkIfReminderSet()
+          }
         }
       } else {
         setError('Offer not found')
@@ -88,6 +106,20 @@ export default function OfferDetailsPage({ params }) {
       setIsFavorited(favoritedIds.has(offerId))
     } catch (err) {
       console.error('Error checking favorite status:', err)
+    }
+  }
+
+  const checkIfReminderSet = async () => {
+    try {
+      const result = await getMyReminders()
+      if (result.success && result.reminders) {
+        const hasReminderForOffer = result.reminders.some(
+          reminder => reminder.offer_id === offerId
+        )
+        setHasReminder(hasReminderForOffer)
+      }
+    } catch (err) {
+      console.error('Error checking reminder status:', err)
     }
   }
 
@@ -220,6 +252,41 @@ export default function OfferDetailsPage({ params }) {
     }
   }
 
+  const handleToggleReminder = async () => {
+    if (!user) {
+      toast.error('Please sign in to set reminders')
+      router.push('/shoppers/auth/signin')
+      return
+    }
+
+    setIsTogglingReminder(true)
+
+    try {
+      if (hasReminder) {
+        const result = await removeOfferReminder(offerId)
+        if (result.success) {
+          setHasReminder(false)
+          toast.success('Reminder removed')
+        } else {
+          toast.error(result.error || 'Failed to remove reminder')
+        }
+      } else {
+        const result = await setOfferReminder(offerId)
+        if (result.success) {
+          setHasReminder(true)
+          toast.success(result.message || "You'll be notified when this offer goes live!")
+        } else {
+          toast.error(result.error || 'Failed to set reminder')
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling reminder:', err)
+      toast.error('Failed to update reminder')
+    } finally {
+      setIsTogglingReminder(false)
+    }
+  }
+
   const handleShare = async () => {
     const shareData = {
       title: offer?.title || 'Check out this offer',
@@ -319,6 +386,7 @@ export default function OfferDetailsPage({ params }) {
   const images = offer.images || []
   const website = offer.business?.business_website || offer.business?.website
   const hasWebsite = website && website.trim() !== ''
+  const isUpcoming = offer.start_date && new Date(offer.start_date) > new Date()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -462,97 +530,149 @@ export default function OfferDetailsPage({ params }) {
                 </div>
               )}
 
-              {/* Quantity Selector */}
-              {canClaimMore(offerId, offer.max_claims_per_user) && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Quantity to Claim
-                    {offer.max_claims_per_user && (
-                      <span className="text-gray-500 ml-1">
-                        (Your quota: {getTotalQuantityClaimed(offerId)}/{offer.max_claims_per_user} units used)
-                      </span>
-                    )}
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
-                      disabled={quantity <= 1}
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      max={offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100}
-                      value={quantity}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1
-                        const max = offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100
-                        setQuantity(Math.min(max, Math.max(1, val)))
-                      }}
-                      className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1b] focus:border-transparent"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const max = offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100
-                        setQuantity(Math.min(max, quantity + 1))
-                      }}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
-                      disabled={offer.max_claims_per_user && (getTotalQuantityClaimed(offerId) + quantity) >= offer.max_claims_per_user}
-                    >
-                      +
-                    </button>
+              {/* Conditional: Show Remind Me for upcoming offers, Claim for active offers */}
+              {isUpcoming ? (
+                // Upcoming offer - show Remind Me button
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">Coming Soon</p>
+                        <p className="text-sm text-blue-700 mt-1">
+                          This offer starts on {new Date(offer.start_date).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {offer.max_claims_per_user && getTotalQuantityClaimed(offerId) > 0
-                      ? `Remaining quota: ${offer.max_claims_per_user - getTotalQuantityClaimed(offerId)} units`
-                      : 'Select how many units you want to claim'}
-                  </p>
-                </div>
-              )}
+                  <Button
+                    onClick={handleToggleReminder}
+                    disabled={isTogglingReminder}
+                    className={`w-full py-6 text-lg font-semibold ${
+                      hasReminder
+                        ? 'bg-amber-600 hover:bg-amber-700'
+                        : 'bg-[#e94e1b] hover:bg-[#d13f16]'
+                    } text-white`}
+                  >
+                    {isTogglingReminder ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        {hasReminder ? 'Removing...' : 'Setting...'}
+                      </>
+                    ) : hasReminder ? (
+                      <>
+                        <BellOff className="w-5 h-5 mr-2" />
+                        Remove Reminder
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="w-5 h-5 mr-2" />
+                        Remind Me
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : (
+                // Active offer - show Claim button with quantity selector
+                <>
+                  {/* Quantity Selector */}
+                  {canClaimMore(offerId, offer.max_claims_per_user) && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Quantity to Claim
+                        {offer.max_claims_per_user && (
+                          <span className="text-gray-500 ml-1">
+                            (Your quota: {getTotalQuantityClaimed(offerId)}/{offer.max_claims_per_user} units used)
+                          </span>
+                        )}
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                          disabled={quantity <= 1}
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max={offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100}
+                          value={quantity}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 1
+                            const max = offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100
+                            setQuantity(Math.min(max, Math.max(1, val)))
+                          }}
+                          className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e94e1b] focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const max = offer.max_claims_per_user ? Math.max(1, offer.max_claims_per_user - getTotalQuantityClaimed(offerId)) : 100
+                            setQuantity(Math.min(max, quantity + 1))
+                          }}
+                          className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                          disabled={offer.max_claims_per_user && (getTotalQuantityClaimed(offerId) + quantity) >= offer.max_claims_per_user}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {offer.max_claims_per_user && getTotalQuantityClaimed(offerId) > 0
+                          ? `Remaining quota: ${offer.max_claims_per_user - getTotalQuantityClaimed(offerId)} units`
+                          : 'Select how many units you want to claim'}
+                      </p>
+                    </div>
+                  )}
 
-              <Button
-                onClick={handleClaimInStore}
-                disabled={claiming || (!canClaimMore(offerId, offer.max_claims_per_user) && !hasUnredeemedClaims(offerId))}
-                className={`w-full py-6 text-lg font-semibold ${
-                  !canClaimMore(offerId, offer.max_claims_per_user) && !hasUnredeemedClaims(offerId)
-                    ? 'bg-gray-500 opacity-70 cursor-not-allowed'
-                    : !canClaimMore(offerId, offer.max_claims_per_user) && hasUnredeemedClaims(offerId)
-                    ? 'bg-amber-600 hover:bg-amber-700'
-                    : 'bg-[#e94e1b] hover:bg-[#d13f16]'
-                } text-white`}
-              >
-                {claiming ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {!canClaimMore(offerId, offer.max_claims_per_user) && hasUnredeemedClaims(offerId) ? 'Unclaiming...' : 'Claiming...'}
-                  </>
-                ) : !canClaimMore(offerId, offer.max_claims_per_user) ? (
-                  hasUnredeemedClaims(offerId) ? (
-                    <>
-                      <Store className="w-5 h-5 mr-2" />
-                      Unclaim One
-                    </>
-                  ) : (
-                    <>
-                      <Store className="w-5 h-5 mr-2" />
-                      Quota Full ({getTotalQuantityClaimed(offerId)}/{offer.max_claims_per_user} units)
-                    </>
-                  )
-                ) : (
-                  <>
-                    <Store className="w-5 h-5 mr-2" />
-                    {getTotalQuantityClaimed(offerId) > 0 && offer.max_claims_per_user
-                      ? `Claim More • ${getTotalQuantityClaimed(offerId)}/${offer.max_claims_per_user} units used`
-                      : getTotalQuantityClaimed(offerId) > 0
-                      ? `Claim More • ${getTotalQuantityClaimed(offerId)} units claimed`
-                      : 'Claim In Store'}
-                  </>
-                )}
-              </Button>
+                  <Button
+                    onClick={handleClaimInStore}
+                    disabled={claiming || (!canClaimMore(offerId, offer.max_claims_per_user) && !hasUnredeemedClaims(offerId))}
+                    className={`w-full py-6 text-lg font-semibold ${
+                      !canClaimMore(offerId, offer.max_claims_per_user) && !hasUnredeemedClaims(offerId)
+                        ? 'bg-gray-500 opacity-70 cursor-not-allowed'
+                        : !canClaimMore(offerId, offer.max_claims_per_user) && hasUnredeemedClaims(offerId)
+                        ? 'bg-amber-600 hover:bg-amber-700'
+                        : 'bg-[#e94e1b] hover:bg-[#d13f16]'
+                    } text-white`}
+                  >
+                    {claiming ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        {!canClaimMore(offerId, offer.max_claims_per_user) && hasUnredeemedClaims(offerId) ? 'Unclaiming...' : 'Claiming...'}
+                      </>
+                    ) : !canClaimMore(offerId, offer.max_claims_per_user) ? (
+                      hasUnredeemedClaims(offerId) ? (
+                        <>
+                          <Store className="w-5 h-5 mr-2" />
+                          Unclaim One
+                        </>
+                      ) : (
+                        <>
+                          <Store className="w-5 h-5 mr-2" />
+                          Quota Full ({getTotalQuantityClaimed(offerId)}/{offer.max_claims_per_user} units)
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <Store className="w-5 h-5 mr-2" />
+                        {getTotalQuantityClaimed(offerId) > 0 && offer.max_claims_per_user
+                          ? `Claim More • ${getTotalQuantityClaimed(offerId)}/${offer.max_claims_per_user} units used`
+                          : getTotalQuantityClaimed(offerId) > 0
+                          ? `Claim More • ${getTotalQuantityClaimed(offerId)} units claimed`
+                          : 'Claim In Store'}
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
 
               <Button
                 onClick={handleGoToWebsite}

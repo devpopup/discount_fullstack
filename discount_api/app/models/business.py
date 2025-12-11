@@ -96,6 +96,31 @@ class Offer(Base):
         return f"<Offer(id={self.id}, title={self.title})>"
 
 
+class OfferReminder(Base):
+    """Track user reminders for upcoming offers"""
+    __tablename__ = "offer_reminders"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False)
+    offer_id = Column(UUID(as_uuid=True), ForeignKey("offers.id", ondelete="CASCADE"), nullable=False)
+
+    # Reminder status
+    is_active = Column(Boolean, default=True, nullable=False)
+    notified_at = Column(DateTime(timezone=True), nullable=True)  # When the user was notified
+
+    # Notification preferences
+    notify_via_app = Column(Boolean, default=True, nullable=False)  # In-app notification
+    notify_via_email = Column(Boolean, default=False, nullable=False)  # Email notification
+    notify_via_push = Column(Boolean, default=True, nullable=False)  # Push notification (for mobile)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<OfferReminder(id={self.id}, user_id={self.user_id}, offer_id={self.offer_id})>"
+
+
 class Category(Base):
     __tablename__ = "categories"
 

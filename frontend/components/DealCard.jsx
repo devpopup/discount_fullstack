@@ -3,8 +3,8 @@
 import { useState, useEffect, memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Tag, Heart, Store } from 'lucide-react'
-import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites } from '@/lib/offers-api'
+import { Tag, Heart, Store, Bell, BellOff } from 'lucide-react'
+import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites, setOfferReminder, removeOfferReminder } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -26,7 +26,9 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
   const [showClaimModal, setShowClaimModal] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
-  const [authAction, setAuthAction] = useState('') // 'favorite' or 'claim'
+  const [authAction, setAuthAction] = useState('') // 'favorite', 'claim', or 'remind'
+  const [hasReminder, setHasReminder] = useState(deal?.has_reminder || false)
+  const [isTogglingReminder, setIsTogglingReminder] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
   const {
@@ -65,19 +67,36 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
 
   const calculateTimeRemaining = (expiresAt) => {
     if (!expiresAt) return 'No expiry'
-    
+
     const now = new Date()
     const expiry = new Date(expiresAt)
     const diff = expiry - now
-    
+
     if (diff <= 0) return 'Expired'
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    
+
     if (days > 0) return `${days}d left`
     if (hours > 0) return `${hours}h left`
     return 'Ending soon'
+  }
+
+  const calculateTimeUntilStart = (startDate) => {
+    if (!startDate) return 'Coming Soon'
+
+    const now = new Date()
+    const start = new Date(startDate)
+    const diff = start - now
+
+    if (diff <= 0) return null // Already started
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+
+    if (days > 0) return `Starts in ${days}d`
+    if (hours > 0) return `Starts in ${hours}h`
+    return 'Starts soon'
   }
 
   const formatDistance = (distance) => {
@@ -95,6 +114,14 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
   useEffect(() => {
     setIsFavorited(initialFavorited)
   }, [initialFavorited])
+
+  // Update reminder state when deal.has_reminder changes
+  useEffect(() => {
+    setHasReminder(deal?.has_reminder || false)
+  }, [deal?.has_reminder])
+
+  // Check if offer is upcoming
+  const isUpcoming = deal?.start_date && new Date(deal.start_date) > new Date()
 
 
   // Handle favorite toggle
@@ -167,6 +194,47 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     setShowClaimModal(true)
   }
 
+  // Handle remind me button click
+  const handleRemindClick = async (e) => {
+    e.preventDefault() // Prevent navigation to offer details
+    e.stopPropagation()
+
+    // Check if user is logged in
+    if (!user) {
+      setAuthAction('remind')
+      setShowAuthDialog(true)
+      return
+    }
+
+    setIsTogglingReminder(true)
+
+    try {
+      let result
+      if (hasReminder) {
+        result = await removeOfferReminder(deal.id)
+        if (result.success) {
+          setHasReminder(false)
+          toast.success('Reminder removed')
+        } else {
+          toast.error(result.error || 'Failed to remove reminder')
+        }
+      } else {
+        result = await setOfferReminder(deal.id)
+        if (result.success) {
+          setHasReminder(true)
+          toast.success("You'll be notified when this offer goes live!")
+        } else {
+          toast.error(result.error || 'Failed to set reminder')
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling reminder:', error)
+      toast.error('Failed to update reminder')
+    } finally {
+      setIsTogglingReminder(false)
+    }
+  }
+
   if (!deal?.id) {
     if (process.env.NODE_ENV === 'development') {
       console.error('DealCard: Missing deal.id', deal)
@@ -190,20 +258,25 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     >
       {/* Deal Image - Full width, 150px height */}
       <div className="relative" style={{ width: '100%', height: '150px', overflow: 'hidden' }}>
-        {images && images.length > 0 ? (
-          <Image
-            src={images[0]}
-            alt={title || 'Product'}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 200px"
-            priority={priority}
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
-            <Tag className="w-12 h-12 text-gray-400" />
-          </div>
-        )}
+        {(() => {
+          // Check multiple possible image sources
+          const imageUrl = images?.[0] || deal?.products?.image_url || deal?.product?.image_url
+
+          return imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={title || 'Product'}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 200px"
+              priority={priority}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
+              <Tag className="w-12 h-12 text-gray-400" />
+            </div>
+          )
+        })()}
 
         {/* Percentage OFF Badge - Top Left */}
         <div
@@ -238,21 +311,32 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
           />
         </button>
 
-        {/* Days Remaining Badge - Bottom Right */}
-        <div
-          className="absolute text-white font-medium"
-          style={{
-            bottom: '8px',
-            right: '8px',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            fontSize: '10px',
-            padding: '4px 8px',
-            borderRadius: '4px'
-          }}
-          suppressHydrationWarning
-        >
-          {calculateTimeRemaining(expiresAt)} left
-        </div>
+        {/* Time Badge - Bottom Right: Shows start time for upcoming, expiry for active */}
+        {(() => {
+          const timeText = isUpcoming
+            ? calculateTimeUntilStart(deal?.start_date)
+            : calculateTimeRemaining(expiresAt)
+
+          // Don't show badge if null (already started)
+          if (!timeText) return null
+
+          return (
+            <div
+              className="absolute text-white font-medium"
+              style={{
+                bottom: '8px',
+                right: '8px',
+                backgroundColor: isUpcoming ? 'rgba(233, 78, 27, 0.9)' : 'rgba(0, 0, 0, 0.7)',
+                fontSize: '10px',
+                padding: '4px 8px',
+                borderRadius: '4px'
+              }}
+              suppressHydrationWarning
+            >
+              {timeText}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Card Content */}
@@ -276,18 +360,45 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
 
         {/* Distance */}
         <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
-          {distance ? `${formatDistance(distance)} away` : 'Distance N/A'}
+          {distance ? formatDistance(distance) : 'Distance N/A'}
         </div>
 
-        {/* Claim Button */}
-        <Button
-          onClick={handleClaimClick}
-          size="sm"
-          className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white text-xs py-1"
-        >
-          <Store className="w-3 h-3 mr-1" />
-          Claim
-        </Button>
+        {/* Conditional Button: Remind Me for upcoming offers, Claim for active offers */}
+        {isUpcoming ? (
+          <Button
+            onClick={handleRemindClick}
+            size="sm"
+            disabled={isTogglingReminder}
+            className={`w-full text-white text-xs py-1 ${
+              hasReminder
+                ? 'bg-gray-600 hover:bg-gray-700'
+                : 'bg-[#e94e1b] hover:bg-[#d13f16]'
+            }`}
+          >
+            {isTogglingReminder ? (
+              <>...</>
+            ) : hasReminder ? (
+              <>
+                <BellOff className="w-3 h-3 mr-1" />
+                Reminder Set
+              </>
+            ) : (
+              <>
+                <Bell className="w-3 h-3 mr-1" />
+                Remind Me
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            onClick={handleClaimClick}
+            size="sm"
+            className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white text-xs py-1"
+          >
+            <Store className="w-3 h-3 mr-1" />
+            Claim
+          </Button>
+        )}
       </div>
     </Link>
 
@@ -305,7 +416,7 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
         <AlertDialogHeader>
           <AlertDialogTitle>Sign in required</AlertDialogTitle>
           <AlertDialogDescription>
-            Please sign in to {authAction === 'favorite' ? 'save offers to your favorites' : 'claim this offer'}.
+            Please sign in to {authAction === 'favorite' ? 'save offers to your favorites' : authAction === 'remind' ? 'set reminders for upcoming offers' : 'claim this offer'}.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -107,7 +107,6 @@ export async function getTrendingOffers({ limit = 10, offset = 0, categoryId = n
     }
 
     const data = await makeOfferRequest(`/customer/offers/trending?${params}`)
-
     // Return the offers from API with pagination info
     return {
       offers: data.offers || [],
@@ -319,6 +318,7 @@ export function transformOfferData(apiOffer) {
     rating: business.rating || apiOffer.rating || null,
     reviewCount: business.review_count || apiOffer.review_count || null,
     expiresAt: apiOffer.expiry_date || apiOffer.offer_expiry_date,
+    start_date: apiOffer.start_date || null, // Preserve start_date for upcoming offers
     claimedCount: apiOffer.current_claims || apiOffer.claimed_count || 0,
     maxClaims: apiOffer.max_claims || null,
     isPopular: apiOffer.is_popular || false,
@@ -327,10 +327,20 @@ export function transformOfferData(apiOffer) {
             apiOffer.product_images ||
             (product && product.image_url ? [constructImageUrl(product.image_url)] : []) ||
             (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
-    latitude: parseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude || 0),
-    longitude: parseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude || 0),
-    // Preserve full business object for detailed pages
-    business: business && Object.keys(business).length > 0 ? business : null
+    latitude: (() => {
+      const lat = business.latitude || apiOffer.business_latitude || apiOffer.latitude
+      return lat ? parseFloat(lat) : null
+    })(),
+    longitude: (() => {
+      const lng = business.longitude || apiOffer.business_longitude || apiOffer.longitude
+      return lng ? parseFloat(lng) : null
+    })(),
+    // Preserve full business, product, and businesses objects for compatibility
+    business: business && Object.keys(business).length > 0 ? business : null,
+    businesses: apiOffer.businesses || null,
+    product: product && Object.keys(product).length > 0 ? product : null,
+    products: apiOffer.products || null,
+    has_reminder: apiOffer.has_reminder || false // Preserve reminder status
   }
 }
 
@@ -425,16 +435,35 @@ export function getDefaultLocation() {
  * Returns distance in kilometers
  */
 export function calculateDistance(lat1, lng1, lat2, lng2) {
+  // Validate all coordinates exist and are valid numbers
   if (!lat1 || !lng1 || !lat2 || !lng2) {
     return null
   }
 
+  // Validate coordinates are within valid ranges
+  // Latitude: -90 to 90, Longitude: -180 to 180
+  const parsedLat1 = parseFloat(lat1)
+  const parsedLng1 = parseFloat(lng1)
+  const parsedLat2 = parseFloat(lat2)
+  const parsedLng2 = parseFloat(lng2)
+
+  if (
+    isNaN(parsedLat1) || isNaN(parsedLng1) || isNaN(parsedLat2) || isNaN(parsedLng2) ||
+    Math.abs(parsedLat1) > 90 || Math.abs(parsedLat2) > 90 ||
+    Math.abs(parsedLng1) > 180 || Math.abs(parsedLng2) > 180
+  ) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Invalid coordinates:', { lat1, lng1, lat2, lng2 })
+    }
+    return null
+  }
+
   const R = 6371 // Earth's radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLng = (lng2 - lng1) * Math.PI / 180
+  const dLat = (parsedLat2 - parsedLat1) * Math.PI / 180
+  const dLng = (parsedLng2 - parsedLng1) * Math.PI / 180
   const a =
     Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.cos(parsedLat1 * Math.PI / 180) * Math.cos(parsedLat2 * Math.PI / 180) *
     Math.sin(dLng/2) * Math.sin(dLng/2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 
@@ -453,9 +482,6 @@ export function transformOfferDataWithDistance(apiOffer, userLocation = null) {
     const businessLat = business.latitude || apiOffer.business_latitude || apiOffer.latitude
     const businessLng = business.longitude || apiOffer.business_longitude || apiOffer.longitude
 
-    if (process.env.NODE_ENV === 'development') {
-    }
-
     if (businessLat && businessLng) {
       const distance = calculateDistance(
         userLocation.lat,
@@ -464,13 +490,6 @@ export function transformOfferDataWithDistance(apiOffer, userLocation = null) {
         parseFloat(businessLng)
       )
       transformedOffer.distance = distance
-
-      if (process.env.NODE_ENV === 'development') {
-      }
-    } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('transformOfferDataWithDistance - Missing coordinates for offer:', apiOffer.id)
-      }
     }
   }
 
@@ -717,5 +736,111 @@ export async function unclaimOffer(offerId) {
   } catch (error) {
     console.error('Error unclaiming offer:', error)
     return { success: false, data: null, error: error.message }
+  }
+}
+// ============================================================================
+// UPCOMING OFFERS & REMINDERS
+// ============================================================================
+
+/**
+ * Get upcoming/scheduled offers
+ */
+export async function getUpcomingOffers({ page = 1, limit = 20 } = {}) {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    })
+
+    const data = await makeOfferRequest(`/customer/offers/upcoming?${params}`, {}, false)
+
+    return {
+      success: true,
+      offers: data.offers || [],
+      total: data.total || 0,
+      page: data.page || page,
+      has_next: data.has_next || false
+    }
+  } catch (error) {
+    console.error('Error fetching upcoming offers:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to fetch upcoming offers',
+      offers: []
+    }
+  }
+}
+
+/**
+ * Set a reminder for an upcoming offer
+ */
+export async function setOfferReminder(offerId) {
+  try {
+    const data = await makeOfferRequest(
+      `/customer/offers/${offerId}/remind`,
+      { method: 'POST' },
+      true // require auth
+    )
+
+    return {
+      success: true,
+      message: data.message || 'Reminder set successfully!'
+    }
+  } catch (error) {
+    console.error('Error setting reminder:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to set reminder'
+    }
+  }
+}
+
+/**
+ * Remove a reminder for an offer
+ */
+export async function removeOfferReminder(offerId) {
+  try {
+    const data = await makeOfferRequest(
+      `/customer/offers/${offerId}/remind`,
+      { method: 'DELETE' },
+      true // require auth
+    )
+
+    return {
+      success: true,
+      message: data.message || 'Reminder removed successfully'
+    }
+  } catch (error) {
+    console.error('Error removing reminder:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to remove reminder'
+    }
+  }
+}
+
+/**
+ * Get user's active reminders
+ */
+export async function getMyReminders() {
+  try {
+    const data = await makeOfferRequest(
+      `/customer/reminders`,
+      { method: 'GET' },
+      true // require auth
+    )
+
+    return {
+      success: true,
+      reminders: data.reminders || [],
+      total: data.total || 0
+    }
+  } catch (error) {
+    console.error('Error fetching reminders:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to fetch reminders',
+      reminders: []
+    }
   }
 }
