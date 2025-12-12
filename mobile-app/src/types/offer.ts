@@ -41,10 +41,12 @@ export interface Offer {
   rating?: number | null;
   reviewCount?: number | null;
   expiresAt?: string;
+  startDate?: string;
   claimedCount: number;
   maxClaims?: number | null;
   isPopular: boolean;
   isFeatured: boolean;
+  hasReminder?: boolean;
   images: string[];
   latitude: number;
   longitude: number;

@@ -3,6 +3,7 @@ import {
   getNearbyOffers,
   getTrendingOffers,
   getExpiringSoonOffers,
+  getUpcomingOffers,
   getAllOffers,
 } from '../services/offersService';
 import { Location } from '../types/offer';
@@ -75,6 +76,30 @@ export function useInfiniteExpiringSoonOffers(
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasMore) {
         return allPages.length * limit;
+      }
+      return undefined;
+    },
+    enabled,
+  });
+}
+
+/**
+ * Hook for infinite scroll upcoming offers
+ */
+export function useInfiniteUpcomingOffers(
+  limit: number = 20,
+  userLocation?: Location,
+  enabled: boolean = true
+) {
+  return useInfiniteQuery({
+    queryKey: ['offers', 'upcoming', 'infinite', limit],
+    queryFn: async ({ pageParam = 1 }) => {
+      return getUpcomingOffers(pageParam, limit, userLocation);
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.hasMore) {
+        return allPages.length + 1;
       }
       return undefined;
     },

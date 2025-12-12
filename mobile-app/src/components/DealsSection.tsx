@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DealCard from './DealCard';
+import DealCardLandscape from './DealCardLandscape';
 import { Offer } from '../types/offer';
 
 interface DealsSectionProps {
@@ -21,7 +22,9 @@ interface DealsSectionProps {
   onDealPress: (deal: Offer) => void;
   onLike: (offerId: string) => void;
   onClaim: (offerId: string) => void;
+  onRemind?: (offerId: string, hasReminder: boolean) => void;
   onViewMore?: () => void;
+  useLandscapeCards?: boolean;
 }
 
 function DealsSection({
@@ -34,16 +37,31 @@ function DealsSection({
   onDealPress,
   onLike,
   onClaim,
+  onRemind,
   onViewMore,
+  useLandscapeCards = false,
 }: DealsSectionProps) {
-  const renderDealCard = ({ item }: { item: Offer }) => (
-    <DealCard
-      deal={item}
-      onPress={() => onDealPress(item)}
-      onLike={onLike}
-      onClaim={onClaim}
-    />
-  );
+  const renderDealCard = ({ item }: { item: Offer }) => {
+    if (useLandscapeCards) {
+      return (
+        <DealCardLandscape
+          deal={item}
+          onPress={() => onDealPress(item)}
+          onLike={onLike}
+          onClaim={onClaim}
+        />
+      );
+    }
+    return (
+      <DealCard
+        deal={item}
+        onPress={() => onDealPress(item)}
+        onLike={onLike}
+        onClaim={onClaim}
+        onRemind={onRemind}
+      />
+    );
+  };
 
   if (loading) {
     return (
@@ -108,12 +126,13 @@ function DealsSection({
 
       {/* Replaced ScrollView with FlatList for better performance */}
       <FlatList
-        horizontal
+        horizontal={!useLandscapeCards}
         data={deals}
         renderItem={renderDealCard}
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.dealsScrollContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={useLandscapeCards ? styles.dealsListContainer : styles.dealsScrollContainer}
         initialNumToRender={3}
         maxToRenderPerBatch={3}
         windowSize={3}
@@ -173,6 +192,10 @@ const styles = StyleSheet.create({
   },
   dealsScrollContainer: {
     paddingHorizontal: 20,
+  },
+  dealsListContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
   loadingContainer: {
     padding: 40,

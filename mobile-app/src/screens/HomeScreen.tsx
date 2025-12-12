@@ -12,11 +12,13 @@ import {
   useNearbyOffers,
   useTrendingOffers,
   useExpiringSoonOffers,
+  useUpcomingOffers,
   useAllOffers,
 } from '../hooks/useOffers';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
+import { setOfferReminder, removeOfferReminder } from '../services/offersService';
 import {
   requestNotificationPermissions,
   setupNotificationListeners,
@@ -30,7 +32,7 @@ type RootStackParamList = {
   DiscountDetails: { offerId: string };
   SignIn: undefined;
   SignUp: undefined;
-  DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
+  DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'upcoming' | 'all' };
   NotificationSettings: undefined;
 };
 
@@ -72,13 +74,20 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     userLocation || undefined,
     !!userLocation
   );
+  const { data: upcomingData, isLoading: upcomingLoading, refetch: refetchUpcoming } = useUpcomingOffers(
+    1,
+    4,
+    userLocation || undefined,
+    !!userLocation
+  );
 
   const nearbyDeals = nearbyData?.offers || [];
   const allDeals = allDealsData?.offers || [];
   const trendingDeals = trendingData?.offers || [];
   const expiringDeals = expiringData?.offers || [];
+  const upcomingDeals = upcomingData?.offers || [];
 
-  const loading = nearbyLoading && allDealsLoading && trendingLoading && expiringLoading;
+  const loading = nearbyLoading && allDealsLoading && trendingLoading && expiringLoading && upcomingLoading;
 
   useEffect(() => {
     initializeLocation();
@@ -146,8 +155,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       refetchAll(),
       refetchTrending(),
       refetchExpiring(),
+      refetchUpcoming(),
     ]);
-  }, [refetchNearby, refetchAll, refetchTrending, refetchExpiring]);
+  }, [refetchNearby, refetchAll, refetchTrending, refetchExpiring, refetchUpcoming]);
 
   const handleDealPress = useCallback((deal: Offer) => {
     navigation.navigate('DiscountDetails', { offerId: deal.id });
@@ -190,6 +200,36 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     console.log('Claim offer:', offerId);
   }, [isAuthenticated, promptSignIn]);
 
+  const handleRemind = useCallback(async (offerId: string, hasReminder: boolean) => {
+    if (!isAuthenticated) {
+      promptSignIn('set reminders for');
+      return;
+    }
+
+    try {
+      if (hasReminder) {
+        // Set reminder
+        const result = await setOfferReminder(offerId);
+        if (result.success) {
+          Alert.alert('Reminder Set!', "You'll be notified when this offer goes live.");
+        } else {
+          Alert.alert('Error', result.error || 'Failed to set reminder');
+        }
+      } else {
+        // Remove reminder
+        const result = await removeOfferReminder(offerId);
+        if (result.success) {
+          Alert.alert('Reminder Removed', 'You will no longer be notified about this offer.');
+        } else {
+          Alert.alert('Error', result.error || 'Failed to remove reminder');
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling reminder:', error);
+      Alert.alert('Error', 'Failed to update reminder. Please try again.');
+    }
+  }, [isAuthenticated, promptSignIn]);
+
   return (
     <View style={styles.container}>
       {/* Scrollable Content */}
@@ -208,11 +248,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           description="Discover great offers from businesses in your area"
           deals={nearbyDeals}
           loading={nearbyLoading}
-          iconName="location"
+          iconName="compass"
           iconColor="#4CAF50"
           onDealPress={handleDealPress}
           onLike={handleLike}
           onClaim={handleClaim}
+          onRemind={handleRemind}
           onViewMore={() => navigation.navigate('DealsList', { type: 'nearby' })}
         />
       )}
@@ -228,6 +269,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         onDealPress={handleDealPress}
         onLike={handleLike}
         onClaim={handleClaim}
+        onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'all' })}
       />
 
@@ -237,11 +279,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         description="Popular offers that everyone is talking about"
         deals={trendingDeals}
         loading={trendingLoading}
-        iconName="flame"
+        iconName="trending-up"
         iconColor="#FF6B6B"
         onDealPress={handleDealPress}
         onLike={handleLike}
         onClaim={handleClaim}
+        onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'trending' })}
       />
 
@@ -251,12 +294,28 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         description="Hurry! These deals won't last much longer"
         deals={expiringDeals}
         loading={expiringLoading}
-        iconName="time"
+        iconName="alarm"
         iconColor="#FFA726"
         onDealPress={handleDealPress}
         onLike={handleLike}
         onClaim={handleClaim}
+        onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'expiring' })}
+      />
+
+      {/* Coming Soon */}
+      <DealsSection
+        title="Coming Soon"
+        description="Get notified when these offers go live!"
+        deals={upcomingDeals}
+        loading={upcomingLoading}
+        iconName="hourglass"
+        iconColor="#9C27B0"
+        onDealPress={handleDealPress}
+        onLike={handleLike}
+        onClaim={handleClaim}
+        onRemind={handleRemind}
+        onViewMore={() => navigation.navigate('DealsList', { type: 'upcoming' })}
       />
 
       {/* Call to Action */}

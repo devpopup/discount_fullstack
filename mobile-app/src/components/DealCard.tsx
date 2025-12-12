@@ -17,12 +17,17 @@ interface DealCardProps {
   onPress: () => void;
   onLike?: (offerId: string) => void;
   onClaim?: (offerId: string) => void;
+  onRemind?: (offerId: string, hasReminder: boolean) => void;
   onLocationPress?: () => void;
   isLiked?: boolean;
 }
 
-function DealCard({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false }: DealCardProps) {
+function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, isLiked = false }: DealCardProps) {
   const [liked, setLiked] = useState(isLiked);
+  const [hasReminder, setHasReminder] = useState(deal.hasReminder || false);
+
+  // Check if offer is upcoming (hasn't started yet)
+  const isUpcoming = deal.startDate ? new Date(deal.startDate) > new Date() : false;
 
   const handleLike = (e: any) => {
     e.stopPropagation();
@@ -36,6 +41,15 @@ function DealCard({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = f
     e.stopPropagation();
     if (onClaim) {
       onClaim(deal.id);
+    }
+  };
+
+  const handleRemind = (e: any) => {
+    e.stopPropagation();
+    if (onRemind) {
+      const newReminderState = !hasReminder;
+      setHasReminder(newReminderState);
+      onRemind(deal.id, newReminderState);
     }
   };
 
@@ -113,17 +127,31 @@ function DealCard({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = f
               color={liked ? '#e94e1b' : '#fff'}
             />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleClaim}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="ticket-outline"
-              size={16}
-              color="#fff"
-            />
-          </TouchableOpacity>
+          {isUpcoming ? (
+            <TouchableOpacity
+              style={[styles.actionButton, hasReminder && styles.actionButtonActive]}
+              onPress={handleRemind}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={hasReminder ? 'notifications' : 'notifications-outline'}
+                size={16}
+                color={hasReminder ? '#e94e1b' : '#fff'}
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleClaim}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="ticket-outline"
+                size={16}
+                color="#fff"
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -270,6 +298,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  actionButtonActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
   },
   content: {
     flex: 1,

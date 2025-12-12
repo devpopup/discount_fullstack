@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { getOfferById, claimOffer, unclaimOffer, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds, getClaimedOfferIds } from '../services/offersService';
+import { getOfferById, claimOffer, unclaimOffer, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds, getClaimedOfferIds, setOfferReminder, removeOfferReminder } from '../services/offersService';
 import { Offer } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
 
@@ -53,6 +53,8 @@ export default function DiscountDetailsScreen({
   const [claiming, setClaiming] = useState(false);
   const [togglingFavorite, setTogglingFavorite] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [hasReminder, setHasReminder] = useState(false);
+  const [togglingReminder, setTogglingReminder] = useState(false);
 
   useEffect(() => {
     fetchOfferDetails();
@@ -69,6 +71,7 @@ export default function DiscountDetailsScreen({
         setError(result.error);
       } else if (result.offer) {
         setOffer(result.offer);
+        setHasReminder(result.offer.hasReminder || false);
 
         // Check if offer is claimed and favorited
         if (isAuthenticated) {
@@ -186,6 +189,46 @@ export default function DiscountDetailsScreen({
     }
   };
 
+  const handleReminderToggle = async () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Sign In Required',
+        'You need to sign in to set reminders.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('SignIn') },
+          { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
+        ]
+      );
+      return;
+    }
+
+    setTogglingReminder(true);
+    try {
+      if (hasReminder) {
+        const result = await removeOfferReminder(offerId);
+        if (result.success) {
+          setHasReminder(false);
+          Alert.alert('Reminder Removed', 'You will no longer be notified about this offer.');
+        } else {
+          Alert.alert('Error', result.error || 'Failed to remove reminder');
+        }
+      } else {
+        const result = await setOfferReminder(offerId);
+        if (result.success) {
+          setHasReminder(true);
+          Alert.alert('Reminder Set!', "You'll be notified when this offer goes live.");
+        } else {
+          Alert.alert('Error', result.error || 'Failed to set reminder');
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to update reminder');
+    } finally {
+      setTogglingReminder(false);
+    }
+  };
+
   const handleShare = async () => {
     if (!offer) return;
 
@@ -231,6 +274,26 @@ export default function DiscountDetailsScreen({
     if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} remaining`;
     return 'Ending soon';
   };
+
+  const calculateTimeUntilStart = (startDate?: string): string => {
+    if (!startDate) return 'Coming Soon';
+
+    const now = new Date();
+    const start = new Date(startDate);
+    const diff = start.getTime() - now.getTime();
+
+    if (diff <= 0) return ''; // Already started
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) return `Starts in ${days} day${days > 1 ? 's' : ''}`;
+    if (hours > 0) return `Starts in ${hours} hour${hours > 1 ? 's' : ''}`;
+    return 'Starts soon';
+  };
+
+  // Check if offer is upcoming (hasn't started yet)
+  const isUpcoming = offer?.startDate ? new Date(offer.startDate) > new Date() : false;
 
   if (loading) {
     return (
@@ -340,22 +403,56 @@ export default function DiscountDetailsScreen({
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
-          <TouchableOpacity
-            style={[styles.claimButton, isClaimed && styles.claimedButton]}
-            onPress={handleClaimOffer}
-            disabled={claiming}
-          >
-            {claiming ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Ionicons name={isClaimed ? "checkmark-circle" : "storefront"} size={20} color="#fff" />
-                <Text style={styles.claimButtonText}>
-                  {isClaimed ? 'Unclaim Offer' : 'Claim In Store'}
+          {isUpcoming ? (
+            <>
+              <TouchableOpacity
+                style={[styles.claimButton, styles.disabledButton]}
+                disabled={true}
+              >
+                <Ionicons name="hourglass-outline" size={20} color="#999" />
+                <Text style={[styles.claimButtonText, styles.disabledButtonText]}>
+                  {calculateTimeUntilStart(offer.startDate)}
                 </Text>
-              </>
-            )}
-          </TouchableOpacity>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.reminderButton, hasReminder && styles.reminderButtonActive]}
+                onPress={handleReminderToggle}
+                disabled={togglingReminder}
+              >
+                {togglingReminder ? (
+                  <ActivityIndicator color={hasReminder ? "#e94e1b" : "#fff"} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={hasReminder ? "notifications" : "notifications-outline"}
+                      size={20}
+                      color={hasReminder ? "#e94e1b" : "#fff"}
+                    />
+                    <Text style={[styles.reminderButtonText, hasReminder && styles.reminderButtonTextActive]}>
+                      {hasReminder ? 'Reminder Set' : 'Remind Me'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              style={[styles.claimButton, isClaimed && styles.claimedButton]}
+              onPress={handleClaimOffer}
+              disabled={claiming}
+            >
+              {claiming ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name={isClaimed ? "checkmark-circle" : "storefront"} size={20} color="#fff" />
+                  <Text style={styles.claimButtonText}>
+                    {isClaimed ? 'Unclaim Offer' : 'Claim In Store'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
 
           {website && (
             <TouchableOpacity style={styles.websiteButton} onPress={handleGoToWebsite}>
@@ -627,6 +724,35 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#e0e0e0',
+  },
+  disabledButtonText: {
+    color: '#999',
+  },
+  reminderButton: {
+    backgroundColor: '#9C27B0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 10,
+    marginBottom: 12,
+    gap: 8,
+  },
+  reminderButtonActive: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#e94e1b',
+  },
+  reminderButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  reminderButtonTextActive: {
+    color: '#e94e1b',
   },
   websiteButton: {
     backgroundColor: '#fff',

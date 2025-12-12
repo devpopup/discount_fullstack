@@ -16,6 +16,7 @@ import {
   useInfiniteNearbyOffers,
   useInfiniteTrendingOffers,
   useInfiniteExpiringSoonOffers,
+  useInfiniteUpcomingOffers,
   useInfiniteAllOffers,
 } from '../hooks/useInfiniteOffers';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
@@ -24,7 +25,7 @@ import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   Home: undefined;
-  DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
+  DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'upcoming' | 'all' };
   DiscountDetails: { offerId: string };
   SignIn: undefined;
   SignUp: undefined;
@@ -46,15 +47,17 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
 
   // Select the appropriate infinite query hook based on type
   const nearbyQuery = useInfiniteNearbyOffers(userLocation, 10, LIMIT, type === 'nearby' && !!userLocation);
-  const allQuery = useInfiniteAllOffers(LIMIT, userLocation || undefined, type === 'all' && !!userLocation);
-  const trendingQuery = useInfiniteTrendingOffers(LIMIT, userLocation || undefined, type === 'trending' && !!userLocation);
-  const expiringQuery = useInfiniteExpiringSoonOffers(24, LIMIT, userLocation || undefined, type === 'expiring' && !!userLocation);
+  const allQuery = useInfiniteAllOffers(LIMIT, userLocation || undefined, type === 'all');
+  const trendingQuery = useInfiniteTrendingOffers(LIMIT, userLocation || undefined, type === 'trending');
+  const expiringQuery = useInfiniteExpiringSoonOffers(24, LIMIT, userLocation || undefined, type === 'expiring');
+  const upcomingQuery = useInfiniteUpcomingOffers(LIMIT, userLocation || undefined, type === 'upcoming');
 
   // Select the active query based on type
   const activeQuery = type === 'nearby' ? nearbyQuery :
                      type === 'all' ? allQuery :
                      type === 'trending' ? trendingQuery :
-                     expiringQuery;
+                     type === 'expiring' ? expiringQuery :
+                     upcomingQuery;
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } = activeQuery;
 
@@ -138,6 +141,8 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
         return 'Trending Deals';
       case 'expiring':
         return 'Expiring Soon';
+      case 'upcoming':
+        return 'Coming Soon';
     }
   };
 

@@ -3,6 +3,7 @@ import {
   getNearbyOffers,
   getTrendingOffers,
   getExpiringSoonOffers,
+  getUpcomingOffers,
   getAllOffers,
   getOfferById,
 } from '../services/offersService';
@@ -60,6 +61,23 @@ export function useExpiringSoonOffers(
     queryFn: () => getExpiringSoonOffers(hours, limit, offset, userLocation),
     enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes for expiring offers (very dynamic)
+  });
+}
+
+/**
+ * Hook to fetch upcoming offers with caching
+ */
+export function useUpcomingOffers(
+  page: number = 1,
+  limit: number = 4,
+  userLocation?: Location,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: ['offers', 'upcoming', page, limit],
+    queryFn: () => getUpcomingOffers(page, limit, userLocation),
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes for upcoming offers
   });
 }
 

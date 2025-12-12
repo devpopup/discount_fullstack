@@ -53,10 +53,12 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     rating: business.rating || apiOffer.rating || null,
     reviewCount: business.review_count || apiOffer.review_count || null,
     expiresAt: apiOffer.expiry_date || apiOffer.offer_expiry_date,
+    startDate: apiOffer.start_date,
     claimedCount: apiOffer.current_claims || apiOffer.claimed_count || 0,
     maxClaims: apiOffer.max_claims || null,
     isPopular: apiOffer.is_popular || false,
     isFeatured: apiOffer.is_featured || false,
+    hasReminder: apiOffer.has_reminder || false,
     images: apiOffer.images ||
             apiOffer.product_images ||
             (product && product.image_url ? [constructImageUrl(product.image_url)] : []) ||
@@ -202,6 +204,38 @@ export async function getExpiringSoonOffers(
       offers: [],
       hasMore: false,
       error: error.message || 'Failed to fetch expiring offers'
+    };
+  }
+}
+
+/**
+ * Get upcoming offers (not yet started)
+ */
+export async function getUpcomingOffers(
+  page: number = 1,
+  limit: number = 50,
+  userLocation?: Location
+): Promise<OffersResponse> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+
+    const response = await apiClient.get(`/customer/offers/upcoming?${params}`);
+    const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, userLocation));
+
+    return {
+      offers,
+      hasMore: response.data.has_next || false,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error fetching upcoming offers:', error);
+    return {
+      offers: [],
+      hasMore: false,
+      error: error.message || 'Failed to fetch upcoming offers'
     };
   }
 }
@@ -449,6 +483,60 @@ export async function getAllOffers(
       offers: [],
       hasMore: false,
       error: error.message || 'Failed to fetch all offers'
+    };
+  }
+}
+
+/**
+ * Set a reminder for an upcoming offer
+ */
+export async function setOfferReminder(offerId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    await apiClient.post(`/customer/offers/${offerId}/remind`);
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error('Error setting reminder:', error);
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to set reminder'
+    };
+  }
+}
+
+/**
+ * Remove a reminder for an offer
+ */
+export async function removeOfferReminder(offerId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    await apiClient.delete(`/customer/offers/${offerId}/remind`);
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error('Error removing reminder:', error);
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to remove reminder'
+    };
+  }
+}
+
+/**
+ * Get user's active reminders
+ */
+export async function getMyReminders(): Promise<{ reminders: any[]; error: string | null }> {
+  try {
+    const response = await apiClient.get('/customer/reminders');
+
+    return {
+      reminders: response.data.reminders || [],
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error fetching reminders:', error);
+    return {
+      reminders: [],
+      error: error.message || 'Failed to fetch reminders'
     };
   }
 }
