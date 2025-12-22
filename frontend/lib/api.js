@@ -16,6 +16,11 @@ export const endpoints = {
   businessLocation: '/business/location',
   uploadBusinessLogo: '/business/upload-logo',
 
+  // Business Tools
+  business: {
+    qrCode: '/business/qr-code',
+  },
+
   // Products
   products: '/business/products',
   product: (id) => `/business/products/${id}`,

@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import DealCard from '@/components/DealCard'
 import Navbar from '@/components/Navbar'
-import Featured from '@/components/Featured'
-import { MapPin, TrendingUp, Clock, ArrowRight, Loader2, ChevronRight, Grid, Sparkles } from 'lucide-react'
+import { ArrowRight, Loader2, ChevronRight } from 'lucide-react'
+import { IoHourglass, IoCompass, IoAlarm, IoTrendingUp, IoGrid } from 'react-icons/io5'
 import {
   getUserLocation,
   getDefaultLocation,
@@ -20,7 +20,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNearbyOffers, useTrendingOffers, useExpiringSoonOffers } from '@/hooks/useOffers'
 
 
-function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange, loading = false }) {
+function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange, loading = false, emptyMessage = null }) {
   const scrollContainerRef = useRef(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
 
@@ -108,7 +108,7 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
       ) : (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <Icon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No {title.toLowerCase()} available at the moment.</p>
+          <p className="text-gray-600">{emptyMessage || `No ${title.toLowerCase()} available at the moment.`}</p>
         </div>
       )}
     </section>
@@ -290,9 +290,6 @@ export default function ShoppersHome() {
       {/* Navbar */}
       <Navbar />
 
-      {/* Featured Hero Section - Full width, outside main container */}
-      {!error && <Featured />}
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error State */}
@@ -313,25 +310,6 @@ export default function ShoppersHome() {
         {/* Content */}
         {!error && (
           <>
-            {/* Coming Soon Section */}
-            {upcomingDeals.length > 0 && (
-              <div id="coming-soon">
-                <DealsSection
-                  title="Coming Soon"
-                  description="Set reminders for upcoming deals"
-                  deals={upcomingDeals}
-                  sectionType="coming-soon"
-                  icon={Sparkles}
-                  userLocation={userLocation}
-                  favoritedIds={favoritedIds}
-                  claimedIds={claimedIds}
-                  onFavoriteChange={handleFavoriteChange}
-                  onClaimChange={handleClaimChange}
-                  loading={upcomingLoading}
-                />
-              </div>
-            )}
-
             {/* Deals Near You */}
             <div id="nearby-deals">
               <DealsSection
@@ -339,13 +317,31 @@ export default function ShoppersHome() {
                 description="Discover great offers from businesses in your area"
                 deals={nearbyDeals}
                 sectionType="nearby"
-                icon={MapPin}
+                icon={IoCompass}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
                 claimedIds={claimedIds}
                 onFavoriteChange={handleFavoriteChange}
                 onClaimChange={handleClaimChange}
                 loading={nearbyLoading}
+              />
+            </div>
+
+            {/* Coming Soon Section - Always shown */}
+            <div id="coming-soon">
+              <DealsSection
+                title="Coming Soon"
+                description="Set reminders for upcoming deals"
+                deals={upcomingDeals}
+                sectionType="coming-soon"
+                icon={IoHourglass}
+                userLocation={userLocation}
+                favoritedIds={favoritedIds}
+                claimedIds={claimedIds}
+                onFavoriteChange={handleFavoriteChange}
+                onClaimChange={handleClaimChange}
+                loading={upcomingLoading}
+                emptyMessage="No scheduled offers at this time"
               />
             </div>
 
@@ -356,7 +352,7 @@ export default function ShoppersHome() {
                 description="Hurry! These deals won't last much longer"
                 deals={expiringSoonDeals}
                 sectionType="expiring"
-                icon={Clock}
+                icon={IoAlarm}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
                 claimedIds={claimedIds}
@@ -373,7 +369,7 @@ export default function ShoppersHome() {
                 description="Popular offers that everyone is talking about"
                 deals={trendingDeals}
                 sectionType="trending"
-                icon={TrendingUp}
+                icon={IoTrendingUp}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
                 claimedIds={claimedIds}
@@ -390,7 +386,7 @@ export default function ShoppersHome() {
                 description="Browse all available offers from local businesses"
                 deals={allDeals}
                 sectionType="all"
-                icon={Grid}
+                icon={IoGrid}
                 userLocation={userLocation}
                 favoritedIds={favoritedIds}
                 claimedIds={claimedIds}

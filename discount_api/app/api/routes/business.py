@@ -1562,6 +1562,11 @@ async def get_offer(
         total_units_claimed = sum(claim.get("quantity", 1) for claim in (claims_result.data or []))
         offer_data['total_units_claimed'] = total_units_claimed
 
+        # Calculate total units redeemed (sum of quantities from redeemed claims)
+        redeemed_result = supabase_admin.table("claimed_offers").select("quantity").eq("offer_id", offer_id).eq("is_redeemed", True).execute()
+        total_units_redeemed = sum(claim.get("quantity", 1) for claim in (redeemed_result.data or []))
+        offer_data['total_units_redeemed'] = total_units_redeemed
+
         return {"offer": offer_data}
         
     except HTTPException:
@@ -3058,3 +3063,79 @@ async def get_offers_analytics_list(
             detail=f"Failed to get offers analytics: {str(e)}"
         )
 
+
+# ============================================================================
+# BUSINESS QR CODE
+# ============================================================================
+
+@router.get("/qr-code", response_model=dict)
+async def get_business_qr_code(
+    current_user: UserProfile = Depends(get_current_business_user)
+):
+    """Generate QR code for business that customers can scan to view offers"""
+    
+    try:
+        # Get business info
+        business_result = supabase_admin.table("businesses").select(
+            "id, business_name"
+        ).eq("user_id", str(current_user.id)).execute()
+        
+        if not business_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business not found"
+            )
+        
+        business = business_result.data[0]
+        business_id = business["id"]
+        business_name = business["business_name"]
+        
+        # Generate URL that customers will visit when scanning QR code
+        # Using the frontend URL from settings
+        customer_url = f"{settings.frontend_url}/shoppers/business/{business_id}"
+        
+        # Generate QR code
+        import qrcode
+        import qrcode.image.svg
+        from io import BytesIO
+        import base64
+        
+        # Create QR code instance
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        
+        # Add data
+        qr.add_data(customer_url)
+        qr.make(fit=True)
+        
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convert to base64 for easy display
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        img_str = base64.b64encode(buffer.getvalue()).decode()
+        qr_code_data_url = f"data:image/png;base64,{img_str}"
+        
+        return {
+            "qr_code": qr_code_data_url,
+            "customer_url": customer_url,
+            "business_id": business_id,
+            "business_name": business_name,
+            "message": "QR code generated successfully. Customers can scan this to view your offers."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error generating QR code: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate QR code: {str(e)}"
+        )

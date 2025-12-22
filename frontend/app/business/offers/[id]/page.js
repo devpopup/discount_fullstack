@@ -554,6 +554,23 @@ export default function OfferDetailPage() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm text-gray-600">Units Redeemed</span>
+                </div>
+                <span className="font-semibold text-green-600">
+                  {offer.total_units_redeemed || 0}
+                  {offer.total_units_claimed ? (
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({Math.round((offer.total_units_redeemed || 0) / (offer.total_units_claimed || 1) * 100)}% redemption rate)
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">Start Date & Time</span>
                 </div>

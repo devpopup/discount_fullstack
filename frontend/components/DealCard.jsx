@@ -3,7 +3,8 @@
 import { useState, useEffect, memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Tag, Heart, Store, Bell, BellOff } from 'lucide-react'
+import { Tag, Heart, Bell, BellOff } from 'lucide-react'
+import { IoGift } from 'react-icons/io5'
 import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites, setOfferReminder, removeOfferReminder } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -395,7 +396,7 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
             size="sm"
             className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white text-xs py-1"
           >
-            <Store className="w-3 h-3 mr-1" />
+            <IoGift className="w-3 h-3 mr-1" />
             Claim
           </Button>
         )}

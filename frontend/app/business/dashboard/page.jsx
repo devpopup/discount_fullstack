@@ -15,8 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu'
-import { 
-  Tag, 
+import {
+  Tag,
   ShoppingBag,
   Users,
   Plus,
@@ -27,13 +27,45 @@ import {
   Eye,
   MoreHorizontal,
   Edit,
-  Trash
+  Trash,
+  QrCode
 } from 'lucide-react'
 
 // Import API functions
 import { getOffers, deleteOffer } from '@/lib/offers'
 import { getProducts, deleteProduct } from '@/lib/products'
 import { getImageUrl } from '@/lib/api'
+
+// QR Code Card Component
+function QRCodeCard() {
+  const router = useRouter()
+
+  return (
+    <Card className="bg-gradient-to-br from-orange-500 to-red-600 border-0 shadow-lg mb-8">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-white" />
+              <p className="text-sm font-semibold text-white/90">Business QR Code</p>
+            </div>
+            <p className="text-2xl font-bold text-white">Get Customers Scanning!</p>
+            <p className="text-sm text-white/80">
+              Generate a QR code for your business. Customers can scan it to view all your offers.
+            </p>
+          </div>
+          <Button
+            onClick={() => router.push('/business/qr-code')}
+            className="bg-white text-orange-600 hover:bg-gray-100 font-semibold px-6 py-6 shadow-lg"
+          >
+            <QrCode className="h-5 w-5 mr-2" />
+            Generate QR Code
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 // Stats Cards Component
 function StatsCards({ stats }) {
@@ -580,9 +612,11 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
+          {/* QR Code Card */}
+          <QRCodeCard />
+
           {/* Stats Cards */}
           <StatsCards stats={stats} />
-
 
           {/* Main Content Grid */}
           <div className="space-y-8">

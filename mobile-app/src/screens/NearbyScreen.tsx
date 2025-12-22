@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import DealCard from '../components/DealCard';
+import DealCardLandscape from '../components/DealCardLandscape';
 import { getNearbyOffers } from '../services/offersService';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
@@ -141,14 +141,12 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
   };
 
   const renderItem = ({ item }: { item: Offer }) => (
-    <View style={styles.cardContainer}>
-      <DealCard
-        deal={item}
-        onPress={() => handleDealPress(item)}
-        onLike={handleLike}
-        onClaim={handleClaim}
-      />
-    </View>
+    <DealCardLandscape
+      deal={item}
+      onPress={() => handleDealPress(item)}
+      onLike={handleLike}
+      onClaim={handleClaim}
+    />
   );
 
   const renderFooter = () => {
@@ -184,9 +182,7 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
         data={deals}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        numColumns={2}
         contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.columnWrapper}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#e94e1b']} />
         }
@@ -216,16 +212,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   listContent: {
-    padding: 10,
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    marginBottom: 15,
-  },
-  cardContainer: {
-    flex: 1,
-    maxWidth: '48%',
+    padding: 15,
   },
   footerLoader: {
     paddingVertical: 20,

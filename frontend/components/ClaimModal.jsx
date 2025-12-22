@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Store, X, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { X, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { IoGift } from 'react-icons/io5'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,12 +21,11 @@ export default function ClaimModal({
   offer,
   onClaimSuccess
 }) {
+  const router = useRouter()
   const {
     getTotalQuantityClaimed,
     canClaimMore,
-    hasUnredeemedClaims,
-    claimOffer,
-    unclaimOffer
+    claimOffer
   } = useClaims()
 
   const [quantity, setQuantity] = useState(offer?.min_claims_per_customer || 1)
@@ -37,7 +38,6 @@ export default function ClaimModal({
   const remainingQuota = offer.max_claims_per_user
     ? offer.max_claims_per_user - totalClaimed
     : Infinity
-  const hasUnredeemed = hasUnredeemedClaims(offer.id)
   const isQuotaExhausted = !userCanClaimMore
   const minQuantity = offer.min_claims_per_customer || 1
   const maxQuantity = remainingQuota === Infinity ? 100 : Math.min(100, remainingQuota)
@@ -45,7 +45,7 @@ export default function ClaimModal({
   const handleClaim = async () => {
     // Validate minimum quantity
     if (minQuantity && quantity < minQuantity) {
-      toast.error(`Minimum claim quantity is ${minQuantity} unit${minQuantity > 1 ? 's' : ''}.`)
+      toast.error(`Minimum claim quantity is ${minQuantity}.`)
       return
     }
 
@@ -54,8 +54,8 @@ export default function ClaimModal({
       const remaining = offer.max_claims_per_user - totalClaimed
       toast.error(
         remaining > 0
-          ? `You can only claim ${remaining} more unit${remaining > 1 ? 's' : ''}. You've already claimed ${totalClaimed}/${offer.max_claims_per_user}.`
-          : `Quota exhausted. You've claimed all ${offer.max_claims_per_user} units available to you.`
+          ? `You can only claim ${remaining} more. You've already claimed ${totalClaimed}/${offer.max_claims_per_user}.`
+          : `Quota exhausted. You've claimed all ${offer.max_claims_per_user} available to you.`
       )
       return
     }
@@ -65,14 +65,19 @@ export default function ClaimModal({
       await claimOffer(offer.id, 'in_store', quantity)
 
       // Success message
-      let message = `Claimed ${quantity} unit${quantity > 1 ? 's' : ''} successfully!`
+      let message = `Claimed quantity ${quantity} successfully!`
       if (totalClaimed > 0 && offer.max_claims_per_user) {
-        message = `Claimed ${quantity} more unit${quantity > 1 ? 's' : ''}! Quota used: ${totalClaimed + quantity}/${offer.max_claims_per_user}`
+        message = `Claimed ${quantity} more! Quota used: ${totalClaimed + quantity}/${offer.max_claims_per_user}`
       } else if (totalClaimed > 0) {
-        message = `Claimed ${quantity} more unit${quantity > 1 ? 's' : ''}! Total: ${totalClaimed + quantity}`
+        message = `Claimed ${quantity} more! Total: ${totalClaimed + quantity}`
       }
 
-      toast.success(message)
+      toast.success(message, {
+        action: {
+          label: 'Click to view your claims',
+          onClick: () => router.push('/shoppers/claims')
+        }
+      })
       if (onClaimSuccess) {
         onClaimSuccess(offer.id, true)
       }
@@ -81,47 +86,40 @@ export default function ClaimModal({
       console.error('Error claiming offer:', error)
 
       // Parse quota-related errors
-      const errorMsg = error.message || 'Failed to claim offer'
-      if (errorMsg.includes('already claimed') || errorMsg.includes('Maximum allowed')) {
-        // Extract the quota info if available
-        const match = errorMsg.match(/Maximum allowed is (\d+)/)
-        if (match) {
-          const maxAllowed = parseInt(match[1])
-          toast.error(`Quota limit reached. You've claimed ${maxAllowed}/${maxAllowed} units for this offer.`)
+      let errorMsg = error.message || 'Failed to claim offer'
+
+      // Parse quota exceeded errors for better UX
+      if (errorMsg.includes('already claimed') && errorMsg.includes('Maximum allowed')) {
+        const claimedMatch = errorMsg.match(/already claimed (\d+)/)
+        const maxMatch = errorMsg.match(/Maximum allowed is (\d+)/)
+
+        if (claimedMatch && maxMatch) {
+          const claimed = parseInt(claimedMatch[1])
+          const maxAllowed = parseInt(maxMatch[1])
+
+          if (claimed > maxAllowed) {
+            errorMsg = `You have exceeded your claim limit for this offer. You've claimed ${claimed}, but the maximum allowed is ${maxAllowed}. Please contact support if you believe this is an error.`
+          } else if (claimed === maxAllowed) {
+            errorMsg = `You have reached your claim limit for this offer (${maxAllowed}/${maxAllowed} used).`
+          }
         } else {
-          toast.error('You\'ve reached your quota limit for this offer')
+          errorMsg = 'You\'ve reached your quota limit for this offer'
         }
-      } else {
-        toast.error(errorMsg)
       }
+
+      toast.error(errorMsg)
     } finally {
       setClaiming(false)
     }
   }
 
-  const handleUnclaim = async () => {
-    setClaiming(true)
-    try {
-      await unclaimOffer(offer.id)
-      toast.success('Offer unclaimed successfully!')
-      if (onClaimSuccess) {
-        onClaimSuccess(offer.id, false)
-      }
-      onClose()
-    } catch (error) {
-      console.error('Error unclaiming offer:', error)
-      toast.error(error.message || 'Failed to unclaim offer')
-    } finally {
-      setClaiming(false)
-    }
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Store className="w-5 h-5 text-[#e94e1b]" />
+            <IoGift className="w-5 h-5 text-[#e94e1b]" />
             Claim Offer
           </DialogTitle>
           <DialogDescription>
@@ -131,77 +129,45 @@ export default function ClaimModal({
 
         <div className="space-y-4 py-4">
           {/* Quota Status */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-            {offer.max_claims_per_user ? (
-              <>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Your Quota Usage:</span>
-                  <span className="font-semibold text-gray-900">
-                    {totalClaimed}/{offer.max_claims_per_user} units
-                  </span>
-                </div>
+          {offer.max_claims_per_user && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Your Quota Usage:</span>
+                <span className="font-semibold text-gray-900">
+                  {totalClaimed}/{offer.max_claims_per_user}
+                </span>
+              </div>
 
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-[#e94e1b] h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min(100, (totalClaimed / offer.max_claims_per_user) * 100)}%`
-                    }}
-                  />
-                </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-[#e94e1b] h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, (totalClaimed / offer.max_claims_per_user) * 100)}%`
+                  }}
+                />
+              </div>
 
-                {userCanClaimMore ? (
-                  <p className="text-sm text-green-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4" />
-                    {remainingQuota} unit{remainingQuota > 1 ? 's' : ''} remaining
-                  </p>
-                ) : (
-                  <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    Quota exhausted ({totalClaimed}/{offer.max_claims_per_user} units used)
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Units Claimed:</span>
-                  <span className="font-semibold text-gray-900">
-                    {totalClaimed} unit{totalClaimed !== 1 ? 's' : ''}
-                  </span>
-                </div>
-
+              {userCanClaimMore ? (
                 <p className="text-sm text-green-600 flex items-center gap-1">
                   <CheckCircle2 className="w-4 h-4" />
-                  No quota limit - claim as many as you need
+                  {remainingQuota} remaining
                 </p>
-              </>
-            )}
-          </div>
+              ) : (
+                <p className="text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  Quota exhausted ({totalClaimed}/{offer.max_claims_per_user} used)
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Quantity Selector or Exhausted Message */}
           {isQuotaExhausted ? (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h4 className="font-medium text-red-900 mb-2">Quota Limit Reached</h4>
-              <p className="text-sm text-red-700 mb-3">
-                You've used all {offer.max_claims_per_user} units of your quota for this offer.
+              <p className="text-sm text-red-700">
+                You've used all {offer.max_claims_per_user} of your quota for this offer.
               </p>
-
-              {hasUnredeemed && (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    You have unredeemed claims. You can unclaim one to free up quota.
-                  </p>
-                  <Button
-                    onClick={handleUnclaim}
-                    disabled={claiming}
-                    variant="outline"
-                    className="w-full border-red-300 text-red-700 hover:bg-red-50"
-                  >
-                    Unclaim One
-                  </Button>
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -211,7 +177,7 @@ export default function ClaimModal({
                 </label>
                 {minQuantity > 1 && (
                   <p className="text-xs text-gray-600 mb-2">
-                    Minimum: {minQuantity} units • Maximum: {maxQuantity === Infinity ? 'No limit' : `${maxQuantity} units`}
+                    Minimum: {minQuantity} • Maximum: {maxQuantity === Infinity ? 'No limit' : maxQuantity}
                   </p>
                 )}
                 <div className="flex items-center gap-3">
@@ -252,19 +218,8 @@ export default function ClaimModal({
                 disabled={claiming}
                 className="w-full bg-[#e94e1b] hover:bg-[#d13f16] text-white"
               >
-                {claiming ? 'Claiming...' : `Claim ${quantity} Unit${quantity > 1 ? 's' : ''}`}
+                {claiming ? 'Claiming...' : `Claim Quantity: ${quantity}`}
               </Button>
-
-              {hasUnredeemed && (
-                <Button
-                  onClick={handleUnclaim}
-                  disabled={claiming}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Or Unclaim One
-                </Button>
-              )}
             </div>
           )}
         </div>

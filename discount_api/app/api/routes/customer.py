@@ -210,6 +210,12 @@ async def search_offers(
             if 'businesses' in offer_data:
                 offer_data['business'] = offer_data['businesses']
                 del offer_data['businesses']
+
+            # Transform products to product for consistency
+            if 'products' in offer_data:
+                offer_data['product'] = offer_data['products']
+                del offer_data['products']
+
             offers.append(OfferSearchResponse(**offer_data))
         
         return OfferListResponse(
@@ -633,10 +639,28 @@ async def claim_offer(
         max_claims_per_user = offer.get("max_claims_per_user")
         if max_claims_per_user and total_after_claim > max_claims_per_user:
             remaining = max_claims_per_user - total_quantity_claimed
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"You have already claimed {total_quantity_claimed} of this offer. Maximum allowed is {max_claims_per_user}. You can only claim {remaining} more."
-            )
+
+            # Handle different error scenarios with clear messages
+            if total_quantity_claimed >= max_claims_per_user:
+                # User has already reached or exceeded their limit
+                if total_quantity_claimed > max_claims_per_user:
+                    # Data inconsistency - user somehow exceeded limit
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"You have exceeded your claim limit for this offer. You have claimed {total_quantity_claimed} units, but the maximum allowed is {max_claims_per_user}. Please contact support if you believe this is an error."
+                    )
+                else:
+                    # User has exactly reached their limit
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"You have reached your claim limit for this offer ({max_claims_per_user}/{max_claims_per_user} units used)."
+                    )
+            else:
+                # User is trying to claim more than remaining
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"You have already claimed {total_quantity_claimed} of this offer. Maximum allowed is {max_claims_per_user}. You can only claim {remaining} more unit{'s' if remaining != 1 else ''}."
+                )
 
         # If max_claims_per_user is not set, check if user already claimed once (backward compatibility)
         if not max_claims_per_user and user_claim_count > 0:
@@ -2043,7 +2067,21 @@ async def get_offer_details(
         current_claims = offer_data.get('current_claims', 0)
         offer_data['can_claim'] = max_claims is None or current_claims < max_claims
         offer_data['claims_remaining'] = None if max_claims is None else max_claims - current_claims
-        
+
+        # Get total claim and redemption statistics
+        try:
+            # Count total claimed
+            claims_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).execute()
+            offer_data['claimed_count'] = claims_result.count if claims_result.count is not None else 0
+
+            # Count total redeemed
+            redeemed_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).eq("is_redeemed", True).execute()
+            offer_data['redeemed_count'] = redeemed_result.count if redeemed_result.count is not None else 0
+        except Exception as stats_error:
+            print(f"Error fetching claim stats: {stats_error}")
+            offer_data['claimed_count'] = 0
+            offer_data['redeemed_count'] = 0
+
         return {"offer": offer_data}
         
     except HTTPException:

@@ -44,41 +44,42 @@ interface HomeScreenProps {
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { isAuthenticated } = useAuth();
-  const [userLocation, setUserLocation] = useState<Location | null>(null);
+  // Initialize with default location immediately so queries can start
+  const [userLocation, setUserLocation] = useState<Location>(getDefaultLocation());
   const notificationsInitialized = useRef(false);
 
-  // Use React Query hooks for automatic caching
+  // Use React Query hooks for automatic caching - enabled by default to load immediately
   const { data: nearbyData, isLoading: nearbyLoading, refetch: refetchNearby } = useNearbyOffers(
-    userLocation || undefined,
+    userLocation,
     10,
     4,
     0,
-    !!userLocation
+    true
   );
   const { data: allDealsData, isLoading: allDealsLoading, refetch: refetchAll } = useAllOffers(
     1,
     4,
-    userLocation || undefined,
-    !!userLocation
+    userLocation,
+    true
   );
   const { data: trendingData, isLoading: trendingLoading, refetch: refetchTrending } = useTrendingOffers(
     4,
     0,
-    userLocation || undefined,
-    !!userLocation
+    userLocation,
+    true
   );
   const { data: expiringData, isLoading: expiringLoading, refetch: refetchExpiring } = useExpiringSoonOffers(
     24,
     4,
     0,
-    userLocation || undefined,
-    !!userLocation
+    userLocation,
+    true
   );
   const { data: upcomingData, isLoading: upcomingLoading, refetch: refetchUpcoming } = useUpcomingOffers(
     1,
     4,
-    userLocation || undefined,
-    !!userLocation
+    userLocation,
+    true
   );
 
   const nearbyDeals = nearbyData?.offers || [];
@@ -242,21 +243,19 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       >
 
       {/* Deals Near You */}
-      {userLocation && (
-        <DealsSection
-          title="Deals Near You"
-          description="Discover great offers from businesses in your area"
-          deals={nearbyDeals}
-          loading={nearbyLoading}
-          iconName="compass"
-          iconColor="#4CAF50"
-          onDealPress={handleDealPress}
-          onLike={handleLike}
-          onClaim={handleClaim}
-          onRemind={handleRemind}
-          onViewMore={() => navigation.navigate('DealsList', { type: 'nearby' })}
-        />
-      )}
+      <DealsSection
+        title="Deals Near You"
+        description="Discover great offers from businesses in your area"
+        deals={nearbyDeals}
+        loading={nearbyLoading}
+        iconName="compass"
+        iconColor="#4CAF50"
+        onDealPress={handleDealPress}
+        onLike={handleLike}
+        onClaim={handleClaim}
+        onRemind={handleRemind}
+        onViewMore={() => navigation.navigate('DealsList', { type: 'nearby' })}
+      />
 
       {/* All Deals */}
       <DealsSection

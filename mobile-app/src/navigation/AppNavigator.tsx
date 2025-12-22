@@ -14,11 +14,13 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import RedemptionScreen from '../screens/RedemptionScreen';
+import BusinessOffersScreen from '../screens/BusinessOffersScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   QRScanner: undefined;
   DiscountDetails: { offerId: string };
+  BusinessOffers: { businessId: string };
   SignIn: undefined;
   SignUp: undefined;
   DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'all' };
@@ -32,9 +34,29 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const linking = {
+  prefixes: ['popupreach://', 'https://popupreach.com'],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          Home: 'home',
+          Nearby: 'nearby',
+          Claims: 'claims',
+          Profile: 'profile',
+        },
+      },
+      DiscountDetails: 'offer/:offerId',
+      BusinessOffers: 'business/:businessId',
+      SignIn: 'signin',
+      SignUp: 'signup',
+    },
+  },
+};
+
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         initialRouteName="MainTabs"
         screenOptions={{
@@ -68,6 +90,14 @@ export default function AppNavigator() {
           options={{
             title: 'Discount Details',
             headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
+          name="BusinessOffers"
+          component={BusinessOffersScreen}
+          options={{
+            title: 'Business Offers',
+            headerShown: false,
           }}
         />
         <Stack.Screen
