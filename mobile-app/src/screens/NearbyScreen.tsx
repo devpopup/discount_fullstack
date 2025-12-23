@@ -164,7 +164,7 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
         }
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to claim offer');
+      Alert.alert('Claim Failed', 'Unable to claim this offer. Please try again.');
     }
   };
 

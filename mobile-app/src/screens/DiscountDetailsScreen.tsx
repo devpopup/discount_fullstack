@@ -185,7 +185,7 @@ export default function DiscountDetailsScreen({
         }
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to process claim');
+      Alert.alert('Claim Failed', 'Unable to process this claim. Please try again.');
     } finally {
       setClaiming(false);
     }

@@ -225,7 +225,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         refetchExpiring();
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to claim offer');
+      Alert.alert('Claim Failed', 'Unable to claim this offer. Please try again.');
     }
   }, [isAuthenticated, promptSignIn, refetchTrending, refetchNearby, refetchExpiring]);
 
