@@ -7,6 +7,7 @@ type RootStackParamList = {
   Home: undefined;
   QRScanner: undefined;
   DiscountDetails: { offerId: string };
+  BusinessOffers: { businessId: string };
 };
 
 type QRScannerNavigationProp = NativeStackNavigationProp<RootStackParamList, 'QRScanner'>;
@@ -21,8 +22,29 @@ export default function QRScannerScreen({ navigation }: QRScannerScreenProps) {
 
   const handleBarCodeScanned = ({ data }: { type: string; data: string }) => {
     setScanned(true);
-    // Assume the QR code contains the offer ID
-    navigation.navigate('DiscountDetails', { offerId: data });
+
+    // Parse the QR code data to determine if it's a business URL or offer ID
+    // Business QR codes contain: https://www.popupreach.com/shoppers/business/{businessId}
+    // Or deep link: popupreach://business/{businessId}
+
+    try {
+      // Check if it's a business URL
+      const businessUrlMatch = data.match(/\/shoppers\/business\/([a-f0-9-]+)/i) ||
+                              data.match(/popupreach:\/\/business\/([a-f0-9-]+)/i);
+
+      if (businessUrlMatch && businessUrlMatch[1]) {
+        // It's a business QR code
+        const businessId = businessUrlMatch[1];
+        navigation.navigate('BusinessOffers', { businessId });
+      } else {
+        // Assume it's an offer ID
+        navigation.navigate('DiscountDetails', { offerId: data });
+      }
+    } catch (error) {
+      console.error('Error parsing QR code:', error);
+      // Default to offer details
+      navigation.navigate('DiscountDetails', { offerId: data });
+    }
   };
 
   if (!permission) {

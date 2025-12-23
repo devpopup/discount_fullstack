@@ -63,12 +63,15 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
       }
     } catch (error: any) {
       console.error('Error loading business offers:', error);
+      const message = error.response?.status === 404
+        ? 'This business has no active offers at the moment.'
+        : error.response?.data?.detail || 'Unable to load offers. Please try again later.';
+
       Alert.alert(
-        'Error',
-        error.response?.data?.detail || 'Failed to load business offers',
+        'No Offers Available',
+        message,
         [
-          { text: 'OK' },
-          { text: 'Go Back', onPress: () => navigation.goBack() }
+          { text: 'OK', onPress: () => navigation.goBack() },
         ]
       );
     } finally {
