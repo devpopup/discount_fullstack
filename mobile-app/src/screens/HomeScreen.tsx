@@ -18,7 +18,7 @@ import {
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
-import { setOfferReminder, removeOfferReminder } from '../services/offersService';
+import { setOfferReminder, removeOfferReminder, claimOffer, getTotalQuantityClaimed, canClaimMore } from '../services/offersService';
 import {
   requestNotificationPermissions,
   setupNotificationListeners,
@@ -191,15 +191,43 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     console.log('Like offer:', offerId);
   }, [isAuthenticated, promptSignIn]);
 
-  const handleClaim = useCallback((offerId: string) => {
+  const handleClaim = useCallback(async (offerId: string, offer?: Offer) => {
     if (!isAuthenticated) {
       promptSignIn('claim');
       return;
     }
-    // TODO: Implement claim API call
-    Alert.alert('Success', 'Offer claimed! Check your Claims tab to view it.');
-    console.log('Claim offer:', offerId);
-  }, [isAuthenticated, promptSignIn]);
+
+    try {
+      // Check quota if offer data is available
+      if (offer?.max_claims_per_user) {
+        const userCanClaim = await canClaimMore(offerId, offer.max_claims_per_user);
+        if (!userCanClaim) {
+          const totalClaimed = await getTotalQuantityClaimed(offerId);
+          Alert.alert(
+            'Limit Reached',
+            `You've reached your limit (${totalClaimed}/${offer.max_claims_per_user}) for this offer.`
+          );
+          return;
+        }
+      }
+
+      // Use min quantity if specified, otherwise default to 1
+      const quantity = offer?.min_claims_per_customer || 1;
+
+      const result = await claimOffer(offerId, 'in_store', quantity);
+      if (result.error) {
+        Alert.alert('Error', result.error);
+      } else {
+        Alert.alert('Success', 'Check the Claims tab for next steps in redeeming your claim.');
+        // Refresh the offers to update claim status
+        refetchTrending();
+        refetchNearby();
+        refetchExpiring();
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to claim offer');
+    }
+  }, [isAuthenticated, promptSignIn, refetchTrending, refetchNearby, refetchExpiring]);
 
   const handleRemind = useCallback(async (offerId: string, hasReminder: boolean) => {
     if (!isAuthenticated) {

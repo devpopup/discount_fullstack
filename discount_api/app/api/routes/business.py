@@ -3089,10 +3089,13 @@ async def get_business_qr_code(
         business = business_result.data[0]
         business_id = business["id"]
         business_name = business["business_name"]
-        
-        # Generate URL that customers will visit when scanning QR code
-        # Using the frontend URL from settings
+
+        # Use web URL for universal compatibility
+        # This page will auto-detect and open app if installed
         customer_url = f"{settings.frontend_url}/shoppers/business/{business_id}"
+
+        # Mobile app deep link (for reference)
+        app_deep_link = f"popupreach://business/{business_id}"
         
         # Generate QR code
         import qrcode
@@ -3124,9 +3127,10 @@ async def get_business_qr_code(
         return {
             "qr_code": qr_code_data_url,
             "customer_url": customer_url,
+            "app_deep_link": app_deep_link,
             "business_id": business_id,
             "business_name": business_name,
-            "message": "QR code generated successfully. Customers can scan this to view your offers."
+            "message": "QR code generated successfully. Customers can scan this to view your offers - it will open in the app if installed, or in a web browser otherwise."
         }
         
     except HTTPException:

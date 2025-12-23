@@ -16,6 +16,22 @@ export default function BusinessOffersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // App detection: Try to open mobile app first
+  useEffect(() => {
+    const appDeepLink = `popupreach://business/${businessId}`;
+
+    // Detect if user is on mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Try to open the app
+      window.location.href = appDeepLink;
+
+      // If app doesn't open within 2.5 seconds, the web page will continue to display
+      // (The page loads in parallel, so users see content regardless)
+    }
+  }, []); // Empty deps - run only once on mount
+
   useEffect(() => {
     fetchBusinessOffers();
   }, [businessId]);
@@ -24,10 +40,10 @@ export default function BusinessOffersPage() {
     try {
       setLoading(true);
 
-      // Fetch offers for this business
+      // Fetch offers for this business using the new dedicated endpoint
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
       const response = await fetch(
-        `${API_BASE}/customer/search/offers?business_id=${businessId}&available_only=true&size=50`
+        `${API_BASE}/customer/businesses/${businessId}/offers?page=1&limit=50`
       );
 
       if (!response.ok) {
@@ -35,13 +51,9 @@ export default function BusinessOffersPage() {
       }
 
       const data = await response.json();
-      console.log('Offers data:', data.offers); // Debug log
+      console.log('Business offers data:', data); // Debug log
       setOffers(data.offers || []);
-
-      // Extract business info from first offer (if available)
-      if (data.offers && data.offers.length > 0 && data.offers[0].business) {
-        setBusiness(data.offers[0].business);
-      }
+      setBusiness(data.business || null);
 
     } catch (err) {
       console.error('Error fetching business offers:', err);

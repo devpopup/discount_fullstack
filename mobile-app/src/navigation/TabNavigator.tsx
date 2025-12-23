@@ -3,41 +3,61 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import NearbyScreen from '../screens/NearbyScreen';
 import ClaimsScreen from '../screens/ClaimsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import { RootStackParamList } from './AppNavigator';
 
 const Tab = createBottomTabNavigator();
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Custom header component
 interface TabHeaderProps {
   title: string;
   showSearch?: boolean;
+  showScanner?: boolean;
   onSearchPress?: () => void;
+  onScanPress?: () => void;
 }
 
-function TabHeader({ title, showSearch, onSearchPress }: TabHeaderProps) {
+function TabHeader({ title, showSearch, showScanner, onSearchPress, onScanPress }: TabHeaderProps) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.header, { paddingTop: insets.top }]}>
       <View style={styles.headerContent}>
         <Text style={styles.headerTitle}>PopupReach</Text>
-        {showSearch && (
-          <TouchableOpacity style={styles.searchButton} onPress={onSearchPress}>
-            <Ionicons name="search-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        )}
+        <View style={styles.headerActions}>
+          {showScanner && (
+            <TouchableOpacity style={styles.iconButton} onPress={onScanPress}>
+              <Ionicons name="qr-code-outline" size={24} color="#333" />
+            </TouchableOpacity>
+          )}
+          {showSearch && (
+            <TouchableOpacity style={styles.iconButton} onPress={onSearchPress}>
+              <Ionicons name="search-outline" size={24} color="#333" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
 }
 
 export default function TabNavigator() {
+  const navigation = useNavigation<NavigationProp>();
+
   const handleSearchPress = () => {
     // TODO: Navigate to search screen or open search modal
     console.log('Search pressed');
+  };
+
+  const handleScanPress = () => {
+    navigation.navigate('QRScanner');
   };
 
   return (
@@ -62,7 +82,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader title="PopupReach" showScanner showSearch onScanPress={handleScanPress} onSearchPress={handleSearchPress} />,
         }}
       />
       <Tab.Screen
@@ -77,7 +97,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader title="PopupReach" showScanner showSearch onScanPress={handleScanPress} onSearchPress={handleSearchPress} />,
         }}
       />
       <Tab.Screen
@@ -87,12 +107,12 @@ export default function TabNavigator() {
           tabBarLabel: 'Claims',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? 'receipt' : 'receipt-outline'}
+              name={focused ? 'gift' : 'gift-outline'}
               size={26}
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader title="PopupReach" showScanner showSearch onScanPress={handleScanPress} onSearchPress={handleSearchPress} />,
         }}
       />
       <Tab.Screen
@@ -138,7 +158,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#e94e1b',
   },
-  searchButton: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButton: {
     padding: 8,
     borderRadius: 8,
   },

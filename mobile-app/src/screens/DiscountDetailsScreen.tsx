@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { getOfferById, claimOffer, unclaimOffer, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds, getClaimedOfferIds, setOfferReminder, removeOfferReminder } from '../services/offersService';
+import { getOfferById, claimOffer, unclaimOffer, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds, getClaimedOfferIds, setOfferReminder, removeOfferReminder, getTotalQuantityClaimed, canClaimMore, getRemainingQuota } from '../services/offersService';
 import { Offer } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
 
@@ -134,12 +134,54 @@ export default function DiscountDetailsScreen({
           Alert.alert('Success', 'Offer unclaimed successfully!');
         }
       } else {
-        const result = await claimOffer(offer.id, 'in_store');
+        // Check if user can claim more based on quantity available
+        if (offer.max_claims_per_user) {
+          const userCanClaim = await canClaimMore(offer.id, offer.max_claims_per_user);
+          if (!userCanClaim) {
+            const totalClaimed = await getTotalQuantityClaimed(offer.id);
+            Alert.alert(
+              'Limit Reached',
+              `You've reached your limit (${totalClaimed}/${offer.max_claims_per_user}) for this offer.`
+            );
+            setClaiming(false);
+            return;
+          }
+        }
+
+        // Get the claim quantity (default to min or 1)
+        const quantity = offer.min_claims_per_customer || 1;
+
+        // Validate total after claim won't exceed limit
+        if (offer.max_claims_per_user) {
+          const totalClaimed = await getTotalQuantityClaimed(offer.id);
+          if (totalClaimed + quantity > offer.max_claims_per_user) {
+            const remaining = offer.max_claims_per_user - totalClaimed;
+            Alert.alert(
+              'Insufficient Quantity',
+              remaining > 0
+                ? `Only ${remaining} quantity available. You've already claimed ${totalClaimed}/${offer.max_claims_per_user}.`
+                : `You've reached the maximum quantity (${offer.max_claims_per_user}) for this offer.`
+            );
+            setClaiming(false);
+            return;
+          }
+        }
+
+        const result = await claimOffer(offer.id, 'in_store', quantity);
         if (result.error) {
           Alert.alert('Error', result.error);
         } else {
           setIsClaimed(true);
-          Alert.alert('Success', 'Offer claimed! Visit the store to redeem.');
+          // Show quantity info in success message if applicable
+          if (offer.max_claims_per_user) {
+            const totalClaimed = await getTotalQuantityClaimed(offer.id);
+            Alert.alert(
+              'Success',
+              `Claimed! Quantity used: ${totalClaimed}/${offer.max_claims_per_user}. Check the Claims tab for next steps.`
+            );
+          } else {
+            Alert.alert('Success', 'Check the Claims tab for next steps in redeeming your claim.');
+          }
         }
       }
     } catch (err) {

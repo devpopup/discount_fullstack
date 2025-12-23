@@ -13,6 +13,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -228,6 +230,7 @@ export async function scheduleLastChanceReminder(
           badge: 1,
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: oneDayBefore,
         },
       });
@@ -304,7 +307,7 @@ export function setupNotificationListeners(
   const responseListener = Notifications.addNotificationResponseReceivedListener(onNotificationTapped);
 
   return () => {
-    Notifications.removeNotificationSubscription(notificationListener);
-    Notifications.removeNotificationSubscription(responseListener);
+    notificationListener.remove();
+    responseListener.remove();
   };
 }

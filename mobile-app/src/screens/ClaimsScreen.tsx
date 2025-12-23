@@ -111,12 +111,14 @@ export default function ClaimsScreen({ navigation }: ClaimsScreenProps) {
             try {
               const result = await unclaimOffer(offerId);
 
-              if (result.success) {
-                // Remove the claim from the list immediately
-                setClaims(prevClaims => prevClaims.filter(claim => claim.id !== claimId));
-                Alert.alert('Success', 'Offer unclaimed successfully!');
+              if (result.error) {
+                Alert.alert('Error', result.error);
               } else {
-                Alert.alert('Error', result.error || 'Failed to unclaim offer');
+                // Remove the claim from the list immediately
+                setAllClaims(prevClaims => prevClaims.filter((claim: any) => claim.id !== claimId));
+                Alert.alert('Success', 'Offer unclaimed successfully!');
+                // Optionally refresh the claims list
+                loadClaims();
               }
             } catch (error) {
               console.error('Error unclaiming offer:', error);

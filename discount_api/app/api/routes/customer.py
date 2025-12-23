@@ -1217,36 +1217,36 @@ async def discover_businesses(
     size: int = Query(20, ge=1, le=100)
 ):
     """Discover businesses with filters"""
-    
+
     try:
         # Build query
         query = supabase.table("businesses").select("*, categories(*)", count="exact")
-        
+
         if verified_only:
             query = query.eq("is_verified", True)
-        
+
         if category_id:
             query = query.eq("category_id", category_id)
-        
+
         if search:
             query = query.ilike("business_name", f"%{search}%")
-        
+
         if has_active_offers:
             current_time = datetime.now(timezone.utc).isoformat()
             # This would need a join - simplified for now
             query = query.eq("is_verified", True)  # Placeholder logic
-        
+
         # Apply pagination
         offset = (page - 1) * size
         query = query.range(offset, offset + size - 1).order("business_name")
-        
+
         result = query.execute()
-        
+
         total = result.count if result.count else 0
         has_next = (page * size) < total
-        
+
         businesses = [BusinessResponse(**business) for business in result.data]
-        
+
         return {
             "businesses": businesses,
             "total": total,
@@ -1254,11 +1254,102 @@ async def discover_businesses(
             "size": size,
             "has_next": has_next
         }
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to discover businesses: {str(e)}"
+        )
+
+
+@router.get("/businesses/{business_id}/offers")
+async def get_business_offers(
+    business_id: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100)
+):
+    """Get all active offers from a specific business (for QR code scanning)"""
+
+    try:
+        # Get business details
+        business_result = supabase.table("businesses").select(
+            "id, business_name, avatar_url, business_address, latitude, longitude, phone_number, business_website, business_hours"
+        ).eq("id", business_id).execute()
+
+        if not business_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business not found"
+            )
+
+        business_data = business_result.data[0]
+
+        # Get current time for active offers check
+        current_time = datetime.now(timezone.utc).isoformat()
+
+        # Get active offers for this business (without product join first)
+        query = supabase.table("offers").select(
+            "*", count="exact"
+        ).eq("business_id", business_id).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time)
+
+        # Apply pagination
+        offset = (page - 1) * limit
+        query = query.order("created_at", desc=True).range(offset, offset + limit - 1)
+
+        result = query.execute()
+
+        total = result.count if result.count else 0
+        has_more = (offset + limit) < total
+
+        # Enrich offers with product data (like trending/nearby endpoints)
+        enriched_offers = []
+        for offer in result.data:
+            # Get product data if product_id exists
+            if offer.get('product_id'):
+                try:
+                    product_result = supabase.table("products").select(
+                        "*, categories(*)"
+                    ).eq("id", offer['product_id']).execute()
+
+                    if product_result.data:
+                        # Use 'products' (plural) to match frontend expectations
+                        offer['products'] = product_result.data[0]
+                    else:
+                        offer['products'] = None
+                except Exception as e:
+                    print(f"Error fetching product for offer {offer.get('id')}: {e}")
+                    offer['products'] = None
+            else:
+                offer['products'] = None
+
+            # Add business data to each offer for consistency with other endpoints
+            offer['business'] = business_data
+            offer['businesses'] = business_data  # For compatibility
+
+            enriched_offers.append(offer)
+
+        # Convert decimals to floats for JSON serialization
+        enriched_offers = convert_decimals_to_float(enriched_offers)
+        business_data = convert_decimals_to_float(business_data)
+
+        return {
+            "business": business_data,
+            "offers": enriched_offers,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "has_more": has_more
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error fetching business offers: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch business offers: {str(e)}"
         )
 
 

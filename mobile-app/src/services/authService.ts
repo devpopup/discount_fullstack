@@ -22,6 +22,7 @@ export interface User {
   phone_number?: string;
   avatar_url?: string;
   is_active?: boolean;
+  is_business?: boolean;
   created_at?: string;
   updated_at?: string;
 }

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import DealCardLandscape from '../components/DealCardLandscape';
-import { getNearbyOffers } from '../services/offersService';
+import { getNearbyOffers, claimOffer, getTotalQuantityClaimed, canClaimMore, setOfferReminder, removeOfferReminder } from '../services/offersService';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
@@ -130,14 +130,70 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
     console.log('Like offer:', offerId);
   };
 
-  const handleClaim = (offerId: string) => {
+  const handleClaim = async (offerId: string, offer?: Offer) => {
     if (!isAuthenticated) {
       promptSignIn('claim');
       return;
     }
-    // TODO: Implement claim API call
-    Alert.alert('Success', 'Offer claimed! Check your Claims tab to view it.');
-    console.log('Claim offer:', offerId);
+
+    try {
+      // Check quota if offer data is available
+      if (offer?.max_claims_per_user) {
+        const userCanClaim = await canClaimMore(offerId, offer.max_claims_per_user);
+        if (!userCanClaim) {
+          const totalClaimed = await getTotalQuantityClaimed(offerId);
+          Alert.alert(
+            'Limit Reached',
+            `You've reached your limit (${totalClaimed}/${offer.max_claims_per_user}) for this offer.`
+          );
+          return;
+        }
+      }
+
+      // Use min quantity if specified, otherwise default to 1
+      const quantity = offer?.min_claims_per_customer || 1;
+
+      const result = await claimOffer(offerId, 'in_store', quantity);
+      if (result.error) {
+        Alert.alert('Error', result.error);
+      } else {
+        Alert.alert('Success', 'Check the Claims tab for next steps in redeeming your claim.');
+        // Refresh the offers
+        if (userLocation) {
+          loadDeals(userLocation, 0, false);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to claim offer');
+    }
+  };
+
+  const handleRemind = async (offerId: string, hasReminder: boolean) => {
+    if (!isAuthenticated) {
+      promptSignIn('set reminders for');
+      return;
+    }
+
+    try {
+      if (hasReminder) {
+        const result = await setOfferReminder(offerId);
+        if (result.success) {
+          Alert.alert('Reminder Set!', "You'll be notified when this offer goes live.");
+        } else {
+          Alert.alert('Error', result.error || 'Failed to set reminder');
+        }
+      } else {
+        const result = await removeOfferReminder(offerId);
+        if (result.success) {
+          Alert.alert('Reminder Removed', 'You will no longer be notified about this offer.');
+        } else {
+          Alert.alert('Error', result.error || 'Failed to remove reminder');
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling reminder:', error);
+      Alert.alert('Error', 'Failed to update reminder. Please try again.');
+    }
   };
 
   const renderItem = ({ item }: { item: Offer }) => (
@@ -146,6 +202,7 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
       onPress={() => handleDealPress(item)}
       onLike={handleLike}
       onClaim={handleClaim}
+      onRemind={handleRemind}
     />
   );
 

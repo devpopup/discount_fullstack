@@ -263,11 +263,13 @@ export async function getOfferById(offerId: string): Promise<{ offer: Offer | nu
  */
 export async function claimOffer(
   offerId: string,
-  claimType: string = 'in_store'
+  claimType: string = 'in_store',
+  quantity: number = 1
 ): Promise<{ success: boolean; error: string | null }> {
   try {
     await apiClient.post(`/customer/offers/${offerId}/claim`, {
-      claim_type: claimType
+      claim_type: claimType,
+      quantity: quantity
     });
 
     return { success: true, error: null };
@@ -539,4 +541,49 @@ export async function getMyReminders(): Promise<{ reminders: any[]; error: strin
       error: error.message || 'Failed to fetch reminders'
     };
   }
+}
+
+/**
+ * Get total quantity claimed for an offer across all user's claims
+ */
+export async function getTotalQuantityClaimed(offerId: string): Promise<number> {
+  try {
+    const response = await apiClient.get('/customer/claimed-offers?size=100');
+    const claimedOffers = response.data.claimed_offers || [];
+
+    let totalQuantity = 0;
+    claimedOffers.forEach((claimedOffer: any) => {
+      const offer = claimedOffer.offer || claimedOffer.offers;
+      const claimOfferId = offer?.id || claimedOffer.offer_id;
+
+      if (claimOfferId === offerId) {
+        totalQuantity += claimedOffer.quantity || 1;
+      }
+    });
+
+    return totalQuantity;
+  } catch (error: any) {
+    console.error('Error getting total quantity claimed:', error);
+    return 0;
+  }
+}
+
+/**
+ * Check if user can claim more of an offer based on max_claims_per_user
+ */
+export async function canClaimMore(offerId: string, maxClaimsPerUser?: number): Promise<boolean> {
+  if (!maxClaimsPerUser) return true; // No limit
+
+  const totalClaimed = await getTotalQuantityClaimed(offerId);
+  return totalClaimed < maxClaimsPerUser;
+}
+
+/**
+ * Get remaining quota for an offer
+ */
+export async function getRemainingQuota(offerId: string, maxClaimsPerUser?: number): Promise<number> {
+  if (!maxClaimsPerUser) return Infinity; // No limit
+
+  const totalClaimed = await getTotalQuantityClaimed(offerId);
+  return Math.max(0, maxClaimsPerUser - totalClaimed);
 }

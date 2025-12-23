@@ -44,6 +44,8 @@ export interface Offer {
   startDate?: string;
   claimedCount: number;
   maxClaims?: number | null;
+  max_claims_per_user?: number | null;
+  min_claims_per_customer?: number | null;
   isPopular: boolean;
   isFeatured: boolean;
   hasReminder?: boolean;

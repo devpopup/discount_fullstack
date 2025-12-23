@@ -16,13 +16,14 @@ interface DealCardLandscapeProps {
   deal: Offer;
   onPress: () => void;
   onLike?: (offerId: string) => void;
-  onClaim?: (offerId: string) => void;
+  onClaim?: (offerId: string, offer?: Offer) => void;
+  onRemind?: (offerId: string, hasReminder: boolean) => void;
   onLocationPress?: () => void;
   isLiked?: boolean;
   hideBusinessInfo?: boolean;
 }
 
-function DealCardLandscape({ deal, onPress, onLike, onClaim, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
+function DealCardLandscape({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
   const [liked, setLiked] = useState(isLiked);
 
   const handleLike = (e: any) => {
@@ -36,7 +37,7 @@ function DealCardLandscape({ deal, onPress, onLike, onClaim, onLocationPress, is
   const handleClaim = (e: any) => {
     e.stopPropagation();
     if (onClaim) {
-      onClaim(deal.id);
+      onClaim(deal.id, deal);
     }
   };
 

@@ -35,17 +35,10 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const linking = {
-  prefixes: ['popupreach://', 'https://popupreach.com'],
+  prefixes: ['popupreach://', 'https://popupreach.com'] as string[],
   config: {
     screens: {
-      MainTabs: {
-        screens: {
-          Home: 'home',
-          Nearby: 'nearby',
-          Claims: 'claims',
-          Profile: 'profile',
-        },
-      },
+      MainTabs: 'tabs',
       DiscountDetails: 'offer/:offerId',
       BusinessOffers: 'business/:businessId',
       SignIn: 'signin',
