@@ -55,10 +55,28 @@ export default function DiscountDetailsScreen({
   const [selectedImage, setSelectedImage] = useState(0);
   const [hasReminder, setHasReminder] = useState(false);
   const [togglingReminder, setTogglingReminder] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [minQuantity, setMinQuantity] = useState(1);
+  const [maxQuantity, setMaxQuantity] = useState(100);
 
   useEffect(() => {
     fetchOfferDetails();
   }, [offerId]);
+
+  // Calculate min/max quantity based on offer constraints
+  useEffect(() => {
+    if (offer && isAuthenticated) {
+      const min = offer.min_claims_per_customer || 1;
+      const totalClaimed = getTotalQuantityClaimed(offer.id);
+      const max = offer.max_claims_per_user
+        ? Math.max(min, offer.max_claims_per_user - totalClaimed)
+        : 100;
+
+      setMinQuantity(min);
+      setMaxQuantity(max);
+      setQuantity(min); // Initialize to minimum
+    }
+  }, [offer, isAuthenticated]);
 
   const fetchOfferDetails = async () => {
     try {
@@ -148,8 +166,15 @@ export default function DiscountDetailsScreen({
           }
         }
 
-        // Get the claim quantity (default to min or 1)
-        const quantity = offer.min_claims_per_customer || 1;
+        // Validate minimum quantity
+        if (offer.min_claims_per_customer && quantity < offer.min_claims_per_customer) {
+          Alert.alert(
+            'Invalid Quantity',
+            `Minimum claim quantity is ${offer.min_claims_per_customer}.`
+          );
+          setClaiming(false);
+          return;
+        }
 
         // Validate total after claim won't exceed limit
         if (offer.max_claims_per_user) {
@@ -172,15 +197,17 @@ export default function DiscountDetailsScreen({
           Alert.alert('Error', result.error);
         } else {
           setIsClaimed(true);
+          // Reset quantity to minimum after successful claim
+          setQuantity(minQuantity);
           // Show quantity info in success message if applicable
           if (offer.max_claims_per_user) {
             const totalClaimed = await getTotalQuantityClaimed(offer.id);
             Alert.alert(
               'Success',
-              `Claimed! Quantity used: ${totalClaimed}/${offer.max_claims_per_user}. Check the Claims tab for next steps.`
+              `Claimed ${quantity}! Quota used: ${totalClaimed}/${offer.max_claims_per_user}. Check the Claims tab for next steps.`
             );
           } else {
-            Alert.alert('Success', 'Check the Claims tab for next steps in redeeming your claim.');
+            Alert.alert('Success', `Claimed ${quantity}! Check the Claims tab for next steps in redeeming your claim.`);
           }
         }
       }
@@ -478,22 +505,72 @@ export default function DiscountDetailsScreen({
               </TouchableOpacity>
             </>
           ) : (
-            <TouchableOpacity
-              style={[styles.claimButton, isClaimed && styles.claimedButton]}
-              onPress={handleClaimOffer}
-              disabled={claiming}
-            >
-              {claiming ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name={isClaimed ? "checkmark-circle" : "storefront"} size={20} color="#fff" />
-                  <Text style={styles.claimButtonText}>
-                    {isClaimed ? 'Unclaim Offer' : 'Claim In Store'}
+            <>
+              {/* Quantity Selector - only show when not claimed */}
+              {!isClaimed && isAuthenticated && (
+                <View style={styles.quantitySection}>
+                  <Text style={styles.quantitySectionTitle}>Quantity to Claim</Text>
+
+                  {/* Quota Info */}
+                  {offer.max_claims_per_user && (
+                    <View style={styles.quotaInfo}>
+                      <Text style={styles.quotaText}>
+                        Quota: {getTotalQuantityClaimed(offer.id)}/{offer.max_claims_per_user} used
+                      </Text>
+                      <Text style={styles.quotaText}>
+                        Remaining: {offer.max_claims_per_user - getTotalQuantityClaimed(offer.id)}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Quantity Stepper */}
+                  <View style={styles.quantityStepper}>
+                    <TouchableOpacity
+                      style={[styles.stepperButton, quantity <= minQuantity && styles.stepperButtonDisabled]}
+                      onPress={() => setQuantity(Math.max(minQuantity, quantity - 1))}
+                      disabled={quantity <= minQuantity}
+                    >
+                      <Ionicons name="remove" size={24} color={quantity <= minQuantity ? "#ccc" : "#e94e1b"} />
+                    </TouchableOpacity>
+
+                    <View style={styles.quantityDisplay}>
+                      <Text style={styles.quantityValue}>{quantity}</Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[styles.stepperButton, quantity >= maxQuantity && styles.stepperButtonDisabled]}
+                      onPress={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                      disabled={quantity >= maxQuantity}
+                    >
+                      <Ionicons name="add" size={24} color={quantity >= maxQuantity ? "#ccc" : "#e94e1b"} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Min/Max Info */}
+                  <Text style={styles.quantityConstraints}>
+                    Min: {minQuantity} • Max: {maxQuantity === 100 ? 'No limit' : maxQuantity}
                   </Text>
-                </>
+                </View>
               )}
-            </TouchableOpacity>
+
+              {/* Claim Button */}
+              <TouchableOpacity
+                style={[styles.claimButton, isClaimed && styles.claimedButton]}
+                onPress={handleClaimOffer}
+                disabled={claiming}
+              >
+                {claiming ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name={isClaimed ? "checkmark-circle" : "storefront"} size={20} color="#fff" />
+                    <Text style={styles.claimButtonText}>
+                      {isClaimed ? 'Unclaim Offer' : 'Claim In Store'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
           )}
 
           {website && (
@@ -935,5 +1012,82 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  quantitySection: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quantitySectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  quotaInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  quotaText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
+  quantityStepper: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 20,
+  },
+  stepperButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e94e1b',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  stepperButtonDisabled: {
+    borderColor: '#e0e0e0',
+    backgroundColor: '#f5f5f5',
+  },
+  quantityDisplay: {
+    minWidth: 60,
+    height: 48,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  quantityValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  quantityConstraints: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

@@ -206,10 +206,9 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
       deal={item}
       onPress={() => handleDealPress(item)}
       onLike={handleLike}
-      onClaim={handleClaim}
       onRemind={handleRemind}
     />
-  ), [handleDealPress, handleLike, handleClaim, handleRemind]);
+  ), [handleDealPress, handleLike, handleRemind]);
 
   const renderFooter = () => {
     if (!hasNextPage) return null;

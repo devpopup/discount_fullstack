@@ -201,7 +201,6 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
       deal={item}
       onPress={() => handleDealPress(item)}
       onLike={handleLike}
-      onClaim={handleClaim}
       onRemind={handleRemind}
     />
   );

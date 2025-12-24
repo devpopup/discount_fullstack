@@ -21,6 +21,7 @@ export default function QRScannerScreen({ navigation }: QRScannerScreenProps) {
   const [scanned, setScanned] = useState(false);
 
   const handleBarCodeScanned = ({ data }: { type: string; data: string }) => {
+    if (scanned) return; // Prevent multiple scans
     setScanned(true);
 
     // Parse the QR code data to determine if it's a business URL or offer ID
@@ -35,15 +36,26 @@ export default function QRScannerScreen({ navigation }: QRScannerScreenProps) {
       if (businessUrlMatch && businessUrlMatch[1]) {
         // It's a business QR code
         const businessId = businessUrlMatch[1];
-        navigation.navigate('BusinessOffers', { businessId });
+        setTimeout(() => {
+          navigation.navigate('BusinessOffers', { businessId });
+        }, 100);
       } else {
         // Assume it's an offer ID
-        navigation.navigate('DiscountDetails', { offerId: data });
+        setTimeout(() => {
+          navigation.navigate('DiscountDetails', { offerId: data });
+        }, 100);
       }
     } catch (error) {
       console.error('Error parsing QR code:', error);
       // Default to offer details
-      navigation.navigate('DiscountDetails', { offerId: data });
+      setTimeout(() => {
+        try {
+          navigation.navigate('DiscountDetails', { offerId: data });
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          setScanned(false); // Allow scanning again
+        }
+      }, 100);
     }
   };
 

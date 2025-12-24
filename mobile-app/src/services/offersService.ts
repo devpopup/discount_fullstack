@@ -56,6 +56,8 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     startDate: apiOffer.start_date,
     claimedCount: apiOffer.current_claims || apiOffer.claimed_count || 0,
     maxClaims: apiOffer.max_claims || null,
+    max_claims_per_user: apiOffer.max_claims_per_user || null,
+    min_claims_per_customer: apiOffer.min_claims_per_customer || null,
     isPopular: apiOffer.is_popular || false,
     isFeatured: apiOffer.is_featured || false,
     hasReminder: apiOffer.has_reminder || false,

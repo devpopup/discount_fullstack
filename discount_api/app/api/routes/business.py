@@ -1466,6 +1466,7 @@ async def create_offer(
             "expiry_date": offer_data["expiry_date"],
             "max_claims": int(offer_data["max_claims"]) if offer_data.get("max_claims") else None,
             "max_claims_per_user": int(offer_data["max_claims_per_user"]) if offer_data.get("max_claims_per_user") else None,
+            "min_claims_per_customer": int(offer_data["min_claims_per_customer"]) if offer_data.get("min_claims_per_customer") else None,
             "current_claims": 0,
             "is_active": offer_data.get("is_active", True),
             "terms_conditions": offer_data.get("terms_conditions"),
@@ -1473,7 +1474,7 @@ async def create_offer(
             # Geofence fields
             "geofence_enabled": geofence_enabled,
             "geofence_radius": geofence_radius,
-            
+
             # Type-specific fields (set to None if not applicable)
             "minimum_purchase_amount": float(offer_data.get("minimum_purchase_amount")) if offer_data.get("minimum_purchase_amount") else None,
             "minimum_quantity": int(offer_data.get("minimum_quantity")) if offer_data.get("minimum_quantity") else None,
@@ -1625,6 +1626,7 @@ async def update_offer(
             "expiry_date": "expiry_date",
             "max_claims": "max_claims",
             "max_claims_per_user": "max_claims_per_user",
+            "min_claims_per_customer": "min_claims_per_customer",
             "is_active": "is_active",
             "terms_conditions": "terms_conditions",
             # Geofence fields
@@ -1648,7 +1650,7 @@ async def update_offer(
                 if db_field in ["discount_value", "minimum_purchase_amount", "get_discount_percentage"]:
                     if value is not None:
                         update_data[db_field] = float(value)
-                elif db_field in ["minimum_quantity", "buy_quantity", "get_quantity", "max_claims", "max_claims_per_user", "geofence_radius"]:
+                elif db_field in ["minimum_quantity", "buy_quantity", "get_quantity", "max_claims", "max_claims_per_user", "min_claims_per_customer", "geofence_radius"]:
                     if value is not None:
                         update_data[db_field] = int(value)
                 elif db_field in ["geofence_enabled"]:

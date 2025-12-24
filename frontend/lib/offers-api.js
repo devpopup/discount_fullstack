@@ -321,6 +321,8 @@ export function transformOfferData(apiOffer) {
     start_date: apiOffer.start_date || null, // Preserve start_date for upcoming offers
     claimedCount: apiOffer.current_claims || apiOffer.claimed_count || 0,
     maxClaims: apiOffer.max_claims || null,
+    max_claims_per_user: apiOffer.max_claims_per_user || null,
+    min_claims_per_customer: apiOffer.min_claims_per_customer || null,
     isPopular: apiOffer.is_popular || false,
     isFeatured: apiOffer.is_featured || false,
     images: apiOffer.images ||

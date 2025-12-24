@@ -552,6 +552,32 @@ export default function OfferDetailPage() {
                 </span>
               </div>
 
+              {/* Min Claims Per Customer */}
+              {offer.min_claims_per_customer && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-gray-600">Min Per Claim</span>
+                  </div>
+                  <span className="font-semibold text-blue-600">
+                    {offer.min_claims_per_customer} units
+                  </span>
+                </div>
+              )}
+
+              {/* Max Claims Per User */}
+              {offer.max_claims_per_user && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm text-gray-600">Max Per User</span>
+                  </div>
+                  <span className="font-semibold text-amber-600">
+                    {offer.max_claims_per_user} units
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

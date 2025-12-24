@@ -659,11 +659,9 @@ export default function OfferDetailsPage({ params }) {
                           </span>
                         )}
                       </label>
-                      {minQuantity > 1 && (
-                        <p className="text-xs text-amber-600 mb-2 font-medium">
-                          Minimum: {minQuantity} • Maximum: {maxQuantity === Infinity ? 'No limit' : maxQuantity}
-                        </p>
-                      )}
+                      <p className="text-xs text-amber-600 mb-2 font-medium">
+                        Minimum: {minQuantity} • Maximum: {maxQuantity === Infinity ? 'No limit' : maxQuantity}
+                      </p>
                       <div className="flex items-center gap-3">
                         <button
                           type="button"

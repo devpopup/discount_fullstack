@@ -16,14 +16,13 @@ interface DealCardLandscapeProps {
   deal: Offer;
   onPress: () => void;
   onLike?: (offerId: string) => void;
-  onClaim?: (offerId: string, offer?: Offer) => void;
   onRemind?: (offerId: string, hasReminder: boolean) => void;
   onLocationPress?: () => void;
   isLiked?: boolean;
   hideBusinessInfo?: boolean;
 }
 
-function DealCardLandscape({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
+function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
   const [liked, setLiked] = useState(isLiked);
 
   const handleLike = (e: any) => {
@@ -31,13 +30,6 @@ function DealCardLandscape({ deal, onPress, onLike, onClaim, onRemind, onLocatio
     setLiked(!liked);
     if (onLike) {
       onLike(deal.id);
-    }
-  };
-
-  const handleClaim = (e: any) => {
-    e.stopPropagation();
-    if (onClaim) {
-      onClaim(deal.id, deal);
     }
   };
 
@@ -161,17 +153,6 @@ function DealCardLandscape({ deal, onPress, onLike, onClaim, onRemind, onLocatio
               name={liked ? 'heart' : 'heart-outline'}
               size={18}
               color={liked ? '#e94e1b' : '#666'}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleClaim}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="ticket-outline"
-              size={18}
-              color="#666"
             />
           </TouchableOpacity>
         </View>

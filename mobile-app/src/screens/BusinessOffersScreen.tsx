@@ -128,7 +128,6 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
       deal={item}
       onPress={() => handleDealPress(item)}
       onLike={handleLike}
-      onClaim={handleClaim}
       hideBusinessInfo={true}
     />
   );
