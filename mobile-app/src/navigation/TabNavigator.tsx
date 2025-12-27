@@ -82,7 +82,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showScanner showSearch onScanPress={handleScanPress} onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
         }}
       />
       <Tab.Screen
@@ -97,7 +97,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showScanner showSearch onScanPress={handleScanPress} onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
         }}
       />
       <Tab.Screen
@@ -112,7 +112,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showScanner showSearch onScanPress={handleScanPress} onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
         }}
       />
       <Tab.Screen
