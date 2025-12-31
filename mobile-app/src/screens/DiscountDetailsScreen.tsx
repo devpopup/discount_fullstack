@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Image,
   Alert,
   Share,
   Linking,
@@ -91,10 +90,9 @@ export default function DiscountDetailsScreen({
         setOffer(result.offer);
         setHasReminder(result.offer.hasReminder || false);
 
-        // Check if offer is claimed and favorited
+        // Check if offer is claimed and favorited (in parallel for better performance)
         if (isAuthenticated) {
-          checkIfClaimed();
-          checkIfFavorited();
+          Promise.all([checkIfClaimed(), checkIfFavorited()]);
         }
       } else {
         setError('Offer not found');

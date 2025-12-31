@@ -24,6 +24,9 @@ import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
 import { claimOffer, getTotalQuantityClaimed, canClaimMore, setOfferReminder, removeOfferReminder } from '../services/offersService';
 
+// Card dimensions for getItemLayout optimization
+const DEAL_CARD_LANDSCAPE_HEIGHT = 155; // Card height (140) + marginBottom (15)
+
 type RootStackParamList = {
   Home: undefined;
   DealsList: { type: 'nearby' | 'trending' | 'expiring' | 'upcoming' | 'all' };
@@ -243,6 +246,16 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
     );
   }
 
+  // Performance optimization: getItemLayout helps FlatList calculate item positions faster
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({
+      length: DEAL_CARD_LANDSCAPE_HEIGHT,
+      offset: DEAL_CARD_LANDSCAPE_HEIGHT * index,
+      index,
+    }),
+    []
+  );
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -262,6 +275,7 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
         windowSize={5}
         removeClippedSubviews={true}
         updateCellsBatchingPeriod={50}
+        getItemLayout={getItemLayout}
       />
     </View>
   );

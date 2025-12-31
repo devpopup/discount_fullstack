@@ -309,7 +309,7 @@ export function transformOfferData(apiOffer) {
     description: offerDescription || '',
     businessName: business.business_name || apiOffer.business_name || 'Unknown Business',
     businessLogo: business.avatar_url || apiOffer.avatar_url || null,
-    discount: calculateDiscountPercentage(apiOffer),
+    discount: apiOffer.discount_percentage || 0,
     originalPrice: parseFloat(apiOffer.original_price || product.price || 0),
     discountedPrice: parseFloat(apiOffer.discounted_price || 0),
     category: category.name || product.category || apiOffer.category || apiOffer.category_name || 'General',
@@ -364,33 +364,8 @@ function constructImageUrl(imagePath) {
   return fullUrl
 }
 
-/**
- * Calculate discount percentage from API data
- */
-function calculateDiscountPercentage(apiOffer) {
-  if (apiOffer.discount_type === 'percentage') {
-    return parseInt(apiOffer.discount_value || 0)
-  }
-  
-  if (apiOffer.discount_type === 'fixed' && apiOffer.original_price) {
-    const discountAmount = parseFloat(apiOffer.discount_value || 0)
-    const originalPrice = parseFloat(apiOffer.original_price)
-    
-    if (originalPrice > 0) {
-      return Math.round((discountAmount / originalPrice) * 100)
-    }
-  }
-  
-  // For other types, try to calculate from original vs discounted price
-  const originalPrice = parseFloat(apiOffer.original_price || 0)
-  const discountedPrice = parseFloat(apiOffer.discounted_price || 0)
-  
-  if (originalPrice > 0 && discountedPrice > 0) {
-    return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
-  }
-  
-  return 0
-}
+// Note: Discount percentage is now calculated on the backend for consistency and performance.
+// The API returns discount_percentage directly in the offer data.
 
 /**
  * Get user location (with permission)

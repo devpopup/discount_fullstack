@@ -6,11 +6,17 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DealCard from './DealCard';
 import DealCardLandscape from './DealCardLandscape';
 import { Offer } from '../types/offer';
+
+// Card dimensions for getItemLayout optimization
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const DEAL_CARD_WIDTH = SCREEN_WIDTH * 0.385 + 12; // Card width + marginRight
+const DEAL_CARD_LANDSCAPE_HEIGHT = 155; // Card height (140) + marginBottom (15)
 
 interface DealsSectionProps {
   title: string;
@@ -61,6 +67,24 @@ function DealsSection({
         onRemind={onRemind}
       />
     );
+  };
+
+  // Performance optimization: getItemLayout helps FlatList calculate item positions faster
+  const getItemLayout = (_: any, index: number) => {
+    if (useLandscapeCards) {
+      // Vertical list with landscape cards
+      return {
+        length: DEAL_CARD_LANDSCAPE_HEIGHT,
+        offset: DEAL_CARD_LANDSCAPE_HEIGHT * index,
+        index,
+      };
+    }
+    // Horizontal list with standard cards
+    return {
+      length: DEAL_CARD_WIDTH,
+      offset: DEAL_CARD_WIDTH * index,
+      index,
+    };
   };
 
   if (loading) {
@@ -137,6 +161,7 @@ function DealsSection({
         maxToRenderPerBatch={3}
         windowSize={3}
         removeClippedSubviews={true}
+        getItemLayout={getItemLayout}
       />
     </View>
   );

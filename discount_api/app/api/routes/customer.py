@@ -24,10 +24,32 @@ from app.core.database import supabase, supabase_admin
 
 
 # Add this helper function at the top of your customer.py file (after imports)
+def calculate_discount_percentage(offer):
+    """Calculate discount percentage for display"""
+    discount_type = offer.get('discount_type')
+    discount_value = offer.get('discount_value', 0)
+    original_price = offer.get('original_price', 0)
+    discounted_price = offer.get('discounted_price', 0)
+
+    # If it's already a percentage type, return the value
+    if discount_type == 'percentage':
+        return int(discount_value or 0)
+
+    # For fixed discount, calculate percentage based on original price
+    if discount_type == 'fixed' and original_price and original_price > 0:
+        discount_amount = float(discount_value or 0)
+        return round((discount_amount / original_price) * 100)
+
+    # Fallback: calculate from original vs discounted price
+    if original_price and original_price > 0 and discounted_price and discounted_price > 0:
+        return round(((original_price - discounted_price) / original_price) * 100)
+
+    return 0
+
 async def enrich_offers_with_product_data(offers_data):
     """Fetch product data for offers and merge it"""
     enriched_offers = []
-    
+
     for offer in offers_data:
         # Get the product data if product_id exists
         if offer.get('product_id'):
@@ -35,15 +57,18 @@ async def enrich_offers_with_product_data(offers_data):
                 product_result = supabase.table("products").select(
                     "*, categories(*)"
                 ).eq("id", offer['product_id']).execute()
-                
+
                 if product_result.data:
                     offer['products'] = product_result.data[0]
             except Exception as e:
                 print(f"Error fetching product for offer {offer.get('id')}: {e}")
                 offer['products'] = None
-        
+
+        # Add discount percentage for client use
+        offer['discount_percentage'] = calculate_discount_percentage(offer)
+
         enriched_offers.append(offer)
-    
+
     return enriched_offers
 
 router = APIRouter(prefix="/customer", tags=["Customer"])

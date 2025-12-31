@@ -3,6 +3,50 @@ import { Offer, OffersResponse, Location } from '../types/offer';
 import { calculateDistance } from '../utils/location';
 
 /**
+ * Simple cache for API responses to reduce network calls
+ */
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+}
+
+class SimpleCache {
+  private cache: Map<string, CacheEntry<any>> = new Map();
+
+  set<T>(key: string, data: T, ttlMs: number = 300000): void { // 5 min default
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl: ttlMs,
+    });
+  }
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    const isExpired = Date.now() - entry.timestamp > entry.ttl;
+    if (isExpired) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.data as T;
+  }
+
+  invalidate(key: string): void {
+    this.cache.delete(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const apiCache = new SimpleCache();
+
+/**
  * Transform API offer data to match our app's structure
  * If userLocation is provided and distance is missing, it will be calculated
  */
@@ -44,7 +88,7 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     description: offerDescription || '',
     businessName: business.business_name || apiOffer.business_name || 'Unknown Business',
     businessLogo: business.avatar_url || apiOffer.avatar_url || null,
-    discount: calculateDiscountPercentage(apiOffer),
+    discount: apiOffer.discount_percentage || 0,
     originalPrice: parseFloat(apiOffer.original_price || product.price || 0),
     discountedPrice: parseFloat(apiOffer.discounted_price || 0),
     category: category.name || product.category || apiOffer.category || apiOffer.category_name || 'General',
@@ -80,32 +124,8 @@ function constructImageUrl(imagePath: string): string | null {
   return `https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/${imagePath}`;
 }
 
-/**
- * Calculate discount percentage from API data
- */
-function calculateDiscountPercentage(apiOffer: any): number {
-  if (apiOffer.discount_type === 'percentage') {
-    return parseInt(apiOffer.discount_value || 0);
-  }
-
-  if (apiOffer.discount_type === 'fixed' && apiOffer.original_price) {
-    const discountAmount = parseFloat(apiOffer.discount_value || 0);
-    const originalPrice = parseFloat(apiOffer.original_price);
-
-    if (originalPrice > 0) {
-      return Math.round((discountAmount / originalPrice) * 100);
-    }
-  }
-
-  const originalPrice = parseFloat(apiOffer.original_price || 0);
-  const discountedPrice = parseFloat(apiOffer.discounted_price || 0);
-
-  if (originalPrice > 0 && discountedPrice > 0) {
-    return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
-  }
-
-  return 0;
-}
+// Note: Discount percentage is now calculated on the backend for consistency and performance.
+// The API returns discount_percentage directly in the offer data.
 
 /**
  * Get nearby offers based on user location
@@ -274,6 +294,10 @@ export async function claimOffer(
       quantity: quantity
     });
 
+    // Invalidate caches
+    apiCache.invalidate('claimed_offer_ids');
+    apiCache.invalidate(`total_claimed_${offerId}`);
+
     return { success: true, error: null };
   } catch (error: any) {
     console.error('Error claiming offer:', error);
@@ -290,6 +314,10 @@ export async function claimOffer(
 export async function unclaimOffer(offerId: string): Promise<{ success: boolean; error: string | null }> {
   try {
     await apiClient.delete(`/customer/offers/${offerId}/claim`);
+
+    // Invalidate caches
+    apiCache.invalidate('claimed_offer_ids');
+    apiCache.invalidate(`total_claimed_${offerId}`);
 
     return { success: true, error: null };
   } catch (error: any) {
@@ -308,6 +336,9 @@ export async function saveOfferToFavorites(offerId: string): Promise<{ success: 
   try {
     await apiClient.post(`/customer/offers/${offerId}/save`);
 
+    // Invalidate cache
+    apiCache.invalidate('favorited_offer_ids');
+
     return { success: true, error: null };
   } catch (error: any) {
     console.error('Error saving offer:', error);
@@ -324,6 +355,9 @@ export async function saveOfferToFavorites(offerId: string): Promise<{ success: 
 export async function removeOfferFromFavorites(offerId: string): Promise<{ success: boolean; error: string | null }> {
   try {
     await apiClient.delete(`/customer/offers/${offerId}/save`);
+
+    // Invalidate cache
+    apiCache.invalidate('favorited_offer_ids');
 
     return { success: true, error: null };
   } catch (error: any) {
@@ -377,6 +411,14 @@ export async function getFavoriteOffers(
  * Get favorited offer IDs
  */
 export async function getFavoritedOfferIds(): Promise<Set<string>> {
+  const cacheKey = 'favorited_offer_ids';
+
+  // Check cache first
+  const cached = apiCache.get<Set<string>>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     const response = await apiClient.get('/customer/saved-offers?size=100');
     const favoriteIds = new Set<string>();
@@ -389,6 +431,8 @@ export async function getFavoritedOfferIds(): Promise<Set<string>> {
       }
     });
 
+    // Cache for 5 minutes
+    apiCache.set(cacheKey, favoriteIds, 300000);
     return favoriteIds;
   } catch (error: any) {
     console.error('Error fetching favorited offer IDs:', error);
@@ -435,6 +479,14 @@ export async function getClaimedOffers(
  * Get claimed offer IDs
  */
 export async function getClaimedOfferIds(): Promise<Set<string>> {
+  const cacheKey = 'claimed_offer_ids';
+
+  // Check cache first
+  const cached = apiCache.get<Set<string>>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     const response = await apiClient.get('/customer/claimed-offers?size=100');
     const claimedIds = new Set<string>();
@@ -447,6 +499,8 @@ export async function getClaimedOfferIds(): Promise<Set<string>> {
       }
     });
 
+    // Cache for 5 minutes
+    apiCache.set(cacheKey, claimedIds, 300000);
     return claimedIds;
   } catch (error: any) {
     console.error('Error fetching claimed offer IDs:', error);
@@ -549,6 +603,14 @@ export async function getMyReminders(): Promise<{ reminders: any[]; error: strin
  * Get total quantity claimed for an offer across all user's claims
  */
 export async function getTotalQuantityClaimed(offerId: string): Promise<number> {
+  const cacheKey = `total_claimed_${offerId}`;
+
+  // Check cache first
+  const cached = apiCache.get<number>(cacheKey);
+  if (cached !== null) {
+    return cached;
+  }
+
   try {
     const response = await apiClient.get('/customer/claimed-offers?size=100');
     const claimedOffers = response.data.claimed_offers || [];
@@ -563,6 +625,8 @@ export async function getTotalQuantityClaimed(offerId: string): Promise<number> 
       }
     });
 
+    // Cache for 2 minutes (shorter TTL since this changes more frequently)
+    apiCache.set(cacheKey, totalQuantity, 120000);
     return totalQuantity;
   } catch (error: any) {
     console.error('Error getting total quantity claimed:', error);
