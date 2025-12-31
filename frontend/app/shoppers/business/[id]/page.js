@@ -16,21 +16,15 @@ export default function BusinessOffersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // App detection: Try to open mobile app first
-  useEffect(() => {
-    const appDeepLink = `popupreach://business/${businessId}`;
-
-    // Detect if user is on mobile device
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      // Try to open the app
-      window.location.href = appDeepLink;
-
-      // If app doesn't open within 2.5 seconds, the web page will continue to display
-      // (The page loads in parallel, so users see content regardless)
-    }
-  }, []); // Empty deps - run only once on mount
+  // App detection: DISABLED - Load web page instead of trying to open mobile app
+  // TODO: Re-enable once mobile app QR code issues are resolved
+  // useEffect(() => {
+  //   const appDeepLink = `popupreach://business/${businessId}`;
+  //   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  //   if (isMobile) {
+  //     window.location.href = appDeepLink;
+  //   }
+  // }, []);
 
   useEffect(() => {
     fetchBusinessOffers();
@@ -155,15 +149,30 @@ export default function BusinessOffersPage() {
         ) : (
           <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-4">
             {offers.map((offer) => {
-              // Get image from various possible sources and convert to full URL
-              const rawImageUrl = offer.product?.image_url || offer.image_url;
+              // Get image from various possible sources (prioritize images array)
+              let rawImageUrl = null;
+              if (offer.images && offer.images.length > 0) {
+                rawImageUrl = offer.images[0];
+              } else if (offer.product_images && offer.product_images.length > 0) {
+                rawImageUrl = offer.product_images[0];
+              } else if (offer.products?.image_url) {
+                // Note: 'products' (plural) is used by this endpoint
+                rawImageUrl = offer.products.image_url;
+              } else if (offer.product?.image_url) {
+                rawImageUrl = offer.product.image_url;
+              } else if (offer.image_url) {
+                rawImageUrl = offer.image_url;
+              } else if (offer.product_image_url) {
+                rawImageUrl = offer.product_image_url;
+              }
+
               const imageUrl = getImageUrl(rawImageUrl);
               const productName = offer.product?.name || offer.title || 'Special Offer';
               const originalPrice = Number(offer.product?.price || offer.original_price || 0);
               const discountedPrice = Number(offer.discounted_price || (originalPrice * (1 - offer.discount_percentage / 100)));
               const discountPercent = Number(offer.discount_percentage || 0);
 
-              console.log('Offer:', offer.id, 'Image URL:', imageUrl); // Debug log
+              console.log('Offer:', offer.id, 'Raw Image:', rawImageUrl, 'Full URL:', imageUrl); // Debug log
 
               return (
                 <Link

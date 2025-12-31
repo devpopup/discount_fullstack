@@ -60,9 +60,26 @@ async def enrich_offers_with_product_data(offers_data):
 
                 if product_result.data:
                     offer['products'] = product_result.data[0]
+
+                    # Create images array from product image_url
+                    product = product_result.data[0]
+                    if product.get('image_url'):
+                        # Construct full image URL
+                        image_url = product['image_url']
+                        if not image_url.startswith('http'):
+                            image_url = f"https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/{image_url}"
+                        offer['images'] = [image_url]
+                    else:
+                        offer['images'] = []
+                else:
+                    offer['products'] = None
+                    offer['images'] = []
             except Exception as e:
                 print(f"Error fetching product for offer {offer.get('id')}: {e}")
                 offer['products'] = None
+                offer['images'] = []
+        else:
+            offer['images'] = []
 
         # Add discount percentage for client use
         offer['discount_percentage'] = calculate_discount_percentage(offer)
@@ -1326,32 +1343,13 @@ async def get_business_offers(
         total = result.count if result.count else 0
         has_more = (offset + limit) < total
 
-        # Enrich offers with product data (like trending/nearby endpoints)
-        enriched_offers = []
-        for offer in result.data:
-            # Get product data if product_id exists
-            if offer.get('product_id'):
-                try:
-                    product_result = supabase.table("products").select(
-                        "*, categories(*)"
-                    ).eq("id", offer['product_id']).execute()
+        # Enrich offers with product data using the centralized enrichment function
+        enriched_offers = await enrich_offers_with_product_data(result.data)
 
-                    if product_result.data:
-                        # Use 'products' (plural) to match frontend expectations
-                        offer['products'] = product_result.data[0]
-                    else:
-                        offer['products'] = None
-                except Exception as e:
-                    print(f"Error fetching product for offer {offer.get('id')}: {e}")
-                    offer['products'] = None
-            else:
-                offer['products'] = None
-
-            # Add business data to each offer for consistency with other endpoints
+        # Add business data to each offer for consistency with other endpoints
+        for offer in enriched_offers:
             offer['business'] = business_data
             offer['businesses'] = business_data  # For compatibility
-
-            enriched_offers.append(offer)
 
         # Convert decimals to floats for JSON serialization
         enriched_offers = convert_decimals_to_float(enriched_offers)
