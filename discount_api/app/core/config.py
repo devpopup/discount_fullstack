@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # App Configuration
     app_name: str = "Offers API"
     debug: bool = False
+
+    # Feature Flags
+    enable_superadmin_offers: bool = True  # Set to False to disable superadmin functionality
     
     # Frontend/QR Code Configuration
     frontend_url: str = "https://yourapp.com"  # Update this to your actual domain

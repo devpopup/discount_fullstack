@@ -1,0 +1,201 @@
+"""
+Superadmin Models - Temporary tables for user acquisition phase
+IMPORTANT: These models are for temporary demo offers and can be completely removed
+without affecting the main system.
+"""
+
+from sqlalchemy import (
+    Column, String, Text, Boolean, Integer, Numeric,
+    ForeignKey, DateTime, BigInteger, TIMESTAMP, CheckConstraint
+)
+from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
+import uuid
+
+from app.core.database import Base
+
+
+class SuperadminBusiness(Base):
+    """
+    Temporary demo businesses created by superadmins.
+    Completely isolated from main businesses table.
+    DROP-SAFE: Can be removed without affecting production data.
+    """
+    __tablename__ = "superadmin_businesses"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by_admin = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)
+
+    # Business identity
+    business_name = Column(Text, nullable=False)
+    business_description = Column(Text, nullable=True)
+    business_address = Column(Text, nullable=True)
+    phone_number = Column(Text, nullable=True)
+    business_website = Column(Text, nullable=True)
+    avatar_url = Column(Text, nullable=True)
+    business_hours = Column(JSONB, nullable=True)
+
+    # Category
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
+
+    # Location (for map and filtering)
+    latitude = Column(Numeric(10, 8), nullable=True)
+    longitude = Column(Numeric(11, 8), nullable=True)
+    formatted_address = Column(Text, nullable=True)
+    place_id = Column(Text, nullable=True)
+    address_components = Column(JSONB, nullable=True)
+
+    # Status
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    # Timestamps
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationships
+    offers = relationship("SuperadminOffer", back_populates="business", cascade="all, delete-orphan")
+    category = relationship("Category", foreign_keys=[category_id])
+    creator = relationship("Profile", foreign_keys=[created_by_admin])
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint("char_length(business_name) >= 2", name="check_business_name_length"),
+    )
+
+
+class SuperadminOffer(Base):
+    """
+    Temporary demo offers created by superadmins.
+    VIEW-ONLY: Users cannot claim these offers (used for awareness/marketing).
+    DROP-SAFE: Can be removed without affecting production data.
+    """
+    __tablename__ = "superadmin_offers"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    superadmin_business_id = Column(UUID(as_uuid=True), ForeignKey("superadmin_businesses.id", ondelete="CASCADE"), nullable=False)
+    created_by_admin = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)
+
+    # Core offer fields
+    title = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+    discount_type = Column(Text, nullable=False)  # 'percentage', 'fixed', 'minimum_purchase', 'quantity_discount', 'bogo'
+    discount_value = Column(Numeric, nullable=False)
+    original_price = Column(Numeric, nullable=True)
+    discounted_price = Column(Numeric, nullable=True)
+
+    # Date range
+    start_date = Column(TIMESTAMP(timezone=True), nullable=False)
+    expiry_date = Column(TIMESTAMP(timezone=True), nullable=False)
+
+    # Claim limits (informational only - no actual claiming)
+    max_claims = Column(Integer, nullable=True)
+    current_claims = Column(Integer, default=0, nullable=False)
+    max_claims_per_user = Column(Integer, nullable=True)
+
+    # Type-specific discount fields
+    minimum_purchase_amount = Column(Numeric, nullable=True)
+    minimum_quantity = Column(Integer, nullable=True)
+    buy_quantity = Column(Integer, nullable=True)
+    get_quantity = Column(Integer, nullable=True)
+    get_discount_percentage = Column(Numeric, nullable=True)
+    offer_parameters = Column(JSONB, nullable=True)
+
+    # Status and terms
+    is_active = Column(Boolean, default=True, nullable=False)
+    terms_conditions = Column(Text, nullable=True)
+
+    # Timestamps
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationships
+    business = relationship("SuperadminBusiness", back_populates="offers")
+    creator = relationship("Profile", foreign_keys=[created_by_admin])
+    views = relationship("SuperadminOfferView", back_populates="offer", cascade="all, delete-orphan")
+    clicks = relationship("SuperadminOfferClick", back_populates="offer", cascade="all, delete-orphan")
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint("char_length(title) >= 3", name="check_title_length"),
+        CheckConstraint("discount_value > 0", name="check_discount_value_positive"),
+        CheckConstraint("original_price IS NULL OR original_price >= 0", name="check_original_price_positive"),
+        CheckConstraint("discounted_price IS NULL OR discounted_price >= 0", name="check_discounted_price_positive"),
+        CheckConstraint("expiry_date > start_date", name="check_expiry_after_start"),
+        CheckConstraint(
+            "original_price IS NULL OR discounted_price IS NULL OR discounted_price < original_price",
+            name="check_discounted_less_than_original"
+        ),
+        CheckConstraint(
+            "discount_type != 'percentage' OR discount_value <= 100",
+            name="check_percentage_discount_max"
+        ),
+        CheckConstraint(
+            "discount_type != 'minimum_purchase' OR minimum_purchase_amount IS NOT NULL",
+            name="check_minimum_purchase_fields"
+        ),
+        CheckConstraint(
+            "discount_type != 'quantity_discount' OR minimum_quantity IS NOT NULL",
+            name="check_quantity_discount_fields"
+        ),
+        CheckConstraint(
+            "discount_type != 'bogo' OR (buy_quantity IS NOT NULL AND get_quantity IS NOT NULL AND get_discount_percentage IS NOT NULL)",
+            name="check_bogo_fields"
+        ),
+        CheckConstraint("max_claims IS NULL OR max_claims > 0", name="check_max_claims_positive"),
+        CheckConstraint("current_claims >= 0", name="check_current_claims_positive"),
+        CheckConstraint("max_claims_per_user IS NULL OR max_claims_per_user > 0", name="check_max_claims_per_user_positive"),
+        CheckConstraint("minimum_purchase_amount IS NULL OR minimum_purchase_amount >= 0", name="check_min_purchase_positive"),
+        CheckConstraint("minimum_quantity IS NULL OR minimum_quantity > 0", name="check_min_quantity_positive"),
+        CheckConstraint("buy_quantity IS NULL OR buy_quantity > 0", name="check_buy_quantity_positive"),
+        CheckConstraint("get_quantity IS NULL OR get_quantity > 0", name="check_get_quantity_positive"),
+        CheckConstraint(
+            "get_discount_percentage IS NULL OR (get_discount_percentage >= 0 AND get_discount_percentage <= 100)",
+            name="check_get_discount_percentage_range"
+        ),
+        CheckConstraint(
+            "discount_type IN ('percentage', 'fixed', 'minimum_purchase', 'quantity_discount', 'bogo')",
+            name="check_discount_type_valid"
+        ),
+    )
+
+
+class SuperadminOfferView(Base):
+    """
+    Tracks views of superadmin offers.
+    Used for analytics during user acquisition phase.
+    DROP-SAFE: Can be removed without affecting production data.
+    """
+    __tablename__ = "superadmin_offer_views"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    superadmin_offer_id = Column(UUID(as_uuid=True), ForeignKey("superadmin_offers.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)
+    ip_address = Column(INET, nullable=True)
+    user_agent = Column(Text, nullable=True)
+    viewed_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relationships
+    offer = relationship("SuperadminOffer", back_populates="views")
+    user = relationship("Profile", foreign_keys=[user_id])
+
+
+class SuperadminOfferClick(Base):
+    """
+    Tracks clicks/interactions with superadmin offers.
+    Used for analytics during user acquisition phase.
+    DROP-SAFE: Can be removed without affecting production data.
+    """
+    __tablename__ = "superadmin_offer_clicks"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    superadmin_offer_id = Column(UUID(as_uuid=True), ForeignKey("superadmin_offers.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)
+    ip_address = Column(INET, nullable=True)
+    user_agent = Column(Text, nullable=True)
+    click_type = Column(Text, nullable=True)  # 'view_details', 'view_location', etc.
+    clicked_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relationships
+    offer = relationship("SuperadminOffer", back_populates="clicks")
+    user = relationship("Profile", foreign_keys=[user_id])

@@ -18,6 +18,7 @@ class Profile(Base):
     # Role flags
     is_business = Column(Boolean, default=False, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
+    is_superadmin = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     
     # Timestamps
@@ -26,3 +27,7 @@ class Profile(Base):
 
     def __repr__(self):
         return f"<Profile(id={self.id}, email={self.email})>"
+
+
+# Alias for compatibility
+User = Profile

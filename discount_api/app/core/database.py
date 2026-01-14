@@ -6,6 +6,9 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from sqlalchemy.ext.declarative import declarative_base
+# SQLAlchemy imports commented out - using Supabase client only
+# from sqlalchemy import create_engine
+# from sqlalchemy.orm import sessionmaker, Session
 from supabase import create_client, Client
 from app.core.config import settings
 import logging
@@ -15,6 +18,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 Base = declarative_base()
+
+# SQLAlchemy setup (OPTIONAL - not used anymore, using Supabase client instead)
+# Commented out to avoid connection issues in WSL
+# engine = create_engine(
+#     settings.database_url,
+#     pool_pre_ping=True,
+#     connect_args={
+#         "connect_timeout": 10,
+#         "options": "-c search_path=public"
+#     }
+# )
+# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Validate configuration
 if not all([settings.supabase_url, settings.supabase_anon_key, settings.supabase_service_role_key]):
@@ -59,11 +74,8 @@ def get_supabase_admin() -> Client:
     """Get Supabase admin client for privileged operations"""
     return supabase_admin
 
-# For now, we'll use Supabase client for all database operations
-# This avoids the Windows async connection issues
-async def get_db():
+def get_db():
     """
-    Placeholder for database session dependency
-    For now returns the supabase client
+    Placeholder - no longer used (using Supabase client directly)
     """
     return supabase

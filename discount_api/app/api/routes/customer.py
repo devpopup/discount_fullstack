@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional, List
 from datetime import datetime, timezone
 from app.core.database import supabase
+from app.core.config import settings
 from app.schemas.business import (
     ProductResponse, ProductListResponse,
     OfferResponse, OfferListResponse,
@@ -2255,6 +2256,386 @@ async def calculate_customer_discount(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Calculation failed: {str(e)}"
+        )
+
+
+# ============================================================================
+# UNIFIED OFFERS ENDPOINT (Regular + Superadmin)
+# ============================================================================
+
+@router.get("/all-offers", response_model=dict)
+async def get_all_offers(
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    lat: Optional[float] = Query(None, description="User latitude for distance calculation", ge=-90, le=90),
+    lng: Optional[float] = Query(None, description="User longitude for distance calculation", ge=-180, le=180),
+    category_id: Optional[int] = Query(None, description="Filter by category"),
+    user: Optional[UserProfile] = Depends(get_current_user_optional)
+):
+    """
+    Get all offers (both regular business offers and superadmin demo offers).
+    Superadmin offers are marked with source='superadmin' and cannot be claimed.
+    Regular offers are marked with source='business'.
+    """
+    from app.core.config import settings
+
+    try:
+        current_time = datetime.now(timezone.utc).isoformat()
+        all_offers = []
+
+        # ===== FETCH REGULAR BUSINESS OFFERS =====
+        query = supabase.table("offers").select(
+            "*, businesses!inner(id, business_name, is_verified, avatar_url, business_address, latitude, longitude, category_id), products(name, image_url)"
+        ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time)
+
+        if category_id:
+            query = query.eq("businesses.category_id", category_id)
+
+        result = query.execute()
+        business_offers = result.data or []
+
+        # Transform and mark as business source
+        for offer in business_offers:
+            offer_copy = offer.copy()
+            offer_copy['source'] = 'business'
+            offer_copy['can_claim'] = True  # Regular offers can be claimed
+            offer_copy['is_demo'] = False
+
+            # Flatten business data
+            if 'businesses' in offer_copy:
+                offer_copy['business'] = offer_copy['businesses']
+                del offer_copy['businesses']
+
+            # Calculate distance if lat/lng provided
+            if lat is not None and lng is not None:
+                business = offer_copy.get('business', {})
+                business_lat = business.get('latitude')
+                business_lng = business.get('longitude')
+
+                if business_lat and business_lng:
+                    from math import radians, sin, cos, sqrt, atan2
+                    R = 6371  # Earth's radius in km
+                    lat1, lng1 = radians(lat), radians(lng)
+                    lat2, lng2 = radians(float(business_lat)), radians(float(business_lng))
+                    dlat, dlng = lat2 - lat1, lng2 - lng1
+                    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
+                    c = 2 * atan2(sqrt(a), sqrt(1-a))
+                    offer_copy['distance_km'] = round(R * c, 2)
+
+            all_offers.append(offer_copy)
+
+        # ===== FETCH SUPERADMIN OFFERS (if feature enabled) =====
+        if settings.enable_superadmin_offers:
+            # Use Supabase to fetch superadmin offers
+            sa_query = supabase.table("superadmin_offers").select(
+                "*, superadmin_businesses(*)"
+            ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time)
+
+            if category_id:
+                sa_query = sa_query.eq("superadmin_businesses.category_id", category_id)
+
+            sa_result = sa_query.execute()
+            superadmin_offers = sa_result.data or []
+
+            # Transform and mark as superadmin source
+            for sa_offer in superadmin_offers:
+                business = sa_offer.get('superadmin_businesses', {})
+
+                # Extract and convert price fields properly
+                original_price = float(sa_offer.get('original_price') or 0)
+                discounted_price = float(sa_offer.get('discounted_price') or 0)
+                discount_value = float(sa_offer.get('discount_value') or 0)
+
+                # Calculate discount percentage for display
+                if sa_offer.get('discount_type') == 'percentage':
+                    discount_percentage = discount_value
+                elif original_price and original_price > 0:
+                    saving = original_price - discounted_price
+                    discount_percentage = round((saving / original_price) * 100, 1)
+                else:
+                    discount_percentage = 0
+
+                offer_dict = {
+                    'id': sa_offer.get('id'),
+                    # Map offer_title/offer_description to title/description for frontend
+                    'title': sa_offer.get('offer_title') or sa_offer.get('title'),
+                    'offer_title': sa_offer.get('offer_title'),  # Keep original field
+                    'description': sa_offer.get('offer_description') or sa_offer.get('description'),
+                    'offer_description': sa_offer.get('offer_description'),  # Keep original field
+                    'discount_type': sa_offer.get('discount_type'),
+                    'discount_value': discount_value,
+                    'discount_percentage': discount_percentage,  # Add calculated percentage
+                    'original_price': original_price,
+                    'discounted_price': discounted_price,
+                    'start_date': sa_offer.get('start_date'),
+                    'expiry_date': sa_offer.get('expiry_date'),
+                    'max_claims': sa_offer.get('max_claims'),
+                    'current_claims': sa_offer.get('current_claims', 0),
+                    'terms_conditions': sa_offer.get('terms_conditions'),
+                    'is_active': sa_offer.get('is_active'),
+                    'created_at': sa_offer.get('created_at'),
+
+                    # Mark as superadmin offer
+                    'source': 'superadmin',
+                    'can_claim': False,  # Superadmin offers CANNOT be claimed
+                    'is_demo': True,
+
+                    # Business data
+                    'business': {
+                        'id': business.get('id'),
+                        'business_name': business.get('business_name'),
+                        'is_verified': False,  # Demo businesses are not verified
+                        'avatar_url': business.get('avatar_url'),
+                        'business_address': business.get('business_address'),
+                        'latitude': business.get('latitude'),
+                        'longitude': business.get('longitude'),
+                        'phone_number': business.get('phone_number'),
+                        'business_website': business.get('business_website'),
+                        'category_id': business.get('category_id'),
+                    } if business else None
+                }
+
+                # Calculate distance if lat/lng provided
+                if lat is not None and lng is not None and business:
+                    business_lat = business.get('latitude')
+                    business_lng = business.get('longitude')
+
+                    if business_lat and business_lng:
+                        from math import radians, sin, cos, sqrt, atan2
+                        R = 6371  # Earth's radius in km
+                        lat1, lng1 = radians(lat), radians(lng)
+                        lat2, lng2 = radians(float(business_lat)), radians(float(business_lng))
+                        dlat, dlng = lat2 - lat1, lng2 - lng1
+                        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
+                        c = 2 * atan2(sqrt(a), sqrt(1-a))
+                        offer_dict['distance_km'] = round(R * c, 2)
+
+                all_offers.append(offer_dict)
+
+        # ===== SORT AND PAGINATE =====
+        # Sort by distance if lat/lng provided, otherwise by created date
+        if lat is not None and lng is not None:
+            all_offers.sort(key=lambda x: x.get('distance_km', float('inf')))
+        else:
+            all_offers.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+        # Pagination
+        total = len(all_offers)
+        offset = (page - 1) * size
+        paginated_offers = all_offers[offset:offset + size]
+        has_next = offset + size < total
+
+        # Convert decimals to float
+        paginated_offers = convert_decimals_to_float(paginated_offers)
+
+        return {
+            "offers": paginated_offers,
+            "total": total,
+            "page": page,
+            "size": size,
+            "has_next": has_next,
+            "counts": {
+                "business_offers": len([o for o in all_offers if o.get('source') == 'business']),
+                "demo_offers": len([o for o in all_offers if o.get('source') == 'superadmin'])
+            }
+        }
+
+    except Exception as e:
+        print(f"Error fetching all offers: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch offers: {str(e)}"
+        )
+
+
+@router.get("/all-offers/{offer_id}", response_model=dict)
+async def get_unified_offer_details(
+    offer_id: str,
+    current_user: Optional[UserProfile] = Depends(get_current_user_optional)
+):
+    """
+    Get detailed offer information from either business or superadmin offers.
+    This endpoint unifies access to both offer types for the customer frontend.
+    """
+
+    try:
+        offer_data = None
+        source = None
+        can_claim = True
+        is_demo = False
+
+        # First, try to get from business offers
+        result = supabase.table("offers").select(
+            "*, products(*, categories(*)), businesses(business_name, is_verified, avatar_url, business_address, latitude, longitude, phone_number, business_website, business_hours)"
+        ).eq("id", offer_id).eq("is_active", True).execute()
+
+        if result.data:
+            offer_data = convert_decimals_to_float(result.data[0])
+            source = "business"
+
+            # Fix structure for frontend
+            if 'products' in offer_data:
+                offer_data['product'] = offer_data['products']
+                del offer_data['products']
+            if 'businesses' in offer_data:
+                offer_data['business'] = offer_data['businesses']
+                del offer_data['businesses']
+        else:
+            # Not found in business offers, try superadmin offers
+            if settings.enable_superadmin_offers:
+                result = supabase_admin.table("superadmin_offers").select(
+                    "*, superadmin_businesses(*)"
+                ).eq("id", offer_id).eq("is_active", True).execute()
+
+                if result.data:
+                    offer_data = convert_decimals_to_float(result.data[0])
+                    source = "superadmin"
+                    can_claim = False  # Demo offers cannot be claimed
+                    is_demo = True
+
+                    # Ensure price fields are properly set as floats
+                    offer_data['original_price'] = float(offer_data.get('original_price') or 0)
+                    offer_data['discounted_price'] = float(offer_data.get('discounted_price') or 0)
+                    offer_data['discount_value'] = float(offer_data.get('discount_value') or 0)
+
+                    # Map offer_title to title for frontend compatibility
+                    if 'offer_title' in offer_data and 'title' not in offer_data:
+                        offer_data['title'] = offer_data['offer_title']
+
+                    # Map offer_description to description for frontend compatibility
+                    if 'offer_description' in offer_data and 'description' not in offer_data:
+                        offer_data['description'] = offer_data['offer_description']
+
+                    # Calculate discount percentage for display
+                    if offer_data['discount_type'] == 'percentage':
+                        offer_data['discount_percentage'] = offer_data['discount_value']
+                    elif offer_data['original_price'] and offer_data['original_price'] > 0:
+                        saving = offer_data['original_price'] - offer_data['discounted_price']
+                        offer_data['discount_percentage'] = round((saving / offer_data['original_price']) * 100, 1)
+                    else:
+                        offer_data['discount_percentage'] = 0
+
+                    # Transform superadmin offer to match business offer structure
+                    if 'superadmin_businesses' in offer_data:
+                        business_data = offer_data['superadmin_businesses']
+                        # Create a business object that matches the expected structure
+                        offer_data['business'] = {
+                            'business_name': business_data.get('business_name'),
+                            'is_verified': False,  # Superadmin businesses are not verified
+                            'avatar_url': None,
+                            'business_address': business_data.get('business_address'),
+                            'latitude': business_data.get('latitude'),
+                            'longitude': business_data.get('longitude'),
+                            'phone_number': business_data.get('phone_number'),
+                            'business_website': business_data.get('business_website'),
+                            'business_hours': business_data.get('business_hours')
+                        }
+                        del offer_data['superadmin_businesses']
+
+                    # Create a mock product object for display
+                    offer_data['product'] = {
+                        'id': None,
+                        'price': offer_data['original_price'],  # Use the already validated float
+                        'image_url': None,
+                        'product_name': offer_data.get('offer_title') or offer_data.get('title'),
+                        'description': offer_data.get('offer_description') or offer_data.get('description'),
+                        'categories': None
+                    }
+
+        if not offer_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Offer not found or inactive"
+            )
+
+        # Add source metadata
+        offer_data['source'] = source
+        offer_data['can_claim'] = can_claim
+        offer_data['is_demo'] = is_demo
+
+        # Add enhanced display information
+        offer_data['display_text'] = OfferCalculator.get_offer_display_text(offer_data)
+        offer_data['conditions_text'] = get_offer_conditions_text(offer_data)
+
+        # Add calculation examples for different quantities
+        item_price = float(offer_data['product']['price']) if offer_data['product']['price'] else 0
+        calculation_examples = []
+
+        # Generate examples based on offer type
+        if offer_data['discount_type'] in ['percentage', 'fixed']:
+            quantities = [1, 2, 5]
+        elif offer_data['discount_type'] == 'quantity_discount':
+            min_qty = offer_data.get('minimum_quantity', 1)
+            quantities = [min_qty - 1, min_qty, min_qty + 2] if min_qty > 1 else [1, 3, 5]
+        elif offer_data['discount_type'] == 'bogo':
+            buy_qty = offer_data.get('buy_quantity', 1)
+            quantities = [buy_qty - 1, buy_qty, buy_qty * 2] if buy_qty > 1 else [1, 2, 4]
+        else:
+            quantities = [1, 2, 5]
+
+        for qty in quantities:
+            if qty > 0:
+                calc_result = OfferCalculator.calculate_discount(
+                    offer_data=offer_data,
+                    quantity=qty,
+                    cart_total=item_price * qty,
+                    item_price=item_price
+                )
+                calculation_examples.append({
+                    'quantity': qty,
+                    'calculation': calc_result
+                })
+
+        offer_data['calculation_examples'] = calculation_examples
+
+        # For business offers, check if user has saved or claimed
+        if source == "business" and current_user:
+            # Check if saved
+            saved_check = supabase.table("saved_offers").select("id").eq("user_id", str(current_user.id)).eq("offer_id", offer_id).execute()
+            offer_data['is_saved'] = len(saved_check.data) > 0
+
+            # Check if claimed
+            claimed_check = supabase.table("claimed_offers").select("id, is_redeemed").eq("user_id", str(current_user.id)).eq("offer_id", offer_id).execute()
+            offer_data['is_claimed'] = len(claimed_check.data) > 0
+            if offer_data['is_claimed']:
+                offer_data['is_redeemed'] = claimed_check.data[0]['is_redeemed']
+
+            # Get claim statistics
+            claims_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).execute()
+            offer_data['claimed_count'] = claims_result.count if claims_result.count is not None else 0
+
+            redeemed_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).eq("is_redeemed", True).execute()
+            offer_data['redeemed_count'] = redeemed_result.count if redeemed_result.count is not None else 0
+        else:
+            # Demo offers or unauthenticated users
+            offer_data['is_saved'] = False
+            offer_data['is_claimed'] = False
+            offer_data['is_redeemed'] = False
+            offer_data['claimed_count'] = 0
+            offer_data['redeemed_count'] = 0
+
+        # Check if offer is still available for claiming (business offers only)
+        if source == "business":
+            max_claims = offer_data.get('max_claims')
+            current_claims = offer_data.get('current_claims', 0)
+            offer_data['can_claim'] = max_claims is None or current_claims < max_claims
+            offer_data['claims_remaining'] = None if max_claims is None else max_claims - current_claims
+        else:
+            offer_data['claims_remaining'] = 0
+
+        return {"offer": offer_data}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting unified offer details: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve offer: {str(e)}"
         )
 
 

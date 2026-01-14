@@ -90,6 +90,17 @@ async def get_current_admin_user(
         )
     return current_user
 
+async def get_current_superadmin_user(
+    current_user: UserProfile = Depends(get_current_active_user)
+) -> UserProfile:
+    """Get current superadmin user"""
+    if not current_user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions. Superadmin access required."
+        )
+    return current_user
+
 # Optional user dependency (doesn't raise exception if no user)
 async def get_current_user_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)

@@ -32,11 +32,12 @@ class UserUpdate(BaseModel):
 # Response schemas
 class UserProfile(UserBase):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: uuid.UUID
     avatar_url: Optional[str] = None
     is_business: bool = False
     is_admin: bool = False
+    is_superadmin: bool = False
     is_active: bool = True
     created_at: datetime
     updated_at: datetime

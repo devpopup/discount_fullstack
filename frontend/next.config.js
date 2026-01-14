@@ -21,6 +21,10 @@ const nextConfig = {
       },
     ],
   },
+  // Disable caching in development to ensure fresh builds
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
+  },
 }
 
 module.exports = nextConfig

@@ -160,8 +160,6 @@ export async function getExpiringSoonOffers({ hours = 24, limit = 10, offset = 0
 export async function getAllOffers({ page = 1, size = 20, categoryId = null } = {}) {
   try {
     const params = new URLSearchParams({
-      sort_by: 'created_at',
-      sort_order: 'desc',
       page: page.toString(),
       size: size.toString()
     })
@@ -170,18 +168,19 @@ export async function getAllOffers({ page = 1, size = 20, categoryId = null } = 
       params.append('category_id', categoryId)
     }
 
-    const data = await makeOfferRequest(`/customer/offers/search?${params}`)
+    // Use the unified endpoint that includes both business and superadmin offers
+    const data = await makeOfferRequest(`/customer/all-offers?${params}`)
 
     // Return raw offers like other functions - transformation happens in the component
     return {
       offers: data.offers || [],
-      pagination: data.pagination || {
-        page,
-        size,
-        total: 0,
-        total_pages: 0,
-        has_next: false,
-        has_prev: false
+      pagination: {
+        page: data.page || page,
+        size: data.size || size,
+        total: data.total || 0,
+        total_pages: data.total_pages || 0,
+        has_next: data.has_next || false,
+        has_prev: data.has_prev || false
       },
       error: null
     }
@@ -250,11 +249,12 @@ export async function searchOffers({
 }
 
 /**
- * Get a specific offer by ID
+ * Get a specific offer by ID (handles both business and superadmin offers)
  */
 export async function getOfferById(offerId) {
   try {
-    const data = await makeOfferRequest(`/customer/offers/${offerId}`)
+    // Use the unified endpoint that handles both business and superadmin offers
+    const data = await makeOfferRequest(`/customer/all-offers/${offerId}`)
     const transformedOffer = data.offer ? transformOfferData(data.offer) : null
     return { offer: transformedOffer, error: null }
   } catch (error) {
@@ -342,7 +342,10 @@ export function transformOfferData(apiOffer) {
     businesses: apiOffer.businesses || null,
     product: product && Object.keys(product).length > 0 ? product : null,
     products: apiOffer.products || null,
-    has_reminder: apiOffer.has_reminder || false // Preserve reminder status
+    has_reminder: apiOffer.has_reminder || false, // Preserve reminder status
+    // Preserve claim and demo flags for superadmin offers
+    can_claim: apiOffer.can_claim !== undefined ? apiOffer.can_claim : true,
+    is_demo: apiOffer.is_demo !== undefined ? apiOffer.is_demo : false
   }
 }
 

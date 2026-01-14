@@ -1,0 +1,513 @@
+INFO:     Will watch for changes in these directories: ['/home/sam/discount_fullstack/discount_api']
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     Started reloader process [36219] using StatReload
+INFO:     Started server process [36228]
+INFO:     Waiting for application startup.
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=id&limit=1 "HTTP/2 200 OK"
+INFO:app.core.database:✅ Database connection successful
+INFO:     Application startup complete.
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/token?grant_type=password "HTTP/2 400 Bad Request"
+Warning: Image utilities not available: cannot import name 'create_thumbnail' from 'app.utils.image_utils' (/home/sam/discount_fullstack/discount_api/app/utils/image_utils.py)
+Starting Offers API...
+✅ Database connection successful
+INFO:     127.0.0.1:50374 - "POST /api/v1/auth/login HTTP/1.1" 500 Internal Server Error
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/signup "HTTP/2 422 Unprocessable Entity"
+INFO:     127.0.0.1:45694 - "POST /api/v1/auth/register HTTP/1.1" 500 Internal Server Error
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/token?grant_type=password "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:49688 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38308 - "GET /api/v1/customer/categories HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:44750 - "GET /api/v1/customer/categories HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56126 - "GET /api/v1/customer/categories HTTP/1.1" 404 Not Found
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:49742 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:38156 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses "HTTP/2 201 Created"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers "HTTP/2 201 Created"
+INFO:     127.0.0.1:60250 - "POST /api/v1/superadmin/offers HTTP/1.1" 201 Created
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Cphone_number%2Cbusiness_website%2Cbusiness_hours%29&id=eq.all&is_active=eq.True "HTTP/2 400 Bad Request"
+Error getting offer details: {'message': 'invalid input syntax for type uuid: "all"', 'code': '22P02', 'hint': None, 'details': None}
+INFO:     127.0.0.1:54652 - "GET /api/v1/customer/offers/all?page=1&size=10 HTTP/1.1" 500 Internal Server Error
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:55220 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:38876 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+Error updating superadmin offer: Object of type datetime is not JSON serializable
+INFO:     127.0.0.1:55276 - "PUT /api/v1/superadmin/offers/0928550c-0e5d-42d9-9fbd-88a5280026b1 HTTP/1.1" 500 Internal Server Error
+WARNING:  StatReload detected changes in 'app/api/routes/superadmin.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36228]
+INFO:     Started server process [38406]
+INFO:     Waiting for application startup.
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=id&limit=1 "HTTP/2 200 OK"
+INFO:app.core.database:✅ Database connection successful
+INFO:     Application startup complete.
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: PATCH https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?id=eq.0928550c-0e5d-42d9-9fbd-88a5280026b1 "HTTP/2 200 OK"
+Warning: Image utilities not available: cannot import name 'create_thumbnail' from 'app.utils.image_utils' (/home/sam/discount_fullstack/discount_api/app/utils/image_utils.py)
+Starting Offers API...
+✅ Database connection successful
+INFO:     127.0.0.1:60514 - "PUT /api/v1/superadmin/offers/0928550c-0e5d-42d9-9fbd-88a5280026b1 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Cphone_number%2Cbusiness_website%2Cbusiness_hours%29&id=eq.all&is_active=eq.True "HTTP/2 400 Bad Request"
+Error getting offer details: {'message': 'invalid input syntax for type uuid: "all"', 'code': '22P02', 'hint': None, 'details': None}
+INFO:     127.0.0.1:44132 - "GET /api/v1/customer/offers/all?page=1&size=10 HTTP/1.1" 500 Internal Server Error
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&id=eq.0928550c-0e5d-42d9-9fbd-88a5280026b1 "HTTP/2 200 OK"
+INFO:     127.0.0.1:40656 - "GET /api/v1/superadmin/offers/0928550c-0e5d-42d9-9fbd-88a5280026b1 HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/api/routes/customer.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38406]
+INFO:     Started server process [39689]
+INFO:     Waiting for application startup.
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=id&limit=1 "HTTP/2 200 OK"
+INFO:app.core.database:✅ Database connection successful
+INFO:     Application startup complete.
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Ccategory_id%29%2Cproducts%28name%2Cimage_url%29&is_active=eq.True&expiry_date=gte.2026-01-09T17%3A54%3A12.699879%2B00%3A00&start_date=lte.2026-01-09T17%3A54%3A12.699879%2B00%3A00 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&is_active=eq.True&expiry_date=gte.2026-01-09T17%3A54%3A12.699879%2B00%3A00&start_date=lte.2026-01-09T17%3A54%3A12.699879%2B00%3A00 "HTTP/2 200 OK"
+Warning: Image utilities not available: cannot import name 'create_thumbnail' from 'app.utils.image_utils' (/home/sam/discount_fullstack/discount_api/app/utils/image_utils.py)
+Starting Offers API...
+✅ Database connection successful
+INFO:     127.0.0.1:36916 - "GET /api/v1/customer/all-offers?page=1&size=10 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 401 Unauthorized"
+INFO:     127.0.0.1:58548 - "GET /api/v1/superadmin/offers?page=1&size=5 HTTP/1.1" 401 Unauthorized
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Ccategory_id%29%2Cproducts%28name%2Cimage_url%29&is_active=eq.True&expiry_date=gte.2026-01-09T17%3A58%3A05.017849%2B00%3A00&start_date=lte.2026-01-09T17%3A58%3A05.017849%2B00%3A00 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&is_active=eq.True&expiry_date=gte.2026-01-09T17%3A58%3A05.017849%2B00%3A00&start_date=lte.2026-01-09T17%3A58%3A05.017849%2B00%3A00 "HTTP/2 200 OK"
+INFO:     127.0.0.1:51392 - "GET /api/v1/customer/all-offers?page=1&size=10 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=20 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60794 - "GET /api/v1/superadmin/offers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35738 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35738 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44762 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44762 - "OPTIONS /api/v1/customer/claimed-offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44772 - "OPTIONS /api/v1/customer/claimed-offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 403 Forbidden"
+INFO:     127.0.0.1:44776 - "GET /api/v1/auth/me HTTP/1.1" 401 Unauthorized
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 403 Forbidden"
+INFO:     127.0.0.1:44772 - "GET /api/v1/customer/claimed-offers?page=1&size=100 HTTP/1.1" 401 Unauthorized
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 403 Forbidden"
+INFO:     127.0.0.1:44776 - "GET /api/v1/customer/claimed-offers?page=1&size=100 HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:44786 - "OPTIONS /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/token?grant_type=password "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:44796 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44796 - "OPTIONS /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:44796 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:44786 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44812 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:44796 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52690 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:44812 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:44786 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:44796 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52494 - "OPTIONS /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:52498 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52504 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 403 Forbidden"
+INFO:     127.0.0.1:52494 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 401 Unauthorized
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 403 Forbidden"
+INFO:     127.0.0.1:52504 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:47560 - "OPTIONS /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/token?grant_type=password "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:47560 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47560 - "OPTIONS /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:47568 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:47560 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47578 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:47568 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60132 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:47578 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:47560 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:47578 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41580 - "OPTIONS /api/v1/superadmin/offers HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:41580 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:35022 - "OPTIONS /api/v1/superadmin/offers/0928550c-0e5d-42d9-9fbd-88a5280026b1 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: DELETE https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?id=eq.0928550c-0e5d-42d9-9fbd-88a5280026b1 "HTTP/2 200 OK"
+INFO:     127.0.0.1:35022 - "DELETE /api/v1/superadmin/offers/0928550c-0e5d-42d9-9fbd-88a5280026b1 HTTP/1.1" 204 No Content
+INFO:     127.0.0.1:55072 - "OPTIONS /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:55088 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55100 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:55072 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:55088 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57952 - "OPTIONS /api/v1/superadmin/offers HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:57952 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:57958 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:57960 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:35542 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:35554 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:52656 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:52672 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses "HTTP/2 201 Created"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers "HTTP/2 201 Created"
+INFO:     127.0.0.1:54008 - "POST /api/v1/superadmin/offers HTTP/1.1" 201 Created
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:54008 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:54016 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:54022 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41800 - "OPTIONS /api/v1/superadmin/offers/0e93f432-16db-449f-8df1-b8918c637515 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: DELETE https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?id=eq.0e93f432-16db-449f-8df1-b8918c637515 "HTTP/2 200 OK"
+INFO:     127.0.0.1:41800 - "DELETE /api/v1/superadmin/offers/0e93f432-16db-449f-8df1-b8918c637515 HTTP/1.1" 204 No Content
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:41800 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:41814 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:41820 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:49552 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:47580 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:47596 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:47564 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:47612 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:     127.0.0.1:52164 - "POST /api/v1/superadmin/offers HTTP/1.1" 422 Unprocessable Entity
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses "HTTP/2 201 Created"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers "HTTP/2 201 Created"
+INFO:     127.0.0.1:52180 - "POST /api/v1/superadmin/offers HTTP/1.1" 201 Created
+INFO:     127.0.0.1:52180 - "OPTIONS /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52180 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:52180 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:46336 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:46340 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60448 - "OPTIONS /api/v1/customer/offers/trending?limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60464 - "OPTIONS /api/v1/customer/offers/expiring-soon?hours=24&limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60448 - "OPTIONS /api/v1/customer/offers/trending?limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60464 - "OPTIONS /api/v1/customer/offers/expiring-soon?hours=24&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&start_date=lte.2026-01-10T19%3A21%3A32.805598%2B00%3A00&expiry_date=gte.2026-01-10T19%3A21%3A32.805598%2B00%3A00&expiry_date=lte.2026-01-11T19%3A21%3A32.805598%2B00%3A00&order=expiry_date.asc&limit=4 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60448 - "GET /api/v1/customer/offers/expiring-soon?hours=24&limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A33.662134%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A33.662134%2B00%3A00&order=current_claims.desc&limit=4 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.6d41d81e-4a5b-4453-a492-0eea34cff4cf "HTTP/2 200 OK"
+Processing offer 2cef91b8-4330-4387-8382-106c6db044a6 with product_id: c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5
+Product query result: [{'id': 'c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'T-shirts', 'description': None, 'price': 50.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png', 'category_id': 5, 'created_at': '2025-08-23T01:15:11.333629+00:00', 'updated_at': '2025-08-23T01:17:32.535774+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: T-shirts with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png
+Processing offer fe2d3126-f7e7-4359-831e-af54c8cd9e7e with product_id: 6d41d81e-4a5b-4453-a492-0eea34cff4cf
+Product query result: [{'id': '6d41d81e-4a5b-4453-a492-0eea34cff4cf', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'Tomford glasses', 'description': 'These are original glasses', 'price': 200.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png', 'category_id': 5, 'created_at': '2025-08-23T01:10:13.414998+00:00', 'updated_at': '2025-08-23T01:10:13.414998+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: Tomford glasses with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png
+INFO:     127.0.0.1:60464 - "GET /api/v1/customer/offers/trending?limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&start_date=lte.2026-01-10T19%3A21%3A34.687987%2B00%3A00&expiry_date=gte.2026-01-10T19%3A21%3A34.687987%2B00%3A00&expiry_date=lte.2026-01-11T19%3A21%3A34.687987%2B00%3A00&order=expiry_date.asc&limit=7 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60476 - "GET /api/v1/customer/offers/expiring-soon?hours=24&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A35.046191%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A35.046191%2B00%3A00&order=current_claims.desc&limit=7 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.6d41d81e-4a5b-4453-a492-0eea34cff4cf "HTTP/2 200 OK"
+Processing offer 2cef91b8-4330-4387-8382-106c6db044a6 with product_id: c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5
+Product query result: [{'id': 'c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'T-shirts', 'description': None, 'price': 50.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png', 'category_id': 5, 'created_at': '2025-08-23T01:15:11.333629+00:00', 'updated_at': '2025-08-23T01:17:32.535774+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: T-shirts with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png
+Processing offer fe2d3126-f7e7-4359-831e-af54c8cd9e7e with product_id: 6d41d81e-4a5b-4453-a492-0eea34cff4cf
+Product query result: [{'id': '6d41d81e-4a5b-4453-a492-0eea34cff4cf', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'Tomford glasses', 'description': 'These are original glasses', 'price': 200.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png', 'category_id': 5, 'created_at': '2025-08-23T01:10:13.414998+00:00', 'updated_at': '2025-08-23T01:10:13.414998+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: Tomford glasses with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png
+INFO:     127.0.0.1:60478 - "GET /api/v1/customer/offers/trending?limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60478 - "OPTIONS /api/v1/customer/offers/upcoming?page=1&limit=4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60476 - "OPTIONS /api/v1/customer/offers/nearby?lat=49.860583896616696&lng=-97.10731766436567&radius=10&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60464 - "OPTIONS /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=7 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cbusiness_address%2Cavatar_url%2Cis_verified%2Clatitude%2Clongitude%2Ctimezone%29&is_active=eq.True&start_date=not.is.null&start_date=gt.2026-01-10T19%3A21%3A36.252526%2B00%3A00&order=start_date.asc&offset=0&limit=4 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60478 - "GET /api/v1/customer/offers/upcoming?page=1&limit=4 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A36.360875%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A36.360875%2B00%3A00 "HTTP/2 200 OK"
+Searching geofenced offers near: 49.860583896616696, -97.10731766436567
+Found 2 active offers total
+Found 0 offers within range (geofenced and non-geofenced)
+Returning 0 offers (prioritizing geofenced offers)
+INFO:     127.0.0.1:60476 - "GET /api/v1/customer/offers/nearby?lat=49.860583896616696&lng=-97.10731766436567&radius=10&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%21product_id%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A36.578997%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A36.578997%2B00%3A00&order=created_at.desc&offset=0&limit=7 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60464 - "GET /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=7 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A42.512974%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A42.512974%2B00%3A00&order=current_claims.desc&limit=4 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.6d41d81e-4a5b-4453-a492-0eea34cff4cf "HTTP/2 200 OK"
+Processing offer 2cef91b8-4330-4387-8382-106c6db044a6 with product_id: c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5
+Product query result: [{'id': 'c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'T-shirts', 'description': None, 'price': 50.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png', 'category_id': 5, 'created_at': '2025-08-23T01:15:11.333629+00:00', 'updated_at': '2025-08-23T01:17:32.535774+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: T-shirts with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png
+Processing offer fe2d3126-f7e7-4359-831e-af54c8cd9e7e with product_id: 6d41d81e-4a5b-4453-a492-0eea34cff4cf
+Product query result: [{'id': '6d41d81e-4a5b-4453-a492-0eea34cff4cf', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'Tomford glasses', 'description': 'These are original glasses', 'price': 200.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png', 'category_id': 5, 'created_at': '2025-08-23T01:10:13.414998+00:00', 'updated_at': '2025-08-23T01:10:13.414998+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: Tomford glasses with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png
+INFO:     127.0.0.1:60488 - "GET /api/v1/customer/offers/trending?limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&start_date=lte.2026-01-10T19%3A21%3A43.014825%2B00%3A00&expiry_date=gte.2026-01-10T19%3A21%3A43.014825%2B00%3A00&expiry_date=lte.2026-01-11T19%3A21%3A43.014825%2B00%3A00&order=expiry_date.asc&limit=4 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60498 - "GET /api/v1/customer/offers/expiring-soon?hours=24&limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cbusiness_address%2Cavatar_url%2Cis_verified%2Clatitude%2Clongitude%2Ctimezone%29&is_active=eq.True&start_date=not.is.null&start_date=gt.2026-01-10T19%3A21%3A43.102206%2B00%3A00&order=start_date.asc&offset=0&limit=4 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60488 - "GET /api/v1/customer/offers/upcoming?page=1&limit=4 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A43.195910%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A43.195910%2B00%3A00&order=current_claims.desc&limit=7 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.6d41d81e-4a5b-4453-a492-0eea34cff4cf "HTTP/2 200 OK"
+Processing offer 2cef91b8-4330-4387-8382-106c6db044a6 with product_id: c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5
+Product query result: [{'id': 'c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'T-shirts', 'description': None, 'price': 50.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png', 'category_id': 5, 'created_at': '2025-08-23T01:15:11.333629+00:00', 'updated_at': '2025-08-23T01:17:32.535774+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: T-shirts with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png
+Processing offer fe2d3126-f7e7-4359-831e-af54c8cd9e7e with product_id: 6d41d81e-4a5b-4453-a492-0eea34cff4cf
+Product query result: [{'id': '6d41d81e-4a5b-4453-a492-0eea34cff4cf', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'Tomford glasses', 'description': 'These are original glasses', 'price': 200.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png', 'category_id': 5, 'created_at': '2025-08-23T01:10:13.414998+00:00', 'updated_at': '2025-08-23T01:10:13.414998+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: Tomford glasses with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png
+INFO:     127.0.0.1:40778 - "GET /api/v1/customer/offers/trending?limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&start_date=lte.2026-01-10T19%3A21%3A43.462839%2B00%3A00&expiry_date=gte.2026-01-10T19%3A21%3A43.462839%2B00%3A00&expiry_date=lte.2026-01-11T19%3A21%3A43.462839%2B00%3A00&order=expiry_date.asc&limit=7 "HTTP/2 200 OK"
+INFO:     127.0.0.1:40786 - "GET /api/v1/customer/offers/expiring-soon?hours=24&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A43.543179%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A43.543179%2B00%3A00 "HTTP/2 200 OK"
+Searching geofenced offers near: 49.860583896616696, -97.10731766436567
+Found 2 active offers total
+Found 0 offers within range (geofenced and non-geofenced)
+Returning 0 offers (prioritizing geofenced offers)
+INFO:     127.0.0.1:40790 - "GET /api/v1/customer/offers/nearby?lat=49.860583896616696&lng=-97.10731766436567&radius=10&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%21product_id%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A21%3A43.849171%2B00%3A00&start_date=lte.2026-01-10T19%3A21%3A43.849171%2B00%3A00&order=created_at.desc&offset=0&limit=7 "HTTP/2 200 OK"
+INFO:     127.0.0.1:40800 - "GET /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=7 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A23%3A51.660112%2B00%3A00&start_date=lte.2026-01-10T19%3A23%3A51.660112%2B00%3A00&order=current_claims.desc&limit=4 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.6d41d81e-4a5b-4453-a492-0eea34cff4cf "HTTP/2 200 OK"
+Processing offer 2cef91b8-4330-4387-8382-106c6db044a6 with product_id: c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5
+Product query result: [{'id': 'c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'T-shirts', 'description': None, 'price': 50.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png', 'category_id': 5, 'created_at': '2025-08-23T01:15:11.333629+00:00', 'updated_at': '2025-08-23T01:17:32.535774+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: T-shirts with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png
+Processing offer fe2d3126-f7e7-4359-831e-af54c8cd9e7e with product_id: 6d41d81e-4a5b-4453-a492-0eea34cff4cf
+Product query result: [{'id': '6d41d81e-4a5b-4453-a492-0eea34cff4cf', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'Tomford glasses', 'description': 'These are original glasses', 'price': 200.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png', 'category_id': 5, 'created_at': '2025-08-23T01:10:13.414998+00:00', 'updated_at': '2025-08-23T01:10:13.414998+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: Tomford glasses with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png
+INFO:     127.0.0.1:52548 - "GET /api/v1/customer/offers/trending?limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&start_date=lte.2026-01-10T19%3A23%3A53.296512%2B00%3A00&expiry_date=gte.2026-01-10T19%3A23%3A53.296512%2B00%3A00&expiry_date=lte.2026-01-11T19%3A23%3A53.296512%2B00%3A00&order=expiry_date.asc&limit=4 "HTTP/2 200 OK"
+INFO:     127.0.0.1:52558 - "GET /api/v1/customer/offers/expiring-soon?hours=24&limit=4&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A23%3A53.617645%2B00%3A00&start_date=lte.2026-01-10T19%3A23%3A53.617645%2B00%3A00&order=current_claims.desc&limit=7 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/products?select=%2A%2Ccategories%28%2A%29&id=eq.6d41d81e-4a5b-4453-a492-0eea34cff4cf "HTTP/2 200 OK"
+Processing offer 2cef91b8-4330-4387-8382-106c6db044a6 with product_id: c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5
+Product query result: [{'id': 'c9e02db4-ca9d-4d7e-9ea8-491d462ac1c5', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'T-shirts', 'description': None, 'price': 50.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png', 'category_id': 5, 'created_at': '2025-08-23T01:15:11.333629+00:00', 'updated_at': '2025-08-23T01:17:32.535774+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: T-shirts with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/8a1938e1-3a42-4acb-91a5-c731f78ee7f7.png
+Processing offer fe2d3126-f7e7-4359-831e-af54c8cd9e7e with product_id: 6d41d81e-4a5b-4453-a492-0eea34cff4cf
+Product query result: [{'id': '6d41d81e-4a5b-4453-a492-0eea34cff4cf', 'business_id': 'f4f93b90-0d9f-457f-bf24-cda20e6f3ca7', 'name': 'Tomford glasses', 'description': 'These are original glasses', 'price': 200.0, 'image_url': 'businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png', 'category_id': 5, 'created_at': '2025-08-23T01:10:13.414998+00:00', 'updated_at': '2025-08-23T01:10:13.414998+00:00', 'is_active': True, 'tags': '[]', 'stock_quantity': None, 'categories': {'id': 5, 'icon': '🛍️', 'name': 'Retail & Shopping', 'created_at': '2025-08-04T19:14:49.270391+00:00', 'description': 'Clothing, electronics, and general merchandise'}}]
+Added product data: Tomford glasses with image: businesses/1ad81559-fdf1-4935-8fc0-fd009c1feb3c/2d461f11-5cd8-4d40-a503-770fd17427f2.png
+INFO:     127.0.0.1:52560 - "GET /api/v1/customer/offers/trending?limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&start_date=lte.2026-01-10T19%3A23%3A54.658341%2B00%3A00&expiry_date=gte.2026-01-10T19%3A23%3A54.658341%2B00%3A00&expiry_date=lte.2026-01-11T19%3A23%3A54.658341%2B00%3A00&order=expiry_date.asc&limit=7 "HTTP/2 200 OK"
+INFO:     127.0.0.1:52562 - "GET /api/v1/customer/offers/expiring-soon?hours=24&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52562 - "OPTIONS /api/v1/customer/offers/nearby?lat=49.86051329310174&lng=-97.1074463555613&radius=10&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cbusiness_address%2Cavatar_url%2Cis_verified%2Clatitude%2Clongitude%2Ctimezone%29&is_active=eq.True&start_date=not.is.null&start_date=gt.2026-01-10T19%3A23%3A55.065397%2B00%3A00&order=start_date.asc&offset=0&limit=4 "HTTP/2 200 OK"
+INFO:     127.0.0.1:52560 - "GET /api/v1/customer/offers/upcoming?page=1&limit=4 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%21product_id%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A23%3A55.160928%2B00%3A00&start_date=lte.2026-01-10T19%3A23%3A55.160928%2B00%3A00&order=created_at.desc&offset=0&limit=7 "HTTP/2 200 OK"
+INFO:     127.0.0.1:52558 - "GET /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=7 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A23%3A55.247062%2B00%3A00&start_date=lte.2026-01-10T19%3A23%3A55.247062%2B00%3A00 "HTTP/2 200 OK"
+Searching geofenced offers near: 49.86051329310174, -97.1074463555613
+Found 2 active offers total
+Found 0 offers within range (geofenced and non-geofenced)
+Returning 0 offers (prioritizing geofenced offers)
+INFO:     127.0.0.1:52562 - "GET /api/v1/customer/offers/nearby?lat=49.86051329310174&lng=-97.1074463555613&radius=10&limit=7&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52576 - "OPTIONS /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52576 - "OPTIONS /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=12 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%21product_id%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A24%3A38.166586%2B00%3A00&start_date=lte.2026-01-10T19%3A24%3A38.166586%2B00%3A00&order=created_at.desc&offset=0&limit=12 "HTTP/2 200 OK"
+INFO:     127.0.0.1:52576 - "GET /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=12 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%21product_id%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A24%3A38.927854%2B00%3A00&start_date=lte.2026-01-10T19%3A24%3A38.927854%2B00%3A00&order=created_at.desc&offset=0&limit=12 "HTTP/2 200 OK"
+INFO:     127.0.0.1:48338 - "GET /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48354 - "OPTIONS /api/v1/superadmin/offers/e0dc9611-d4af-4c04-b3e6-37afedb7db1f HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: DELETE https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?id=eq.e0dc9611-d4af-4c04-b3e6-37afedb7db1f "HTTP/2 200 OK"
+INFO:     127.0.0.1:48354 - "DELETE /api/v1/superadmin/offers/e0dc9611-d4af-4c04-b3e6-37afedb7db1f HTTP/1.1" 204 No Content
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:52444 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:52450 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:52462 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39622 - "OPTIONS /api/v1/superadmin/offers HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses "HTTP/2 201 Created"
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers "HTTP/2 201 Created"
+INFO:     127.0.0.1:39622 - "POST /api/v1/superadmin/offers HTTP/1.1" 201 Created
+INFO:     127.0.0.1:39622 - "OPTIONS /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39636 - "OPTIONS /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:39646 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:39636 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:39622 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cproducts%21product_id%28%2A%2Ccategories%28%2A%29%29%2Cbusinesses%21inner%28business_name%2Cis_verified%2Cavatar_url%2Clatitude%2Clongitude%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A27%3A40.675626%2B00%3A00&start_date=lte.2026-01-10T19%3A27%3A40.675626%2B00%3A00&order=created_at.desc&offset=0&limit=12 "HTTP/2 200 OK"
+INFO:     127.0.0.1:39648 - "GET /api/v1/customer/offers/search?sort_by=created_at&sort_order=desc&page=1&size=12 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 401 Unauthorized"
+INFO:     127.0.0.1:47178 - "GET /api/v1/superadmin/offers HTTP/1.1" 401 Unauthorized
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Ccategory_id%29%2Cproducts%28name%2Cimage_url%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A29%3A41.985780%2B00%3A00&start_date=lte.2026-01-10T19%3A29%3A41.985780%2B00%3A00 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A29%3A41.985780%2B00%3A00&start_date=lte.2026-01-10T19%3A29%3A41.985780%2B00%3A00 "HTTP/2 200 OK"
+INFO:     127.0.0.1:45158 - "GET /api/v1/customer/all-offers?page=1&size=10 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Ccategory_id%29%2Cproducts%28name%2Cimage_url%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A31%3A19.681316%2B00%3A00&start_date=lte.2026-01-10T19%3A31%3A19.681316%2B00%3A00 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A31%3A19.681316%2B00%3A00&start_date=lte.2026-01-10T19%3A31%3A19.681316%2B00%3A00 "HTTP/2 200 OK"
+INFO:     127.0.0.1:60874 - "GET /api/v1/customer/all-offers?page=1&size=20 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:41392 - "GET /api/v1/superadmin/offers?page=1&size=100 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/rpc/get_categories_with_offers "HTTP/2 400 Bad Request"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/categories?select=%2A&order=name.asc "HTTP/2 200 OK"
+Error getting categories: {'message': 'structure of query does not match function result type', 'code': '42804', 'hint': None, 'details': 'Returned type integer does not match expected type uuid in column 1.'}
+INFO:     127.0.0.1:41398 - "GET /api/v1/customer/offers/categories HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/user "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/profiles?select=%2A&id=eq.54df730c-b736-4628-af7b-fcb2f373134a "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_businesses?select=%2A&order=created_at.desc&offset=0&limit=100 "HTTP/2 200 OK"
+INFO:     127.0.0.1:41410 - "GET /api/v1/superadmin/businesses?page=1&size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41398 - "OPTIONS /api/v1/customer/all-offers?page=1&size=12 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Ccategory_id%29%2Cproducts%28name%2Cimage_url%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A36%3A41.465916%2B00%3A00&start_date=lte.2026-01-10T19%3A36%3A41.465916%2B00%3A00 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/superadmin_offers?select=%2A%2Csuperadmin_businesses%28%2A%29&is_active=eq.True&expiry_date=gte.2026-01-10T19%3A36%3A41.465916%2B00%3A00&start_date=lte.2026-01-10T19%3A36%3A41.465916%2B00%3A00 "HTTP/2 200 OK"
+INFO:     127.0.0.1:41392 - "GET /api/v1/customer/all-offers?page=1&size=12 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://lwwhsiaqvkjtlqaxkads.supabase.co/auth/v1/token?grant_type=refresh_token "HTTP/2 200 OK"
+INFO:     127.0.0.1:52114 - "OPTIONS /api/v1/customer/all-offers?page=1&size=12 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://lwwhsiaqvkjtlqaxkads.supabase.co/rest/v1/offers?select=%2A%2Cbusinesses%21inner%28id%2Cbusiness_name%2Cis_verified%2Cavatar_url%2Cbusiness_address%2Clatitude%2Clongitude%2Ccategory_id%29%2Cproducts%28name%2Cimage_url%29&is_active=eq.True&expiry_date=gte.2026-01-12T16%3A22%3A02.829361%2B00%3A00&start_date=lte.2026-01-12T16%3A22%3A02.829361%2B00%3A00 "HTTP/2 401 Unauthorized"
+Traceback (most recent call last):
+  File "/home/sam/discount_fullstack/discount_api/app/api/routes/customer.py", line 2293, in get_all_offers
+    result = query.execute()
+             ^^^^^^^^^^^^^^^
+  File "/home/sam/discount_fullstack/discount_api/venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py", line 78, in execute
+    raise APIError(dict(json_obj))
+postgrest.exceptions.APIError: {'message': 'JWT expired', 'code': 'PGRST301', 'hint': None, 'details': None}
+Error fetching all offers: {'message': 'JWT expired', 'code': 'PGRST301', 'hint': None, 'details': None}
+INFO:     127.0.0.1:52114 - "GET /api/v1/customer/all-offers?page=1&size=12 HTTP/1.1" 500 Internal Server Error

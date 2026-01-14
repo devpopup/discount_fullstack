@@ -13,7 +13,7 @@ from fastapi.encoders import jsonable_encoder
 from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.database import check_database_health
-from app.api.routes import auth, health, business, categories, customer
+from app.api.routes import auth, health, business, categories, customer, superadmin
 
 
 # Custom JSON encoder to handle Decimal objects
@@ -93,6 +93,10 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(categories.router, prefix="/api/v1")
 app.include_router(business.router, prefix="/api/v1")
 app.include_router(customer.router, prefix="/api/v1")
+
+# Include superadmin router if feature is enabled
+if settings.enable_superadmin_offers:
+    app.include_router(superadmin.router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -18,7 +18,8 @@ import {
   ExternalLink,
   Loader2,
   Bell,
-  BellOff
+  BellOff,
+  Store
 } from 'lucide-react'
 import { IoGift } from 'react-icons/io5'
 import {
@@ -435,6 +436,7 @@ export default function OfferDetailsPage({ params }) {
   const website = offer.business?.business_website || offer.business?.website
   const hasWebsite = website && website.trim() !== ''
   const isUpcoming = offer.start_date && new Date(offer.start_date) > new Date()
+  const isDemoOffer = offer.can_claim === false || offer.is_demo === true
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -598,7 +600,7 @@ export default function OfferDetailsPage({ params }) {
                 </div>
               )}
 
-              {/* Conditional: Show Remind Me for upcoming offers, Claim for active offers */}
+              {/* Conditional: Show Remind Me for upcoming, View Only for demo, Claim for active offers */}
               {isUpcoming ? (
                 // Upcoming offer - show Remind Me button
                 <>
@@ -645,6 +647,24 @@ export default function OfferDetailsPage({ params }) {
                     )}
                   </Button>
                 </>
+              ) : isDemoOffer ? (
+                // Demo offer - show informational message only
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <Store className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-blue-900 mb-1">Visit Store to Claim</h3>
+                      <p className="text-sm text-blue-700">
+                        This offer is available in-store only. Visit the business location to claim this special offer in person.
+                      </p>
+                      {offer.business?.business_address && (
+                        <p className="text-sm text-blue-800 font-medium mt-2">
+                          📍 {offer.business.business_address}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ) : (
                 // Active offer - show Claim button with quantity selector
                 <>

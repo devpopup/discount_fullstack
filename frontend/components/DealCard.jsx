@@ -3,7 +3,7 @@
 import { useState, useEffect, memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Tag, Heart, Bell, BellOff } from 'lucide-react'
+import { Tag, Heart, Bell, BellOff, Store } from 'lucide-react'
 import { IoGift } from 'react-icons/io5'
 import { calculateDistance, saveOfferToFavorites, removeOfferFromFavorites, setOfferReminder, removeOfferReminder } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
@@ -123,6 +123,9 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
 
   // Check if offer is upcoming
   const isUpcoming = deal?.start_date && new Date(deal.start_date) > new Date()
+
+  // Check if offer is a demo (view-only)
+  const isDemoOffer = deal?.can_claim === false || deal?.is_demo === true
 
 
   // Handle favorite toggle
@@ -293,6 +296,22 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
           {discount}% OFF
         </div>
 
+        {/* In-Store Badge - Below discount badge if demo offer */}
+        {isDemoOffer && (
+          <div
+            className="absolute bg-blue-500 text-white font-medium"
+            style={{
+              top: '36px',
+              left: '8px',
+              fontSize: '10px',
+              padding: '3px 6px',
+              borderRadius: '4px'
+            }}
+          >
+            IN-STORE
+          </div>
+        )}
+
         {/* Favorite Button - Top Right */}
         <button
           onClick={handleFavoriteClick}
@@ -364,7 +383,7 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
           {distance ? formatDistance(distance) : 'Distance N/A'}
         </div>
 
-        {/* Conditional Button: Remind Me for upcoming offers, Claim for active offers */}
+        {/* Conditional Button: Remind Me for upcoming offers, View Only for demo, Claim for active offers */}
         {isUpcoming ? (
           <Button
             onClick={handleRemindClick}
@@ -390,6 +409,14 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
               </>
             )}
           </Button>
+        ) : isDemoOffer ? (
+          <div
+            className="w-full bg-gray-100 text-gray-600 text-xs py-1 rounded-md flex items-center justify-center border border-gray-300 cursor-not-allowed font-medium"
+            data-version="2026-01-13-v2"
+          >
+            <Store className="w-3 h-3 mr-1" />
+            In-Store Only
+          </div>
         ) : (
           <Button
             onClick={handleClaimClick}
