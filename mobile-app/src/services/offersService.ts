@@ -111,7 +111,9 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
             (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
     latitude: parseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude || 0),
     longitude: parseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude || 0),
-    business: business && Object.keys(business).length > 0 ? business : null
+    business: business && Object.keys(business).length > 0 ? business : null,
+    canClaim: apiOffer.can_claim !== undefined ? apiOffer.can_claim : true,
+    isDemo: apiOffer.is_demo !== undefined ? apiOffer.is_demo : false
   };
 }
 
@@ -263,11 +265,12 @@ export async function getUpcomingOffers(
 }
 
 /**
- * Get a specific offer by ID
+ * Get a specific offer by ID (handles both business and superadmin offers)
  */
 export async function getOfferById(offerId: string): Promise<{ offer: Offer | null; error: string | null }> {
   try {
-    const response = await apiClient.get(`/customer/offers/${offerId}`);
+    // Use the unified endpoint that handles both business and superadmin offers
+    const response = await apiClient.get(`/customer/all-offers/${offerId}`);
     const offer = response.data.offer ? transformOfferData(response.data.offer) : null;
 
     return { offer, error: null };
@@ -509,7 +512,7 @@ export async function getClaimedOfferIds(): Promise<Set<string>> {
 }
 
 /**
- * Get all offers with optional filtering
+ * Get all offers with optional filtering (includes both business and superadmin offers)
  */
 export async function getAllOffers(
   page: number = 1,
@@ -519,16 +522,14 @@ export async function getAllOffers(
   try {
     const params = new URLSearchParams({
       page: page.toString(),
-      size: size.toString(),
-      sort_by: 'created_at',
-      sort_order: 'desc'
+      size: size.toString()
     });
 
-    const response = await apiClient.get(`/customer/offers/search?${params}`);
+    // Use the unified endpoint that includes both business and superadmin offers
+    const response = await apiClient.get(`/customer/all-offers?${params}`);
     const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, userLocation));
 
-    const pagination = response.data.pagination || {};
-    const hasMore = pagination.has_next || false;
+    const hasMore = response.data.has_next || false;
 
     return {
       offers,
