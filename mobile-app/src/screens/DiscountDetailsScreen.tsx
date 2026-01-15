@@ -57,6 +57,7 @@ export default function DiscountDetailsScreen({
   const [quantity, setQuantity] = useState(1);
   const [minQuantity, setMinQuantity] = useState(1);
   const [maxQuantity, setMaxQuantity] = useState(100);
+  const [totalClaimed, setTotalClaimed] = useState(0);
 
   useEffect(() => {
     fetchOfferDetails();
@@ -64,17 +65,23 @@ export default function DiscountDetailsScreen({
 
   // Calculate min/max quantity based on offer constraints
   useEffect(() => {
-    if (offer && isAuthenticated) {
-      const min = offer.min_claims_per_customer || 1;
-      const totalClaimed = getTotalQuantityClaimed(offer.id);
-      const max = offer.max_claims_per_user
-        ? Math.max(min, offer.max_claims_per_user - totalClaimed)
-        : 100;
+    const fetchClaimedQuantity = async () => {
+      if (offer && isAuthenticated) {
+        const min = offer.min_claims_per_customer || 1;
+        const claimed = await getTotalQuantityClaimed(offer.id);
+        setTotalClaimed(claimed);
 
-      setMinQuantity(min);
-      setMaxQuantity(max);
-      setQuantity(min); // Initialize to minimum
-    }
+        const max = offer.max_claims_per_user
+          ? Math.max(min, offer.max_claims_per_user - claimed)
+          : 100;
+
+        setMinQuantity(min);
+        setMaxQuantity(max);
+        setQuantity(min); // Initialize to minimum
+      }
+    };
+
+    fetchClaimedQuantity();
   }, [offer, isAuthenticated]);
 
   const fetchOfferDetails = async () => {
@@ -147,6 +154,9 @@ export default function DiscountDetailsScreen({
           Alert.alert('Error', result.error);
         } else {
           setIsClaimed(false);
+          // Refresh total claimed
+          const claimed = await getTotalQuantityClaimed(offer.id);
+          setTotalClaimed(claimed);
           Alert.alert('Success', 'Offer unclaimed successfully!');
         }
       } else {
@@ -197,12 +207,14 @@ export default function DiscountDetailsScreen({
           setIsClaimed(true);
           // Reset quantity to minimum after successful claim
           setQuantity(minQuantity);
+          // Refresh total claimed
+          const claimed = await getTotalQuantityClaimed(offer.id);
+          setTotalClaimed(claimed);
           // Show quantity info in success message if applicable
           if (offer.max_claims_per_user) {
-            const totalClaimed = await getTotalQuantityClaimed(offer.id);
             Alert.alert(
               'Success',
-              `Claimed ${quantity}! Quota used: ${totalClaimed}/${offer.max_claims_per_user}. Check the Claims tab for next steps.`
+              `Claimed ${quantity}! Quota used: ${claimed}/${offer.max_claims_per_user}. Check the Claims tab for next steps.`
             );
           } else {
             Alert.alert('Success', `Claimed ${quantity}! Check the Claims tab for next steps in redeeming your claim.`);
@@ -470,7 +482,7 @@ export default function DiscountDetailsScreen({
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
-          {offer.isDemo || offer.canClaim === false ? (
+          {(offer.isDemo === true || offer.canClaim === false) ? (
             // Demo offer - view only
             <>
               <View style={styles.demoOfferBanner}>
@@ -526,10 +538,10 @@ export default function DiscountDetailsScreen({
                   {offer.max_claims_per_user && (
                     <View style={styles.quotaInfo}>
                       <Text style={styles.quotaText}>
-                        Quota: {getTotalQuantityClaimed(offer.id)}/{offer.max_claims_per_user} used
+                        Quota: {totalClaimed}/{offer.max_claims_per_user} used
                       </Text>
                       <Text style={styles.quotaText}>
-                        Remaining: {offer.max_claims_per_user - getTotalQuantityClaimed(offer.id)}
+                        Remaining: {offer.max_claims_per_user - totalClaimed}
                       </Text>
                     </View>
                   )}
