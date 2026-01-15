@@ -371,9 +371,6 @@ export default function DiscountDetailsScreen({
     return 'Starts soon';
   };
 
-  // Check if offer is upcoming (hasn't started yet)
-  const isUpcoming = offer?.startDate ? new Date(offer.startDate) > new Date() : false;
-
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -402,6 +399,8 @@ export default function DiscountDetailsScreen({
   const imageUrl = images.length > 0 ? images[selectedImage] : 'https://via.placeholder.com/400x200?text=No+Image';
   const website = offer.business?.business_website || offer.business?.website;
   const phone = offer.business?.phone_number || offer.business?.phone;
+  const hasWebsite = website && website.trim() !== '';
+  const isUpcoming = offer?.startDate ? new Date(offer.startDate) > new Date() : false;
 
   return (
     <ScrollView style={styles.container}>
@@ -636,7 +635,7 @@ export default function DiscountDetailsScreen({
             <View style={styles.termItem}>
               <Text style={styles.termBullet}>•</Text>
               <Text style={styles.termText}>
-                Offer valid until {new Date(offer.expiresAt || '').toLocaleDateString()}
+                Offer valid until {offer.expiresAt ? new Date(offer.expiresAt).toLocaleDateString() : 'N/A'}
               </Text>
             </View>
             {offer.maxClaims && (
