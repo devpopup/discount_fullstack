@@ -115,7 +115,7 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
         )}
 
         {/* In-Store Only Badge for Demo Offers */}
-        {(deal.isDemo || deal.canClaim === false) && (
+        {(deal.isDemo === true || deal.canClaim === false) && (
           <View style={styles.inStoreBadge}>
             <Ionicons name="storefront" size={10} color="#fff" />
             <Text style={styles.inStoreText}>IN-STORE</Text>

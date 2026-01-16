@@ -51,6 +51,12 @@ const apiCache = new SimpleCache();
  * If userLocation is provided and distance is missing, it will be calculated
  */
 function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
+  // Defensive: Return a default offer if apiOffer is invalid
+  if (!apiOffer || typeof apiOffer !== 'object') {
+    console.warn('Invalid offer data received:', apiOffer);
+    return createDefaultOffer();
+  }
+
   const business = apiOffer.businesses || apiOffer.business || {};
   const product = apiOffer.products || apiOffer.product || {};
   const category = product.categories || {};
@@ -109,11 +115,59 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
             apiOffer.product_images ||
             (product && product.image_url ? [constructImageUrl(product.image_url)] : []) ||
             (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
-    latitude: parseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude || 0),
-    longitude: parseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude || 0),
+    latitude: (() => {
+      try {
+        return parseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude || 0);
+      } catch (e) {
+        return 0;
+      }
+    })(),
+    longitude: (() => {
+      try {
+        return parseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude || 0);
+      } catch (e) {
+        return 0;
+      }
+    })(),
     business: business && Object.keys(business).length > 0 ? business : null,
-    canClaim: apiOffer.can_claim !== undefined ? apiOffer.can_claim : true,
-    isDemo: apiOffer.is_demo !== undefined ? apiOffer.is_demo : false
+    canClaim: apiOffer.can_claim === false ? false : true,
+    isDemo: apiOffer.is_demo === true ? true : false
+  };
+}
+
+/**
+ * Create a default offer object for error cases
+ */
+function createDefaultOffer(): Offer {
+  return {
+    id: 'error',
+    title: 'Error Loading Offer',
+    description: 'Unable to load offer details',
+    businessName: 'Unknown',
+    businessLogo: null,
+    discount: 0,
+    originalPrice: 0,
+    discountedPrice: 0,
+    category: 'General',
+    location: 'Unknown',
+    distance: null,
+    rating: null,
+    reviewCount: null,
+    expiresAt: undefined,
+    startDate: undefined,
+    claimedCount: 0,
+    maxClaims: null,
+    max_claims_per_user: null,
+    min_claims_per_customer: null,
+    isPopular: false,
+    isFeatured: false,
+    hasReminder: false,
+    images: [],
+    latitude: 0,
+    longitude: 0,
+    business: null,
+    canClaim: false,
+    isDemo: false,
   };
 }
 

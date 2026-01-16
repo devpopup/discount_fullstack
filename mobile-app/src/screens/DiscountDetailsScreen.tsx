@@ -395,12 +395,14 @@ export default function DiscountDetailsScreen({
     );
   }
 
-  const images = offer.images || [];
+  // Defensive checks for offer properties
+  const images = Array.isArray(offer.images) ? offer.images : [];
   const imageUrl = images.length > 0 ? images[selectedImage] : 'https://via.placeholder.com/400x200?text=No+Image';
   const website = offer.business?.business_website || offer.business?.website;
   const phone = offer.business?.phone_number || offer.business?.phone;
-  const hasWebsite = website && website.trim() !== '';
+  const hasWebsite = website && typeof website === 'string' && website.trim() !== '';
   const isUpcoming = offer?.startDate ? new Date(offer.startDate) > new Date() : false;
+  const offerDiscount = typeof offer.discount === 'number' ? offer.discount : 0;
 
   return (
     <ScrollView style={styles.container}>
@@ -414,7 +416,7 @@ export default function DiscountDetailsScreen({
 
         {/* Discount Badge on Image */}
         <View style={styles.discountBadgeOverlay}>
-          <Text style={styles.badgeDiscountText}>{offer.discount}%</Text>
+          <Text style={styles.badgeDiscountText}>{offerDiscount}%</Text>
           <Text style={styles.badgeOffText}>OFF</Text>
         </View>
 
@@ -467,12 +469,14 @@ export default function DiscountDetailsScreen({
         {/* Price Section */}
         <View style={styles.priceSection}>
           <View style={styles.priceRow}>
-            <Text style={styles.discountedPrice}>${offer.discountedPrice.toFixed(2)}</Text>
-            {offer.originalPrice && offer.originalPrice > 0 && (
+            <Text style={styles.discountedPrice}>
+              ${typeof offer.discountedPrice === 'number' ? offer.discountedPrice.toFixed(2) : '0.00'}
+            </Text>
+            {offer.originalPrice && typeof offer.originalPrice === 'number' && offer.originalPrice > 0 && (
               <>
                 <Text style={styles.originalPrice}>${offer.originalPrice.toFixed(2)}</Text>
                 <Text style={styles.savings}>
-                  Save ${(offer.originalPrice - offer.discountedPrice).toFixed(2)}
+                  Save ${(offer.originalPrice - (offer.discountedPrice || 0)).toFixed(2)}
                 </Text>
               </>
             )}
