@@ -102,7 +102,7 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
         />
         {/* Discount Badge */}
         <View style={styles.discountBadge}>
-          <Text style={styles.discountText}>{deal.discount}%</Text>
+          <Text style={styles.discountText}>{typeof deal.discount === 'number' ? Math.round(deal.discount) : 0}%</Text>
           <Text style={styles.offText}>OFF</Text>
         </View>
 
@@ -190,9 +190,9 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
         {/* Price Section */}
         <View style={styles.priceRow}>
           <Text style={styles.discountedPrice} numberOfLines={1}>
-            ${deal.discountedPrice.toFixed(2)}
+            ${typeof deal.discountedPrice === 'number' ? deal.discountedPrice.toFixed(2) : '0.00'}
           </Text>
-          {deal.originalPrice > 0 && (
+          {typeof deal.originalPrice === 'number' && deal.originalPrice > 0 && (
             <Text style={styles.originalPrice} numberOfLines={1}>
               ${deal.originalPrice.toFixed(2)}
             </Text>
