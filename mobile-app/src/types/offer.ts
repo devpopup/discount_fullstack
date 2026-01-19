@@ -53,8 +53,6 @@ export interface Offer {
   latitude: number;
   longitude: number;
   business?: Business | null;
-  canClaim?: boolean; // Whether offer can be claimed (false for superadmin demo offers)
-  isDemo?: boolean; // Whether this is a demo offer (superadmin created)
 }
 
 export interface OffersResponse {

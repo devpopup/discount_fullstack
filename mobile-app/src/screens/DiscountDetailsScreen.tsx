@@ -485,20 +485,7 @@ export default function DiscountDetailsScreen({
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
-          {(offer.isDemo === true || offer.canClaim === false) ? (
-            // Demo offer - view only
-            <>
-              <View style={styles.demoOfferBanner}>
-                <Ionicons name="information-circle" size={24} color="#3b82f6" />
-                <View style={styles.demoOfferTextContainer}>
-                  <Text style={styles.demoOfferTitle}>Visit Store to Claim</Text>
-                  <Text style={styles.demoOfferText}>
-                    This offer is available in-store only. Visit the business location to claim this special offer in person.
-                  </Text>
-                </View>
-              </View>
-            </>
-          ) : isUpcoming ? (
+          {isUpcoming ? (
             <>
               <TouchableOpacity
                 style={[styles.claimButton, styles.disabledButton]}
@@ -851,31 +838,6 @@ const styles = StyleSheet.create({
   },
   actionSection: {
     marginBottom: 20,
-  },
-  demoOfferBanner: {
-    backgroundColor: '#eff6ff',
-    borderWidth: 1,
-    borderColor: '#93c5fd',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 12,
-  },
-  demoOfferTextContainer: {
-    flex: 1,
-  },
-  demoOfferTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e40af',
-    marginBottom: 4,
-  },
-  demoOfferText: {
-    fontSize: 14,
-    color: '#3b82f6',
-    lineHeight: 20,
   },
   claimButton: {
     backgroundColor: '#e94e1b',
