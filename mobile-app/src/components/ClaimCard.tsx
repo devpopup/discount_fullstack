@@ -52,15 +52,19 @@ export default function ClaimCard({ claim, onPress, onLocationPress, onUnclaim }
 
     // Check if expired
     if (offer?.expires_at) {
-      const expiryDate = new Date(offer.expires_at);
-      const now = new Date();
-      if (expiryDate < now) {
-        return (
-          <View style={[styles.statusBadge, styles.statusExpired]}>
-            <Ionicons name="alert-circle" size={12} color="#991b1b" />
-            <Text style={styles.statusTextExpired}>Expired</Text>
-          </View>
-        );
+      try {
+        const expiryDate = new Date(offer.expires_at);
+        const now = new Date();
+        if (!isNaN(expiryDate.getTime()) && expiryDate < now) {
+          return (
+            <View style={[styles.statusBadge, styles.statusExpired]}>
+              <Ionicons name="alert-circle" size={12} color="#991b1b" />
+              <Text style={styles.statusTextExpired}>Expired</Text>
+            </View>
+          );
+        }
+      } catch (error) {
+        // Invalid date, fall through to pending
       }
     }
 
@@ -75,24 +79,43 @@ export default function ClaimCard({ claim, onPress, onLocationPress, onUnclaim }
   const getExpiryMessage = () => {
     if (claim.is_redeemed || !offer?.expires_at) return null;
 
-    const expiryDate = new Date(offer.expires_at);
-    const now = new Date();
-    const daysRemaining = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    try {
+      const expiryDate = new Date(offer.expires_at);
+      const now = new Date();
 
-    if (daysRemaining < 0) {
-      return <Text style={styles.expiryTextExpired}>This offer has expired</Text>;
-    } else if (daysRemaining === 0) {
-      return <Text style={styles.expiryTextUrgent}>Expires today!</Text>;
-    } else if (daysRemaining === 1) {
-      return <Text style={styles.expiryTextUrgent}>Expires tomorrow</Text>;
-    } else if (daysRemaining <= 3) {
-      return <Text style={styles.expiryTextWarning}>Expires in {daysRemaining} days</Text>;
-    } else {
-      return <Text style={styles.expiryTextNormal}>Valid until {expiryDate.toLocaleDateString()}</Text>;
+      // Check if date is valid
+      if (isNaN(expiryDate.getTime())) return null;
+
+      const daysRemaining = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysRemaining < 0) {
+        return <Text style={styles.expiryTextExpired}>This offer has expired</Text>;
+      } else if (daysRemaining === 0) {
+        return <Text style={styles.expiryTextUrgent}>Expires today!</Text>;
+      } else if (daysRemaining === 1) {
+        return <Text style={styles.expiryTextUrgent}>Expires tomorrow</Text>;
+      } else if (daysRemaining <= 3) {
+        return <Text style={styles.expiryTextWarning}>Expires in {daysRemaining} days</Text>;
+      } else {
+        return <Text style={styles.expiryTextNormal}>Valid until {expiryDate.toLocaleDateString()}</Text>;
+      }
+    } catch (error) {
+      return null;
     }
   };
 
-  const claimedDate = claim.claimed_at ? new Date(claim.claimed_at) : null;
+  // Safe date parsing for claimed date
+  let claimedDate: Date | null = null;
+  if (claim.claimed_at) {
+    try {
+      const date = new Date(claim.claimed_at);
+      if (!isNaN(date.getTime())) {
+        claimedDate = date;
+      }
+    } catch (error) {
+      claimedDate = null;
+    }
+  }
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
@@ -182,13 +205,23 @@ export default function ClaimCard({ claim, onPress, onLocationPress, onUnclaim }
           )}
 
           {/* Redeemed Info */}
-          {claim.is_redeemed && claim.redeemed_at && (
-            <View style={styles.redeemedBox}>
-              <Text style={styles.redeemedText}>
-                Redeemed on {new Date(claim.redeemed_at).toLocaleDateString()}
-              </Text>
-            </View>
-          )}
+          {claim.is_redeemed && claim.redeemed_at && (() => {
+            try {
+              const redeemedDate = new Date(claim.redeemed_at);
+              if (!isNaN(redeemedDate.getTime())) {
+                return (
+                  <View style={styles.redeemedBox}>
+                    <Text style={styles.redeemedText}>
+                      Redeemed on {redeemedDate.toLocaleDateString()}
+                    </Text>
+                  </View>
+                );
+              }
+            } catch (error) {
+              // Invalid date, don't render anything
+            }
+            return null;
+          })()}
         </View>
       </View>
     </TouchableOpacity>

@@ -9,6 +9,7 @@ import {
   Alert,
   Share,
   Linking,
+  Image,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -340,35 +341,63 @@ export default function DiscountDetailsScreen({
   const calculateTimeRemaining = (expiresAt?: string): string => {
     if (!expiresAt) return 'No expiry';
 
-    const now = new Date();
-    const expiry = new Date(expiresAt);
-    const diff = expiry.getTime() - now.getTime();
+    try {
+      const now = new Date();
+      const expiry = new Date(expiresAt);
 
-    if (diff <= 0) return 'Expired';
+      // Check if date is valid
+      if (isNaN(expiry.getTime())) return 'No expiry';
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diff = expiry.getTime() - now.getTime();
 
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} remaining`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} remaining`;
-    return 'Ending soon';
+      if (diff <= 0) return 'Expired';
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+      if (days > 0) return `${days} day${days > 1 ? 's' : ''} remaining`;
+      if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} remaining`;
+      return 'Ending soon';
+    } catch (error) {
+      return 'No expiry';
+    }
   };
 
   const calculateTimeUntilStart = (startDate?: string): string => {
     if (!startDate) return 'Coming Soon';
 
-    const now = new Date();
-    const start = new Date(startDate);
-    const diff = start.getTime() - now.getTime();
+    try {
+      const now = new Date();
+      const start = new Date(startDate);
 
-    if (diff <= 0) return ''; // Already started
+      // Check if date is valid
+      if (isNaN(start.getTime())) return 'Coming Soon';
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diff = start.getTime() - now.getTime();
 
-    if (days > 0) return `Starts in ${days} day${days > 1 ? 's' : ''}`;
-    if (hours > 0) return `Starts in ${hours} hour${hours > 1 ? 's' : ''}`;
-    return 'Starts soon';
+      if (diff <= 0) return ''; // Already started
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+      if (days > 0) return `Starts in ${days} day${days > 1 ? 's' : ''}`;
+      if (hours > 0) return `Starts in ${hours} hour${hours > 1 ? 's' : ''}`;
+      return 'Starts soon';
+    } catch (error) {
+      return 'Coming Soon';
+    }
+  };
+
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return 'N/A';
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'N/A';
+    }
   };
 
   if (loading) {
@@ -401,7 +430,20 @@ export default function DiscountDetailsScreen({
   const website = offer.business?.business_website || offer.business?.website;
   const phone = offer.business?.phone_number || offer.business?.phone;
   const hasWebsite = website && typeof website === 'string' && website.trim() !== '';
-  const isUpcoming = offer?.startDate ? new Date(offer.startDate) > new Date() : false;
+
+  // Safe check for upcoming offers
+  let isUpcoming = false;
+  if (offer?.startDate) {
+    try {
+      const startDate = new Date(offer.startDate);
+      if (!isNaN(startDate.getTime())) {
+        isUpcoming = startDate > new Date();
+      }
+    } catch (error) {
+      isUpcoming = false;
+    }
+  }
+
   const offerDiscount = typeof offer.discount === 'number' ? offer.discount : 0;
 
   return (
@@ -626,7 +668,7 @@ export default function DiscountDetailsScreen({
             <View style={styles.termItem}>
               <Text style={styles.termBullet}>•</Text>
               <Text style={styles.termText}>
-                Offer valid until {offer.expiresAt ? new Date(offer.expiresAt).toLocaleDateString() : 'N/A'}
+                Offer valid until {formatDate(offer.expiresAt)}
               </Text>
             </View>
             {offer.maxClaims && (

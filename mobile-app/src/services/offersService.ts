@@ -82,15 +82,39 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     }
   }
 
+  // Safe parseFloat with fallback
+  const safeParseFloat = (value: any, fallback: number = 0): number => {
+    try {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? fallback : parsed;
+    } catch (e) {
+      return fallback;
+    }
+  };
+
+  // Safe images array construction
+  let images: string[] = [];
+  if (Array.isArray(apiOffer.images) && apiOffer.images.length > 0) {
+    images = apiOffer.images;
+  } else if (Array.isArray(apiOffer.product_images) && apiOffer.product_images.length > 0) {
+    images = apiOffer.product_images;
+  } else if (product?.image_url) {
+    const imageUrl = constructImageUrl(product.image_url);
+    if (imageUrl) images = [imageUrl];
+  } else if (apiOffer.product_image_url) {
+    const imageUrl = constructImageUrl(apiOffer.product_image_url);
+    if (imageUrl) images = [imageUrl];
+  }
+
   return {
     id: offerId,
     title: offerTitle || 'Special Offer',
     description: offerDescription || '',
     businessName: business.business_name || apiOffer.business_name || 'Unknown Business',
     businessLogo: business.avatar_url || apiOffer.avatar_url || null,
-    discount: apiOffer.discount_percentage || 0,
-    originalPrice: parseFloat(apiOffer.original_price || product.price || 0),
-    discountedPrice: parseFloat(apiOffer.discounted_price || 0),
+    discount: safeParseFloat(apiOffer.discount_percentage, 0),
+    originalPrice: safeParseFloat(apiOffer.original_price || product.price, 0),
+    discountedPrice: safeParseFloat(apiOffer.discounted_price, 0),
     category: category.name || product.category || apiOffer.category || apiOffer.category_name || 'General',
     location: business.business_address || business.address || business.city || apiOffer.business_address || apiOffer.address || 'Location not specified',
     distance: distance,
@@ -105,12 +129,9 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     isPopular: apiOffer.is_popular || false,
     isFeatured: apiOffer.is_featured || false,
     hasReminder: apiOffer.has_reminder || false,
-    images: apiOffer.images ||
-            apiOffer.product_images ||
-            (product && product.image_url ? [constructImageUrl(product.image_url)] : []) ||
-            (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
-    latitude: parseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude || 0),
-    longitude: parseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude || 0),
+    images: images,
+    latitude: safeParseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude, 0),
+    longitude: safeParseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude, 0),
     business: business && Object.keys(business).length > 0 ? business : null,
   };
 }
