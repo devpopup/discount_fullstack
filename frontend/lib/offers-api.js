@@ -327,8 +327,10 @@ export function transformOfferData(apiOffer) {
     isFeatured: apiOffer.is_featured || false,
     images: apiOffer.images ||
             apiOffer.product_images ||
+            (apiOffer.image_url ? [constructImageUrl(apiOffer.image_url)] : []) ||
             (product && product.image_url ? [constructImageUrl(product.image_url)] : []) ||
             (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
+    image_url: apiOffer.image_url || null, // Preserve direct image_url for superadmin offers
     latitude: (() => {
       const lat = business.latitude || apiOffer.business_latitude || apiOffer.latitude
       return lat ? parseFloat(lat) : null
