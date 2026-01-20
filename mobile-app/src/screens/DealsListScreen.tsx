@@ -65,9 +65,19 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } = activeQuery;
 
-  // Flatten all pages into a single array
+  // Flatten all pages into a single array with defensive checks
   const deals = useMemo(() => {
-    return data?.pages.flatMap(page => page.offers) || [];
+    if (!data?.pages) return [];
+
+    return data.pages.flatMap(page => {
+      // Ensure page.offers is an array
+      if (!page || !Array.isArray(page.offers)) return [];
+
+      // Filter out any invalid offers
+      return page.offers.filter(offer => {
+        return offer && typeof offer === 'object' && offer.id;
+      });
+    });
   }, [data]);
 
   useEffect(() => {
@@ -204,14 +214,22 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
     }
   };
 
-  const renderItem = useCallback(({ item }: { item: Offer }) => (
-    <DealCardLandscape
-      deal={item}
-      onPress={() => handleDealPress(item)}
-      onLike={handleLike}
-      onRemind={handleRemind}
-    />
-  ), [handleDealPress, handleLike, handleRemind]);
+  const renderItem = useCallback(({ item }: { item: Offer }) => {
+    // Defensive check - ensure item has required fields
+    if (!item || !item.id) {
+      console.warn('Invalid offer item:', item);
+      return null;
+    }
+
+    return (
+      <DealCardLandscape
+        deal={item}
+        onPress={() => handleDealPress(item)}
+        onLike={handleLike}
+        onRemind={handleRemind}
+      />
+    );
+  }, [handleDealPress, handleLike, handleRemind]);
 
   const renderFooter = () => {
     if (!hasNextPage) return null;
@@ -261,7 +279,7 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
       <FlatList
         data={deals}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || `offer-${index}`}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} colors={['#e94e1b']} />

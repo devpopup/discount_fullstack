@@ -48,6 +48,12 @@ function DealsSection({
   useLandscapeCards = false,
 }: DealsSectionProps) {
   const renderDealCard = ({ item }: { item: Offer }) => {
+    // Defensive check - ensure item has required fields
+    if (!item || !item.id) {
+      console.warn('Invalid offer item in DealsSection:', item);
+      return null;
+    }
+
     if (useLandscapeCards) {
       return (
         <DealCardLandscape
@@ -153,7 +159,7 @@ function DealsSection({
         horizontal={!useLandscapeCards}
         data={deals}
         renderItem={renderDealCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || `deal-${index}`}
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={useLandscapeCards ? styles.dealsListContainer : styles.dealsScrollContainer}
