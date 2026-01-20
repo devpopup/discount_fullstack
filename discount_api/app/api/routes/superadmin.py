@@ -4,10 +4,11 @@ IMPORTANT: These routes are for temporary functionality and can be completely re
 Uses Supabase client for consistency with the rest of the application
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, File, UploadFile
 from typing import List, Optional
 import uuid
 from datetime import datetime
+import mimetypes
 
 from app.core.database import supabase, supabase_admin
 from app.utils.dependencies import get_current_superadmin_user
@@ -26,6 +27,75 @@ from app.schemas.superadmin import (
 )
 
 router = APIRouter(prefix="/superadmin", tags=["superadmin"])
+
+
+# ============================================================================
+# IMAGE UPLOAD ENDPOINT
+# ============================================================================
+
+@router.post("/upload-image", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def upload_offer_image(
+    file: UploadFile = File(...),
+    current_user: UserProfile = Depends(get_current_superadmin_user)
+):
+    """
+    Upload an image for a superadmin offer.
+    Uses service role key for secure uploads.
+    Only accessible by superadmins.
+    """
+    try:
+        # Validate file type
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File must be an image"
+            )
+
+        # Validate file size (5MB max)
+        file_content = await file.read()
+        if len(file_content) > 5 * 1024 * 1024:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Image must be less than 5MB"
+            )
+
+        # Generate unique filename
+        file_ext = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+        unique_filename = f"{int(datetime.utcnow().timestamp() * 1000)}-{uuid.uuid4().hex[:8]}.{file_ext}"
+        file_path = f"superadmin/{unique_filename}"
+
+        # Upload to Supabase Storage using admin client
+        upload_response = supabase_admin.storage.from_("product-images").upload(
+            path=file_path,
+            file=file_content,
+            file_options={
+                "content-type": file.content_type,
+                "cache-control": "3600",
+                "upsert": "false"
+            }
+        )
+
+        # Get public URL
+        public_url_data = supabase_admin.storage.from_("product-images").get_public_url(file_path)
+        public_url = public_url_data
+
+        return {
+            "success": True,
+            "image_url": public_url,
+            "file_path": file_path,
+            "message": "Image uploaded successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload image: {str(e)}"
+        )
 
 
 # ============================================================================

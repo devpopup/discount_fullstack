@@ -432,7 +432,13 @@ export default function OfferDetailsPage({ params }) {
     )
   }
 
-  const images = offer.images || []
+  // Build images array from multiple possible sources
+  // Priority: offer.images array > direct image_url (superadmin) > product.image_url
+  const images = offer.images?.length > 0
+    ? offer.images
+    : (offer.image_url || offer.product?.image_url)
+    ? [offer.image_url || offer.product?.image_url]
+    : []
   const website = offer.business?.business_website || offer.business?.website
   const hasWebsite = website && website.trim() !== ''
   const isUpcoming = offer.start_date && new Date(offer.start_date) > new Date()

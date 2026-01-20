@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getAdminOffers, createAdminOffer, deleteAdminOffer, getCategories, getAdminBusinesses } from '@/lib/admin-api'
+import { getAdminOffers, createAdminOffer, deleteAdminOffer, getCategories, getAdminBusinesses, getAdminToken } from '@/lib/admin-api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Store, Calendar, Percent, Tag, Loader2, CheckCircle, AlertCircle, Eye, DollarSign, Package } from 'lucide-react'
+import { Plus, Trash2, Store, Calendar, Percent, Tag, Loader2, CheckCircle, AlertCircle, Eye, DollarSign, Package, X, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import AddressAutocomplete from '@/components/AddressAutocomplete'
 
@@ -21,6 +21,11 @@ export default function AdminOffersPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
+
+  // Image upload state
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -228,6 +233,76 @@ export default function AdminOffersPage() {
     return true
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB')
+      return
+    }
+
+    setImageFile(file)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+  }
+
+  const uploadImageToSupabase = async (file: File): Promise<string | null> => {
+    try {
+      setIsUploadingImage(true)
+
+      // Get admin token
+      const token = getAdminToken()
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.')
+      }
+
+      // Create FormData
+      const formData = new FormData()
+      formData.append('file', file)
+
+      // Upload via backend API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/superadmin/upload-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Upload failed')
+      }
+
+      const result = await response.json()
+      return result.image_url
+    } catch (error: any) {
+      console.error('Failed to upload image:', error)
+      toast.error(error.message || 'Failed to upload image')
+      return null
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -236,6 +311,15 @@ export default function AdminOffersPage() {
     setCreating(true)
 
     try {
+      // Upload image first if provided
+      let offerImageUrl = null
+      if (imageFile) {
+        offerImageUrl = await uploadImageToSupabase(imageFile)
+        if (!offerImageUrl) {
+          throw new Error('Failed to upload image')
+        }
+      }
+
       // Combine date and time, parse as local time, then convert to UTC ISO strings
       const startDateTime = new Date(`${formData.start_date}T${formData.start_time}:00`)
       const expiryDateTime = new Date(`${formData.expiry_date}T${formData.expiry_time}:00`)
@@ -251,6 +335,7 @@ export default function AdminOffersPage() {
       const payload: any = {
         offer_title: formData.offer_title.trim(),
         offer_description: formData.offer_description.trim() || undefined,
+        offer_image_url: offerImageUrl,
         discount_type: formData.discount_type,
         original_price: parseFloat(formData.original_price),
         discounted_price: calculatedDiscountedPrice,
@@ -360,6 +445,10 @@ export default function AdminOffersPage() {
       get_discount_percentage: '100',
       terms_conditions: '',
     })
+
+    // Reset image state
+    setImageFile(null)
+    setImagePreview(null)
   }
 
   const handleDelete = async (offerId: string, offerTitle: string) => {
@@ -584,6 +673,59 @@ export default function AdminOffersPage() {
                       placeholder="Detailed description of the offer"
                       rows={2}
                     />
+                  </div>
+
+                  {/* Image Upload Section */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" />
+                      Offer Image (Optional)
+                    </Label>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100
+                            cursor-pointer"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          PNG, JPG, GIF up to 5MB. Recommended: 800x600px
+                        </p>
+                      </div>
+
+                      {/* Image Preview */}
+                      {imagePreview && (
+                        <div className="relative w-32 h-32 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-md"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload Progress */}
+                    {isUploadingImage && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Uploading image...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

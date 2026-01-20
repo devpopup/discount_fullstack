@@ -264,7 +264,8 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
       <div className="relative" style={{ width: '100%', height: '150px', overflow: 'hidden' }}>
         {(() => {
           // Check multiple possible image sources
-          const imageUrl = images?.[0] || deal?.products?.image_url || deal?.product?.image_url
+          // Priority: direct image_url (superadmin offers) > images array > products.image_url > product.image_url
+          const imageUrl = deal?.image_url || images?.[0] || deal?.products?.image_url || deal?.product?.image_url
 
           return imageUrl ? (
             <Image
