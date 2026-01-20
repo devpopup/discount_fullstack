@@ -325,12 +325,26 @@ export function transformOfferData(apiOffer) {
     min_claims_per_customer: apiOffer.min_claims_per_customer || null,
     isPopular: apiOffer.is_popular || false,
     isFeatured: apiOffer.is_featured || false,
-    images: apiOffer.images ||
-            apiOffer.product_images ||
-            (apiOffer.image_url ? [constructImageUrl(apiOffer.image_url)] : []) ||
-            (product && product.image_url ? [constructImageUrl(product.image_url)] : []) ||
-            (apiOffer.product_image_url ? [constructImageUrl(apiOffer.product_image_url)] : []),
-    image_url: apiOffer.image_url || null, // Preserve direct image_url for superadmin offers
+    images: (() => {
+      // Build images array with proper URL construction
+      if (apiOffer.images && apiOffer.images.length > 0) {
+        return apiOffer.images.map(img => constructImageUrl(img))
+      }
+      if (apiOffer.product_images && apiOffer.product_images.length > 0) {
+        return apiOffer.product_images.map(img => constructImageUrl(img))
+      }
+      if (apiOffer.image_url) {
+        return [constructImageUrl(apiOffer.image_url)]
+      }
+      if (product && product.image_url) {
+        return [constructImageUrl(product.image_url)]
+      }
+      if (apiOffer.product_image_url) {
+        return [constructImageUrl(apiOffer.product_image_url)]
+      }
+      return []
+    })(),
+    image_url: apiOffer.image_url ? constructImageUrl(apiOffer.image_url) : null, // Preserve direct image_url for superadmin offers
     latitude: (() => {
       const lat = business.latitude || apiOffer.business_latitude || apiOffer.latitude
       return lat ? parseFloat(lat) : null
