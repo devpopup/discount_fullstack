@@ -133,6 +133,8 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     latitude: safeParseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude, 0),
     longitude: safeParseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude, 0),
     business: business && Object.keys(business).length > 0 ? business : null,
+    canClaim: apiOffer.can_claim === false ? false : true,
+    isDemo: apiOffer.is_demo === true ? true : false,
   };
 }
 
@@ -284,11 +286,11 @@ export async function getUpcomingOffers(
 }
 
 /**
- * Get a specific offer by ID
+ * Get a specific offer by ID (includes both business and superadmin offers)
  */
 export async function getOfferById(offerId: string): Promise<{ offer: Offer | null; error: string | null }> {
   try {
-    const response = await apiClient.get(`/customer/offers/${offerId}`);
+    const response = await apiClient.get(`/customer/all-offers/${offerId}`);
     const offer = response.data.offer ? transformOfferData(response.data.offer) : null;
 
     return { offer, error: null };
@@ -530,7 +532,7 @@ export async function getClaimedOfferIds(): Promise<Set<string>> {
 }
 
 /**
- * Get all offers with optional filtering
+ * Get all offers with optional filtering (includes both business and superadmin offers)
  */
 export async function getAllOffers(
   page: number = 1,
@@ -543,7 +545,7 @@ export async function getAllOffers(
       size: size.toString()
     });
 
-    const response = await apiClient.get(`/customer/offers?${params}`);
+    const response = await apiClient.get(`/customer/all-offers?${params}`);
     const offers = (response.data.offers || []).map((offer: any) => transformOfferData(offer, userLocation));
 
     const hasMore = response.data.has_next || false;

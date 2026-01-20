@@ -141,6 +141,14 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
           </View>
         )}
 
+        {/* In-Store Only Badge for Demo Offers */}
+        {(deal.isDemo === true || deal.canClaim === false) && (
+          <View style={styles.inStoreBadge}>
+            <Ionicons name="storefront" size={10} color="#fff" />
+            <Text style={styles.inStoreText}>IN-STORE</Text>
+          </View>
+        )}
+
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
@@ -310,6 +318,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 9,
     fontWeight: '600',
+  },
+  inStoreBadge: {
+    position: 'absolute',
+    top: 52,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 3,
+  },
+  inStoreText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: '700',
   },
   actionButtons: {
     position: 'absolute',
