@@ -2362,6 +2362,7 @@ async def get_all_offers(
                     'offer_title': sa_offer.get('offer_title'),  # Keep original field
                     'description': sa_offer.get('offer_description') or sa_offer.get('description'),
                     'offer_description': sa_offer.get('offer_description'),  # Keep original field
+                    'image_url': sa_offer.get('image_url'),  # Offer image
                     'discount_type': sa_offer.get('discount_type'),
                     'discount_value': discount_value,
                     'discount_percentage': discount_percentage,  # Add calculated percentage
@@ -2538,7 +2539,7 @@ async def get_unified_offer_details(
                     offer_data['product'] = {
                         'id': None,
                         'price': offer_data['original_price'],  # Use the already validated float
-                        'image_url': None,
+                        'image_url': offer_data.get('image_url'),  # Use offer's image
                         'product_name': offer_data.get('offer_title') or offer_data.get('title'),
                         'description': offer_data.get('offer_description') or offer_data.get('description'),
                         'categories': None

@@ -288,6 +288,7 @@ async def create_superadmin_offer_with_business(
             'created_by_admin': str(current_user.id),
             'title': offer_data.offer_title,
             'description': offer_data.offer_description,
+            'image_url': offer_data.offer_image_url,
             'discount_type': offer_data.discount_type,
             'discount_value': offer_data.discount_value,
             'original_price': offer_data.original_price,

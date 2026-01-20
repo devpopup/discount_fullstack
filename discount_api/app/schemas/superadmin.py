@@ -82,6 +82,7 @@ class SuperadminOfferBase(BaseModel):
     """Base schema for superadmin offer with all required fields"""
     title: str = Field(..., min_length=3, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
+    image_url: Optional[str] = Field(None, description="URL to the offer image")
     discount_type: str = Field(
         ...,
         pattern="^(percentage|fixed|minimum_purchase|quantity_discount|bogo)$",
@@ -164,6 +165,7 @@ class SuperadminOfferUpdate(BaseModel):
     """Schema for updating a superadmin offer"""
     title: Optional[str] = Field(None, min_length=3, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
+    image_url: Optional[str] = Field(None, description="URL to the offer image")
     discount_type: Optional[str] = Field(None, pattern="^(percentage|fixed|minimum_purchase|quantity_discount|bogo)$")
     discount_value: Optional[float] = Field(None, gt=0)
     original_price: Optional[float] = Field(None, ge=0)
@@ -227,6 +229,7 @@ class SuperadminOfferWithBusinessCreate(BaseModel):
     # Offer fields
     offer_title: str = Field(..., min_length=3, max_length=200, description="Offer title")
     offer_description: Optional[str] = Field(None, max_length=1000, description="Offer description")
+    offer_image_url: Optional[str] = Field(None, description="URL to the offer image")
     discount_type: str = Field(
         ...,
         pattern="^(percentage|fixed|minimum_purchase|quantity_discount|bogo)$",
