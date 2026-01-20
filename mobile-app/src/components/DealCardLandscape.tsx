@@ -51,23 +51,40 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
   const calculateTimeRemaining = (expiresAt?: string): string => {
     if (!expiresAt) return '';
 
-    const now = new Date();
-    const expiry = new Date(expiresAt);
-    const diff = expiry.getTime() - now.getTime();
+    try {
+      const now = new Date();
+      const expiry = new Date(expiresAt);
 
-    if (diff <= 0) return 'Expired';
+      // Check if date is valid
+      if (isNaN(expiry.getTime())) return '';
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diff = expiry.getTime() - now.getTime();
 
-    if (days > 0) return `${days}d left`;
-    if (hours > 0) return `${hours}h left`;
-    return 'Ending soon';
+      if (diff <= 0) return 'Expired';
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+      if (days > 0) return `${days}d left`;
+      if (hours > 0) return `${hours}h left`;
+      return 'Ending soon';
+    } catch (error) {
+      return '';
+    }
   };
 
   const imageUrl = deal.images && deal.images.length > 0
     ? deal.images[0]
     : 'https://via.placeholder.com/400x200?text=No+Image';
+
+  // Safe price formatting
+  const formatPrice = (price: any): string => {
+    const numPrice = typeof price === 'number' ? price : parseFloat(price);
+    if (isNaN(numPrice)) return '0.00';
+    return numPrice.toFixed(2);
+  };
+
+  const discount = typeof deal.discount === 'number' ? deal.discount : 0;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
@@ -82,7 +99,7 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
         />
         {/* Discount Badge */}
         <View style={styles.discountBadge}>
-          <Text style={styles.discountText}>{deal.discount}%</Text>
+          <Text style={styles.discountText}>{discount}%</Text>
           <Text style={styles.offText}>OFF</Text>
         </View>
 
@@ -124,11 +141,11 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
         {/* Price Section */}
         <View style={styles.priceRow}>
           <Text style={styles.discountedPrice} numberOfLines={1}>
-            ${deal.discountedPrice.toFixed(2)}
+            ${formatPrice(deal.discountedPrice)}
           </Text>
-          {deal.originalPrice > 0 && (
+          {deal.originalPrice && deal.originalPrice > 0 && (
             <Text style={styles.originalPrice} numberOfLines={1}>
-              ${deal.originalPrice.toFixed(2)}
+              ${formatPrice(deal.originalPrice)}
             </Text>
           )}
         </View>
