@@ -425,7 +425,12 @@ export default function DiscountDetailsScreen({
   }
 
   // Defensive checks for offer properties
-  const images = Array.isArray(offer.images) ? offer.images : [];
+  // Build images array from offer.images or offer.image_url (for superadmin offers)
+  const images = Array.isArray(offer.images) && offer.images.length > 0
+    ? offer.images
+    : offer.image_url
+    ? [offer.image_url]
+    : [];
   const imageUrl = images.length > 0 ? images[selectedImage] : 'https://via.placeholder.com/400x200?text=No+Image';
   const website = offer.business?.business_website || offer.business?.website;
   const phone = offer.business?.phone_number || offer.business?.phone;

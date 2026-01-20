@@ -93,11 +93,15 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
   };
 
   // Safe images array construction
+  // Priority: images array > image_url (superadmin) > product_images > product.image_url
   let images: string[] = [];
   if (Array.isArray(apiOffer.images) && apiOffer.images.length > 0) {
     images = apiOffer.images;
   } else if (Array.isArray(apiOffer.product_images) && apiOffer.product_images.length > 0) {
     images = apiOffer.product_images;
+  } else if (apiOffer.image_url) {
+    const imageUrl = constructImageUrl(apiOffer.image_url);
+    if (imageUrl) images = [imageUrl];
   } else if (product?.image_url) {
     const imageUrl = constructImageUrl(product.image_url);
     if (imageUrl) images = [imageUrl];
@@ -105,6 +109,9 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     const imageUrl = constructImageUrl(apiOffer.product_image_url);
     if (imageUrl) images = [imageUrl];
   }
+
+  // Preserve direct image_url for superadmin offers
+  const directImageUrl = apiOffer.image_url ? constructImageUrl(apiOffer.image_url) : null;
 
   return {
     id: offerId,
@@ -130,6 +137,7 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     isFeatured: apiOffer.is_featured || false,
     hasReminder: apiOffer.has_reminder || false,
     images: images,
+    image_url: directImageUrl,
     latitude: safeParseFloat(business.latitude || apiOffer.business_latitude || apiOffer.latitude, 0),
     longitude: safeParseFloat(business.longitude || apiOffer.business_longitude || apiOffer.longitude, 0),
     business: business && Object.keys(business).length > 0 ? business : null,

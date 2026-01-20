@@ -50,6 +50,7 @@ export interface Offer {
   isFeatured: boolean;
   hasReminder?: boolean;
   images: string[];
+  image_url?: string | null; // Direct image URL for superadmin offers
   latitude: number;
   longitude: number;
   business?: Business | null;

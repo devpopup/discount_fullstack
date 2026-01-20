@@ -112,9 +112,10 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
 
   const discount = typeof deal.discount === 'number' ? deal.discount : 0;
 
-  const imageUrl = deal.images && deal.images.length > 0
-    ? deal.images[0]
-    : 'https://via.placeholder.com/400x200?text=No+Image';
+  // Check multiple image sources: image_url (superadmin) > images array > placeholder
+  const imageUrl = deal.image_url ||
+    (deal.images && deal.images.length > 0 ? deal.images[0] : null) ||
+    'https://via.placeholder.com/400x200?text=No+Image';
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>

@@ -73,9 +73,10 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
     }
   };
 
-  const imageUrl = deal.images && deal.images.length > 0
-    ? deal.images[0]
-    : 'https://via.placeholder.com/400x200?text=No+Image';
+  // Check multiple image sources: image_url (superadmin) > images array > placeholder
+  const imageUrl = deal.image_url ||
+    (deal.images && deal.images.length > 0 ? deal.images[0] : null) ||
+    'https://via.placeholder.com/400x200?text=No+Image';
 
   // Safe price formatting
   const formatPrice = (price: any): string => {
