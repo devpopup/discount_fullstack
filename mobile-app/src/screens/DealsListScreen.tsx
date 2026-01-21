@@ -44,6 +44,24 @@ interface DealsListScreenProps {
 }
 
 export default function DealsListScreen({ navigation, route }: DealsListScreenProps) {
+  // Defensive check for route params
+  if (!route?.params?.type) {
+    console.error('DealsListScreen: Missing type parameter');
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Invalid navigation parameters</Text>
+          <TouchableOpacity
+            style={styles.errorButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.errorButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   const { type } = route.params;
   const { isAuthenticated } = useAuth();
   const [userLocation, setUserLocation] = useState<Location | null>(null);
@@ -67,18 +85,33 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
 
   // Flatten all pages into a single array with defensive checks
   const deals = useMemo(() => {
-    if (!data?.pages) return [];
+    try {
+      if (!data?.pages) return [];
 
-    return data.pages.flatMap(page => {
-      // Ensure page.offers is an array
-      if (!page || !Array.isArray(page.offers)) return [];
+      const flattenedDeals = data.pages.flatMap(page => {
+        // Ensure page.offers is an array
+        if (!page || !Array.isArray(page.offers)) {
+          console.warn('DealsListScreen: Invalid page structure', page);
+          return [];
+        }
 
-      // Filter out any invalid offers
-      return page.offers.filter(offer => {
-        return offer && typeof offer === 'object' && offer.id;
+        // Filter out any invalid offers
+        return page.offers.filter(offer => {
+          const isValid = offer && typeof offer === 'object' && offer.id;
+          if (!isValid) {
+            console.warn('DealsListScreen: Filtered invalid offer', offer);
+          }
+          return isValid;
+        });
       });
-    });
-  }, [data]);
+
+      console.log(`DealsListScreen (${type}): Loaded ${flattenedDeals.length} deals`);
+      return flattenedDeals;
+    } catch (error) {
+      console.error('DealsListScreen: Error flattening deals', error);
+      return [];
+    }
+  }, [data, type]);
 
   useEffect(() => {
     initializeLocation();
@@ -217,18 +250,23 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
   const renderItem = useCallback(({ item }: { item: Offer }) => {
     // Defensive check - ensure item has required fields
     if (!item || !item.id) {
-      console.warn('Invalid offer item:', item);
+      console.warn('DealsList renderItem: Invalid offer item:', item);
       return null;
     }
 
-    return (
-      <DealCardLandscape
-        deal={item}
-        onPress={() => handleDealPress(item)}
-        onLike={handleLike}
-        onRemind={handleRemind}
-      />
-    );
+    try {
+      return (
+        <DealCardLandscape
+          deal={item}
+          onPress={() => handleDealPress(item)}
+          onLike={handleLike}
+          onRemind={handleRemind}
+        />
+      );
+    } catch (error) {
+      console.error('DealsList renderItem error:', error);
+      return null;
+    }
   }, [handleDealPress, handleLike, handleRemind]);
 
   const renderFooter = () => {
@@ -274,10 +312,13 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
     []
   );
 
+  // Final safety check - ensure deals is always an array
+  const safeDeals = Array.isArray(deals) ? deals : [];
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={deals}
+        data={safeDeals}
         renderItem={renderItem}
         keyExtractor={(item, index) => item?.id || `offer-${index}`}
         contentContainerStyle={styles.listContent}

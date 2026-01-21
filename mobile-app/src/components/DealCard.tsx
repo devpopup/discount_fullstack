@@ -117,6 +117,17 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
     (deal.images && deal.images.length > 0 ? deal.images[0] : null) ||
     'https://via.placeholder.com/400x200?text=No+Image';
 
+  // Debug logging for superadmin offers
+  if (deal.isDemo && __DEV__) {
+    console.log('DealCard - Superadmin Offer:', {
+      id: deal.id,
+      title: deal.title,
+      image_url: deal.image_url,
+      images: deal.images,
+      finalImageUrl: imageUrl
+    });
+  }
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       {/* Image Section */}
