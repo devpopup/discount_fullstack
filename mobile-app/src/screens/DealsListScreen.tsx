@@ -44,25 +44,8 @@ interface DealsListScreenProps {
 }
 
 export default function DealsListScreen({ navigation, route }: DealsListScreenProps) {
-  // Defensive check for route params
-  if (!route?.params?.type) {
-    console.error('DealsListScreen: Missing type parameter');
-    return (
-      <View style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Invalid navigation parameters</Text>
-          <TouchableOpacity
-            style={styles.errorButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.errorButtonText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  const { type } = route.params;
+  // Get type with fallback to avoid hooks ordering issues
+  const type = route?.params?.type;
   const { isAuthenticated } = useAuth();
   const [userLocation, setUserLocation] = useState<Location | null>(null);
   const LIMIT = 20;
@@ -293,16 +276,8 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
     );
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#e94e1b" />
-        <Text style={styles.loadingText}>Loading {getTitle().toLowerCase()}...</Text>
-      </View>
-    );
-  }
-
   // Performance optimization: getItemLayout helps FlatList calculate item positions faster
+  // Must be defined before any conditional returns to follow Rules of Hooks
   const getItemLayout = useCallback(
     (_: any, index: number) => ({
       length: DEAL_CARD_LANDSCAPE_HEIGHT,
@@ -314,6 +289,33 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
 
   // Final safety check - ensure deals is always an array
   const safeDeals = Array.isArray(deals) ? deals : [];
+
+  // Defensive check for route params - must be after all hooks
+  if (!type) {
+    console.error('DealsListScreen: Missing type parameter');
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Invalid navigation parameters</Text>
+          <TouchableOpacity
+            style={styles.errorButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.errorButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#e94e1b" />
+        <Text style={styles.loadingText}>Loading {getTitle().toLowerCase()}...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -395,5 +397,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  errorButton: {
+    backgroundColor: '#e94e1b',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

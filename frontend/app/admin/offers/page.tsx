@@ -614,11 +614,11 @@ export default function AdminOffersPage() {
                         }}
                         placeholder="Start typing business address..."
                       />
-                      {formData.latitude && formData.longitude && (
+                      {/* {formData.latitude && formData.longitude && (
                         <p className="text-xs text-green-600 mt-1">
                           ✓ Location coordinates captured
                         </p>
-                      )}
+                      )} */}
                     </div>
 
                     <div className="space-y-2">
