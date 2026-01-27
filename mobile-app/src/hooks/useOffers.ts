@@ -27,6 +27,7 @@ export function useNearbyOffers(
     },
     enabled: enabled && !!location,
     staleTime: 3 * 60 * 1000, // 3 minutes for nearby offers (more dynamic)
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -43,6 +44,7 @@ export function useTrendingOffers(
     queryKey: ['offers', 'trending', limit, offset],
     queryFn: () => getTrendingOffers(limit, offset, userLocation),
     enabled,
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -61,6 +63,7 @@ export function useExpiringSoonOffers(
     queryFn: () => getExpiringSoonOffers(hours, limit, offset, userLocation),
     enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes for expiring offers (very dynamic)
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -78,6 +81,7 @@ export function useUpcomingOffers(
     queryFn: () => getUpcomingOffers(page, limit, userLocation),
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes for upcoming offers
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 
@@ -94,6 +98,7 @@ export function useAllOffers(
     queryKey: ['offers', 'all', page, size],
     queryFn: () => getAllOffers(page, size, userLocation),
     enabled,
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 

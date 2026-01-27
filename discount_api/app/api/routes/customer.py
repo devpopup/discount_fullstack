@@ -2326,8 +2326,8 @@ async def get_all_offers(
 
         # ===== FETCH SUPERADMIN OFFERS (if feature enabled) =====
         if settings.enable_superadmin_offers:
-            # Use Supabase to fetch superadmin offers
-            sa_query = supabase.table("superadmin_offers").select(
+            # Use supabase_admin to fetch superadmin offers (bypasses RLS to ensure all fields are returned)
+            sa_query = supabase_admin.table("superadmin_offers").select(
                 "*, superadmin_businesses(*)"
             ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time)
 

@@ -38,6 +38,11 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     businessName,
     businessLogo,
     discount,
+    discount_type,
+    discount_value,
+    buy_quantity,
+    get_quantity,
+    get_discount_percentage,
     originalPrice,
     discountedPrice,
     category,
@@ -54,6 +59,35 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     latitude,
     longitude
   } = deal || {}
+
+  // Format discount badge based on type
+  const getDiscountBadge = () => {
+    const discountType = discount_type || 'percentage'
+    const discountValue = discount_value || 0
+
+    switch (discountType) {
+      case 'percentage':
+        return discount > 0 ? `${Math.round(discount)}% OFF` : null
+      case 'fixed':
+        return discountValue > 0 ? `$${Math.round(discountValue)} OFF` : null
+      case 'bogo':
+        const buyQty = buy_quantity || 1
+        const getQty = get_quantity || 1
+        const getPct = get_discount_percentage || 100
+        if (getPct === 100) {
+          return `B${buyQty}G${getQty} FREE`
+        }
+        return `B${buyQty}G${getQty} ${getPct}%`
+      case 'minimum_purchase':
+        return discountValue > 0 ? `$${Math.round(discountValue)} OFF` : null
+      case 'quantity_discount':
+        return discountValue > 0 ? `${Math.round(discountValue)}% BULK` : null
+      default:
+        return discount > 0 ? `${Math.round(discount)}% OFF` : null
+    }
+  }
+
+  const discountBadgeText = getDiscountBadge()
 
   // Calculate distance if not provided and we have user location + business coordinates
   let distance = providedDistance
@@ -283,26 +317,28 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
           )
         })()}
 
-        {/* Percentage OFF Badge - Top Left */}
-        <div
-          className="absolute bg-[#e74c3c] text-white font-semibold"
-          style={{
-            top: '8px',
-            left: '8px',
-            fontSize: '11px',
-            padding: '4px 8px',
-            borderRadius: '4px'
-          }}
-        >
-          {discount}% OFF
-        </div>
+        {/* Discount Badge - Top Left (only show if there's a valid discount) */}
+        {discountBadgeText && (
+          <div
+            className="absolute bg-[#e74c3c] text-white font-semibold"
+            style={{
+              top: '8px',
+              left: '8px',
+              fontSize: '11px',
+              padding: '4px 8px',
+              borderRadius: '4px'
+            }}
+          >
+            {discountBadgeText}
+          </div>
+        )}
 
         {/* In-Store Badge - Below discount badge if demo offer */}
         {isDemoOffer && (
           <div
             className="absolute bg-blue-500 text-white font-medium"
             style={{
-              top: '36px',
+              top: discountBadgeText ? '36px' : '8px',
               left: '8px',
               fontSize: '10px',
               padding: '3px 6px',

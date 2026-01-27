@@ -120,6 +120,8 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     businessName: business.business_name || apiOffer.business_name || 'Unknown Business',
     businessLogo: business.avatar_url || apiOffer.avatar_url || null,
     discount: safeParseFloat(apiOffer.discount_percentage, 0),
+    discountType: apiOffer.discount_type || 'percentage',
+    discountValue: safeParseFloat(apiOffer.discount_value, 0),
     originalPrice: safeParseFloat(apiOffer.original_price || product.price, 0),
     discountedPrice: safeParseFloat(apiOffer.discounted_price, 0),
     category: category.name || product.category || apiOffer.category || apiOffer.category_name || 'General',
@@ -143,6 +145,10 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     business: business && Object.keys(business).length > 0 ? business : null,
     canClaim: apiOffer.can_claim === false ? false : true,
     isDemo: apiOffer.is_demo === true ? true : false,
+    // BOGO specific fields
+    buyQuantity: apiOffer.buy_quantity || null,
+    getQuantity: apiOffer.get_quantity || null,
+    getDiscountPercentage: safeParseFloat(apiOffer.get_discount_percentage, 0),
   };
 }
 

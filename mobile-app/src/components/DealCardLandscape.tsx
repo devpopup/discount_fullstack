@@ -86,6 +86,37 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
   };
 
   const discount = typeof deal.discount === 'number' ? deal.discount : 0;
+  const discountType = deal.discountType || 'percentage';
+  const discountValue = deal.discountValue || 0;
+
+  // Format discount badge based on type
+  const getDiscountBadge = () => {
+    switch (discountType) {
+      case 'percentage':
+        return { text: `${Math.round(discount)}%`, subText: 'OFF' };
+      case 'fixed':
+        return { text: `$${Math.round(discountValue)}`, subText: 'OFF' };
+      case 'bogo':
+        const buyQty = deal.buyQuantity || 1;
+        const getQty = deal.getQuantity || 1;
+        const getPct = deal.getDiscountPercentage || 100;
+        if (getPct === 100) {
+          return { text: `B${buyQty}G${getQty}`, subText: 'FREE' };
+        }
+        return { text: `B${buyQty}G${getQty}`, subText: `${getPct}%` };
+      case 'minimum_purchase':
+        return { text: `$${Math.round(discountValue)}`, subText: 'OFF' };
+      case 'quantity_discount':
+        return { text: `${Math.round(discountValue)}%`, subText: 'BULK' };
+      default:
+        if (discount > 0) {
+          return { text: `${Math.round(discount)}%`, subText: 'OFF' };
+        }
+        return null; // Don't show badge if no valid discount
+    }
+  };
+
+  const discountBadge = getDiscountBadge();
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
@@ -98,11 +129,13 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
           transition={200}
           cachePolicy="memory-disk"
         />
-        {/* Discount Badge */}
-        <View style={styles.discountBadge}>
-          <Text style={styles.discountText}>{discount}%</Text>
-          <Text style={styles.offText}>OFF</Text>
-        </View>
+        {/* Discount Badge - only show if there's a valid discount */}
+        {discountBadge && (
+          <View style={styles.discountBadge}>
+            <Text style={styles.discountText}>{discountBadge.text}</Text>
+            <Text style={styles.offText}>{discountBadge.subText}</Text>
+          </View>
+        )}
 
         {/* Distance Badge */}
         {(deal.distance !== null && deal.distance !== undefined && deal.distance > 0) && (
@@ -196,11 +229,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
     overflow: 'hidden',
     flexDirection: 'row',
   },

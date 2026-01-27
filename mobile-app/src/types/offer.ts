@@ -33,6 +33,8 @@ export interface Offer {
   businessName: string;
   businessLogo?: string | null;
   discount: number;
+  discountType?: string; // 'percentage', 'fixed', 'bogo', 'minimum_purchase', 'quantity_discount'
+  discountValue?: number; // The raw discount value
   originalPrice: number;
   discountedPrice: number;
   category: string;
@@ -56,6 +58,10 @@ export interface Offer {
   business?: Business | null;
   canClaim?: boolean; // Whether offer can be claimed (false for superadmin demo offers)
   isDemo?: boolean; // Whether this is a demo offer (superadmin created)
+  // BOGO specific fields
+  buyQuantity?: number;
+  getQuantity?: number;
+  getDiscountPercentage?: number;
 }
 
 export interface OffersResponse {
