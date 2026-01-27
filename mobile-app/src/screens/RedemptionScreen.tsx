@@ -276,7 +276,7 @@ export default function RedemptionScreen({ navigation }: RedemptionScreenProps) 
               <Text style={styles.detailValue}>
                 {claimDetails.discount_type === 'percentage'
                   ? `${claimDetails.discount_value}%`
-                  : `$${claimDetails.discount_value.toFixed(2)}`}
+                  : `$${typeof claimDetails.discount_value === 'number' ? claimDetails.discount_value.toFixed(2) : '0.00'}`}
               </Text>
             </View>
 
