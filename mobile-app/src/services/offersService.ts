@@ -95,10 +95,27 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
   // Safe images array construction
   // Priority: images array > image_url (superadmin) > product_images > product.image_url
   let images: string[] = [];
+
+  // Debug logging for image resolution
+  if (__DEV__ && (apiOffer.is_demo || apiOffer.source === 'superadmin')) {
+    console.log('transformOfferData - Image sources:', {
+      id: offerId,
+      title: offerTitle,
+      image_url: apiOffer.image_url,
+      images: apiOffer.images,
+      product_images: apiOffer.product_images,
+      product_image_url: product?.image_url,
+    });
+  }
+
   if (Array.isArray(apiOffer.images) && apiOffer.images.length > 0) {
-    images = apiOffer.images;
+    images = apiOffer.images
+      .map((img: string) => constructImageUrl(img))
+      .filter((img: string | null): img is string => img !== null);
   } else if (Array.isArray(apiOffer.product_images) && apiOffer.product_images.length > 0) {
-    images = apiOffer.product_images;
+    images = apiOffer.product_images
+      .map((img: string) => constructImageUrl(img))
+      .filter((img: string | null): img is string => img !== null);
   } else if (apiOffer.image_url) {
     const imageUrl = constructImageUrl(apiOffer.image_url);
     if (imageUrl) images = [imageUrl];
@@ -112,6 +129,15 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
 
   // Preserve direct image_url for superadmin offers
   const directImageUrl = apiOffer.image_url ? constructImageUrl(apiOffer.image_url) : null;
+
+  // Debug: log final image resolution
+  if (__DEV__ && (apiOffer.is_demo || apiOffer.source === 'superadmin')) {
+    console.log('transformOfferData - Final images:', {
+      id: offerId,
+      images,
+      directImageUrl,
+    });
+  }
 
   return {
     id: offerId,

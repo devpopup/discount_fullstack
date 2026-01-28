@@ -2341,6 +2341,9 @@ async def get_all_offers(
             for sa_offer in superadmin_offers:
                 business = sa_offer.get('superadmin_businesses', {})
 
+                # Debug: log image_url for superadmin offers
+                print(f"[DEBUG] Superadmin offer {sa_offer.get('id')}: image_url = {sa_offer.get('image_url')}")
+
                 # Extract and convert price fields properly
                 original_price = float(sa_offer.get('original_price') or 0)
                 discounted_price = float(sa_offer.get('discounted_price') or 0)
@@ -2355,6 +2358,14 @@ async def get_all_offers(
                 else:
                     discount_percentage = 0
 
+                # Build images array from image_url for frontend compatibility
+                sa_image_url = sa_offer.get('image_url')
+                sa_images = []
+                if sa_image_url:
+                    if not sa_image_url.startswith('http'):
+                        sa_image_url = f"https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/{sa_image_url}"
+                    sa_images = [sa_image_url]
+
                 offer_dict = {
                     'id': sa_offer.get('id'),
                     # Map offer_title/offer_description to title/description for frontend
@@ -2362,7 +2373,8 @@ async def get_all_offers(
                     'offer_title': sa_offer.get('offer_title'),  # Keep original field
                     'description': sa_offer.get('offer_description') or sa_offer.get('description'),
                     'offer_description': sa_offer.get('offer_description'),  # Keep original field
-                    'image_url': sa_offer.get('image_url'),  # Offer image
+                    'image_url': sa_image_url,  # Offer image (full URL)
+                    'images': sa_images,  # Images array for frontend compatibility
                     'discount_type': sa_offer.get('discount_type'),
                     'discount_value': discount_value,
                     'discount_percentage': discount_percentage,  # Add calculated percentage
@@ -2535,11 +2547,18 @@ async def get_unified_offer_details(
                         }
                         del offer_data['superadmin_businesses']
 
+                    # Ensure image_url is a full URL and build images array
+                    detail_image_url = offer_data.get('image_url')
+                    if detail_image_url and not detail_image_url.startswith('http'):
+                        detail_image_url = f"https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/{detail_image_url}"
+                        offer_data['image_url'] = detail_image_url
+                    offer_data['images'] = [detail_image_url] if detail_image_url else []
+
                     # Create a mock product object for display
                     offer_data['product'] = {
                         'id': None,
                         'price': offer_data['original_price'],  # Use the already validated float
-                        'image_url': offer_data.get('image_url'),  # Use offer's image
+                        'image_url': detail_image_url,  # Use offer's image (full URL)
                         'product_name': offer_data.get('offer_title') or offer_data.get('title'),
                         'description': offer_data.get('offer_description') or offer_data.get('description'),
                         'categories': None
