@@ -66,7 +66,7 @@ export default function AdminLogin() {
             </div>
             <div>
               <CardTitle className="text-3xl font-bold text-[#1e3a5f]">
-                Superadmin Portal
+                Admin Portal
               </CardTitle>
               <CardDescription className="text-base mt-2">
                 Demo Offer Management System

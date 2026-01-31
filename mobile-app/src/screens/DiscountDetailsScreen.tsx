@@ -680,35 +680,12 @@ export default function DiscountDetailsScreen({
         </View>
 
         {/* Terms & Conditions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Terms & Conditions</Text>
-          <View style={styles.termsList}>
-            <View style={styles.termItem}>
-              <Text style={styles.termBullet}>•</Text>
-              <Text style={styles.termText}>
-                Offer valid until {formatDate(offer.expiresAt)}
-              </Text>
-            </View>
-            {offer.maxClaims && (
-              <View style={styles.termItem}>
-                <Text style={styles.termBullet}>•</Text>
-                <Text style={styles.termText}>Limited to {offer.maxClaims} total claims</Text>
-              </View>
-            )}
-            <View style={styles.termItem}>
-              <Text style={styles.termBullet}>•</Text>
-              <Text style={styles.termText}>Must be presented at time of purchase</Text>
-            </View>
-            <View style={styles.termItem}>
-              <Text style={styles.termBullet}>•</Text>
-              <Text style={styles.termText}>Cannot be combined with other offers</Text>
-            </View>
-            <View style={styles.termItem}>
-              <Text style={styles.termBullet}>•</Text>
-              <Text style={styles.termText}>Subject to availability</Text>
-            </View>
+        {offer.termsConditions ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Terms & Conditions</Text>
+            <Text style={styles.description}>{offer.termsConditions}</Text>
           </View>
-        </View>
+        ) : null}
 
         {/* Business Information */}
         <View style={styles.section}>

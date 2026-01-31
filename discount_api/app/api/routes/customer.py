@@ -48,38 +48,28 @@ def calculate_discount_percentage(offer):
     return 0
 
 async def enrich_offers_with_product_data(offers_data):
-    """Fetch product data for offers and merge it"""
+    """Fetch product data for offers and merge it (batch query)"""
+    # Batch fetch all products in a single query
+    product_ids = list(set(o['product_id'] for o in offers_data if o.get('product_id')))
+    products_map = {}
+    if product_ids:
+        products_result = supabase.table("products").select("*, categories(*)").in_("id", product_ids).execute()
+        products_map = {p['id']: p for p in (products_result.data or [])}
+
     enriched_offers = []
-
     for offer in offers_data:
-        # Get the product data if product_id exists
-        if offer.get('product_id'):
-            try:
-                product_result = supabase.table("products").select(
-                    "*, categories(*)"
-                ).eq("id", offer['product_id']).execute()
-
-                if product_result.data:
-                    offer['products'] = product_result.data[0]
-
-                    # Create images array from product image_url
-                    product = product_result.data[0]
-                    if product.get('image_url'):
-                        # Construct full image URL
-                        image_url = product['image_url']
-                        if not image_url.startswith('http'):
-                            image_url = f"https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/{image_url}"
-                        offer['images'] = [image_url]
-                    else:
-                        offer['images'] = []
-                else:
-                    offer['products'] = None
-                    offer['images'] = []
-            except Exception as e:
-                print(f"Error fetching product for offer {offer.get('id')}: {e}")
-                offer['products'] = None
+        product = products_map.get(offer.get('product_id'))
+        if product:
+            offer['products'] = product
+            if product.get('image_url'):
+                image_url = product['image_url']
+                if not image_url.startswith('http'):
+                    image_url = f"https://lwwhsiaqvkjtlqaxkads.supabase.co/storage/v1/object/public/product-images/{image_url}"
+                offer['images'] = [image_url]
+            else:
                 offer['images'] = []
         else:
+            offer['products'] = None
             offer['images'] = []
 
         # Add discount percentage for client use
@@ -298,38 +288,19 @@ async def get_trending_offers(
         
         result = query.execute()
         
-        # Step 2: Manually fetch product data for each offer
-        enriched_offers = []
+        # Step 2: Batch fetch product data for all offers in a single query
+        product_ids = list(set(o['product_id'] for o in result.data if o.get('product_id')))
+        products_map = {}
+        if product_ids:
+            products_result = supabase.table("products").select("*, categories(*)").in_("id", product_ids).execute()
+            products_map = {p['id']: p for p in (products_result.data or [])}
+
         for offer in result.data:
-            print(f"Processing offer {offer.get('id')} with product_id: {offer.get('product_id')}")
-            
-            # Get product data if product_id exists
-            if offer.get('product_id'):
-                try:
-                    product_result = supabase.table("products").select(
-                        "*, categories(*)"
-                    ).eq("id", offer['product_id']).execute()
-                    
-                    print(f"Product query result: {product_result.data}")
-                    
-                    if product_result.data:
-                        # Use 'products' (plural) to match your frontend
-                        offer['products'] = product_result.data[0]
-                        print(f"Added product data: {product_result.data[0].get('name')} with image: {product_result.data[0].get('image_url')}")
-                    else:
-                        offer['products'] = None
-                        print(f"No product found for ID: {offer['product_id']}")
-                except Exception as e:
-                    print(f"Error fetching product for offer {offer.get('id')}: {e}")
-                    offer['products'] = None
-            else:
-                offer['products'] = None
-            
-            enriched_offers.append(offer)
-        
+            offer['products'] = products_map.get(offer.get('product_id'))
+
         # Step 3: Transform data - return raw dict to preserve all fields
         offers = []
-        for offer in enriched_offers:
+        for offer in result.data:
             offer_data = offer.copy()
             
             # Ensure business data is preserved
@@ -352,7 +323,6 @@ async def get_trending_offers(
         }
         
     except Exception as e:
-        print(f"Error in get_trending_offers: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get trending offers: {str(e)}"
@@ -382,30 +352,19 @@ async def get_expiring_offers(
         
         result = query.execute()
         
-        # Step 2: Manually fetch product data
-        enriched_offers = []
+        # Step 2: Batch fetch product data for all offers in a single query
+        product_ids = list(set(o['product_id'] for o in result.data if o.get('product_id')))
+        products_map = {}
+        if product_ids:
+            products_result = supabase.table("products").select("*, categories(*)").in_("id", product_ids).execute()
+            products_map = {p['id']: p for p in (products_result.data or [])}
+
         for offer in result.data:
-            if offer.get('product_id'):
-                try:
-                    product_result = supabase.table("products").select(
-                        "*, categories(*)"
-                    ).eq("id", offer['product_id']).execute()
-                    
-                    if product_result.data:
-                        offer['products'] = product_result.data[0]
-                    else:
-                        offer['products'] = None
-                except Exception as e:
-                    print(f"Error fetching product for offer {offer.get('id')}: {e}")
-                    offer['products'] = None
-            else:
-                offer['products'] = None
-            
-            enriched_offers.append(offer)
-        
+            offer['products'] = products_map.get(offer.get('product_id'))
+
         # Step 3: Transform data - return raw dict to preserve all fields
         offers = []
-        for offer in enriched_offers:
+        for offer in result.data:
             offer_data = offer.copy()
             
             # Ensure business data is preserved
@@ -575,6 +534,36 @@ async def get_saved_offers(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve saved offers: {str(e)}"
+        )
+
+
+@router.get("/saved-offer-ids")
+async def get_saved_offer_ids(
+    current_user: UserProfile = Depends(get_current_active_user),
+):
+    """Get just the offer IDs the user has saved (lightweight endpoint for status checks)"""
+    try:
+        result = supabase.table("saved_offers").select("offer_id").eq("user_id", str(current_user.id)).execute()
+        return {"offer_ids": [r["offer_id"] for r in (result.data or [])]}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve saved offer IDs: {str(e)}"
+        )
+
+
+@router.get("/claimed-offer-ids")
+async def get_claimed_offer_ids(
+    current_user: UserProfile = Depends(get_current_active_user),
+):
+    """Get just the offer IDs the user has claimed (lightweight endpoint for status checks)"""
+    try:
+        result = supabase.table("claimed_offers").select("offer_id").eq("user_id", str(current_user.id)).execute()
+        return {"offer_ids": list(set(r["offer_id"] for r in (result.data or [])))}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve claimed offer IDs: {str(e)}"
         )
 
 
@@ -1450,8 +1439,6 @@ async def get_offers_nearby(
 ):
     """Find offers near a location with geofencing support"""
     try:
-        print(f"Searching geofenced offers near: {lat}, {lng}")
-
         # Get current time for active offers check
         current_time = datetime.now(timezone.utc).isoformat()
 
@@ -1461,7 +1448,6 @@ async def get_offers_nearby(
         ).eq("is_active", True).gte("expiry_date", current_time).lte("start_date", current_time).execute()
 
         all_offers = result.data or []
-        print(f"Found {len(all_offers)} active offers total")
 
         # Filter offers based on geofencing logic
         nearby_offers = []
@@ -1497,7 +1483,6 @@ async def get_offers_nearby(
                     offer['distance_km'] = round(distance_meters / 1000, 2)
                     offer['within_geofence'] = True
                     nearby_offers.append(offer)
-                    print(f"Offer {offer.get('id')} is within geofence ({distance_meters}m <= {geofence_radius}m)")
             else:
                 # For non-geofenced offers, use the general search radius
                 if distance_meters <= (radius * 1000):  # convert km to meters
@@ -1505,13 +1490,9 @@ async def get_offers_nearby(
                     offer['within_geofence'] = False
                     nearby_offers.append(offer)
 
-        print(f"Found {len(nearby_offers)} offers within range (geofenced and non-geofenced)")
-
         # Sort by geofence priority (geofenced first), then by distance
         nearby_offers.sort(key=lambda x: (not x.get('within_geofence', False), x['distance_km']))
         offers = nearby_offers[:limit]
-
-        print(f"Returning {len(offers)} offers (prioritizing geofenced offers)")
 
         # Filter by category if specified
         if category_id and offers:
@@ -1525,32 +1506,15 @@ async def get_offers_nearby(
         # Convert decimals to floats for JSON serialization
         offers = convert_decimals_to_float(offers)
 
-        # Enrich offers with product data (similar to trending endpoint)
-        enriched_offers = []
+        # Batch fetch product data for all nearby offers in a single query
+        product_ids = list(set(o['product_id'] for o in offers if o.get('product_id')))
+        products_map = {}
+        if product_ids:
+            products_result = supabase_admin.table("products").select("*, categories(*)").in_("id", product_ids).execute()
+            products_map = {p['id']: p for p in (products_result.data or [])}
+
         for offer in offers:
-            # Get product data if product_id exists
-            if offer.get('product_id'):
-                try:
-                    product_result = supabase_admin.table("products").select(
-                        "*, categories(*)"
-                    ).eq("id", offer['product_id']).execute()
-
-                    if product_result.data:
-                        # Use 'products' (plural) to match frontend expectations
-                        offer['products'] = product_result.data[0]
-                        print(f"Added product data to nearby offer: {product_result.data[0].get('name')} with image: {product_result.data[0].get('image_url')}")
-                    else:
-                        offer['products'] = None
-                except Exception as e:
-                    print(f"Error fetching product for nearby offer {offer.get('id')}: {e}")
-                    offer['products'] = None
-            else:
-                offer['products'] = None
-
-            enriched_offers.append(offer)
-
-        # Use enriched offers instead of plain offers
-        offers = enriched_offers
+            offer['products'] = products_map.get(offer.get('product_id'))
 
         # Add additional computed fields
         for offer in offers:
@@ -1586,9 +1550,6 @@ async def get_offers_nearby(
         }
         
     except Exception as e:
-        print(f"Error searching offers: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to search offers: {str(e)}"
@@ -1844,29 +1805,15 @@ async def get_upcoming_offers(
 
         total_count = result.count or 0
 
-        # Step 2: Manually fetch product data for each offer (like trending/expiring endpoints)
-        # Business data is already included from the Supabase join above
-        enriched_offers = []
+        # Step 2: Batch fetch product data for all offers in a single query
+        product_ids = list(set(o['product_id'] for o in result.data if o.get('product_id')))
+        products_map = {}
+        if product_ids:
+            products_result = supabase.table("products").select("*, categories(*)").in_("id", product_ids).execute()
+            products_map = {p['id']: p for p in (products_result.data or [])}
+
         for offer in result.data:
-            # Get product data if product_id exists
-            if offer.get('product_id'):
-                try:
-                    product_result = supabase.table("products").select(
-                        "*, categories(*)"
-                    ).eq("id", offer['product_id']).execute()
-
-                    if product_result.data:
-                        # Use 'products' (plural) to match frontend expectations
-                        offer['products'] = product_result.data[0]
-                    else:
-                        offer['products'] = None
-                except Exception as e:
-                    print(f"  Error fetching product for offer {offer.get('id')}: {e}")
-                    offer['products'] = None
-            else:
-                offer['products'] = None
-
-            enriched_offers.append(offer)
+            offer['products'] = products_map.get(offer.get('product_id'))
 
         # Step 3: If user is logged in, check which offers they have reminders for
         reminder_offer_ids = set()
@@ -1880,7 +1827,7 @@ async def get_upcoming_offers(
 
         # Step 4: Transform data and add reminder status
         offers_data = []
-        for offer in enriched_offers:
+        for offer in result.data:
             offer_data = offer.copy()
 
             # Ensure business data is preserved
@@ -1915,9 +1862,6 @@ async def get_upcoming_offers(
         }
 
     except Exception as e:
-        print(f"Error fetching upcoming offers: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch upcoming offers: {str(e)}"
@@ -2183,17 +2127,13 @@ async def get_offer_details(
         offer_data['can_claim'] = max_claims is None or current_claims < max_claims
         offer_data['claims_remaining'] = None if max_claims is None else max_claims - current_claims
 
-        # Get total claim and redemption statistics
+        # Get total claim and redemption statistics in a single query
         try:
-            # Count total claimed
-            claims_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).execute()
-            offer_data['claimed_count'] = claims_result.count if claims_result.count is not None else 0
-
-            # Count total redeemed
-            redeemed_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).eq("is_redeemed", True).execute()
-            offer_data['redeemed_count'] = redeemed_result.count if redeemed_result.count is not None else 0
+            all_claims = supabase.table("claimed_offers").select("id, is_redeemed").eq("offer_id", offer_id).execute()
+            all_claims_data = all_claims.data or []
+            offer_data['claimed_count'] = len(all_claims_data)
+            offer_data['redeemed_count'] = sum(1 for c in all_claims_data if c.get('is_redeemed'))
         except Exception as stats_error:
-            print(f"Error fetching claim stats: {stats_error}")
             offer_data['claimed_count'] = 0
             offer_data['redeemed_count'] = 0
 
@@ -2622,17 +2562,21 @@ async def get_unified_offer_details(
             if offer_data['is_claimed']:
                 offer_data['is_redeemed'] = claimed_check.data[0]['is_redeemed']
 
-            # Get claim statistics
-            claims_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).execute()
-            offer_data['claimed_count'] = claims_result.count if claims_result.count is not None else 0
+            # Check if user has an active reminder for this offer
+            reminder_check = supabase.table("offer_reminders").select("id").eq("user_id", str(current_user.id)).eq("offer_id", offer_id).eq("is_active", True).execute()
+            offer_data['has_reminder'] = len(reminder_check.data) > 0
 
-            redeemed_result = supabase.table("claimed_offers").select("id", count="exact").eq("offer_id", offer_id).eq("is_redeemed", True).execute()
-            offer_data['redeemed_count'] = redeemed_result.count if redeemed_result.count is not None else 0
+            # Get claim statistics in a single query
+            all_claims = supabase.table("claimed_offers").select("id, is_redeemed").eq("offer_id", offer_id).execute()
+            all_claims_data = all_claims.data or []
+            offer_data['claimed_count'] = len(all_claims_data)
+            offer_data['redeemed_count'] = sum(1 for c in all_claims_data if c.get('is_redeemed'))
         else:
             # Demo offers or unauthenticated users
             offer_data['is_saved'] = False
             offer_data['is_claimed'] = False
             offer_data['is_redeemed'] = False
+            offer_data['has_reminder'] = False
             offer_data['claimed_count'] = 0
             offer_data['redeemed_count'] = 0
 

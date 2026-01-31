@@ -52,8 +52,8 @@ export default function AdminLayout({
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-white">Superadmin Portal</h1>
-                <p className="text-xs text-gray-300">Demo Offer Management</p>
+                <h1 className="text-xl font-bold text-white">Admin Portal</h1>
+                <p className="text-xs text-gray-300">Demo Offer</p>
               </div>
             </div>
 

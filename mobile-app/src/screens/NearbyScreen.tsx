@@ -246,6 +246,10 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        removeClippedSubviews={true}
       />
     </View>
   );

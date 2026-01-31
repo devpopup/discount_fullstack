@@ -359,9 +359,11 @@ export function transformOfferData(apiOffer) {
     product: product && Object.keys(product).length > 0 ? product : null,
     products: apiOffer.products || null,
     has_reminder: apiOffer.has_reminder || false, // Preserve reminder status
+    is_saved: apiOffer.is_saved || false, // Preserve saved/favorite status
     // Preserve claim and demo flags for superadmin offers
     can_claim: apiOffer.can_claim !== undefined ? apiOffer.can_claim : true,
-    is_demo: apiOffer.is_demo !== undefined ? apiOffer.is_demo : false
+    is_demo: apiOffer.is_demo !== undefined ? apiOffer.is_demo : false,
+    terms_conditions: apiOffer.terms_conditions || null
   }
 }
 
@@ -596,18 +598,12 @@ export async function isOfferFavorited(offerId) {
  */
 export async function getFavoritedOfferIds() {
   try {
-    const result = await getFavoriteOffers({ size: 100 })
-    const favoriteIds = new Set()
-
-    result.offers.forEach(savedOffer => {
-      const offer = savedOffer.offers || savedOffer
-      const offerId = offer.id || offer.offer_id
-      if (offerId) {
-        favoriteIds.add(offerId)
-      }
-    })
-
-    return favoriteIds
+    const data = await makeOfferRequest(
+      `/customer/saved-offer-ids`,
+      { method: 'GET' },
+      true
+    )
+    return new Set(data.offer_ids || [])
   } catch (error) {
     console.error('Error fetching favorited offer IDs:', error)
     return new Set()
@@ -620,20 +616,12 @@ export async function getFavoritedOfferIds() {
  */
 export async function getClaimedOfferIds() {
   try {
-    const result = await getClaimedOffers({ page: 1, size: 100 })
-    const claimedIds = new Set()
-
-    if (result.claimed_offers) {
-      result.claimed_offers.forEach(claimedOffer => {
-        const offer = claimedOffer.offer || claimedOffer.offers
-        const offerId = offer?.id || claimedOffer.offer_id
-        if (offerId) {
-          claimedIds.add(offerId)
-        }
-      })
-    }
-
-    return claimedIds
+    const data = await makeOfferRequest(
+      `/customer/claimed-offer-ids`,
+      { method: 'GET' },
+      true
+    )
+    return new Set(data.offer_ids || [])
   } catch (error) {
     console.error('Error fetching claimed offer IDs:', error)
     return new Set()

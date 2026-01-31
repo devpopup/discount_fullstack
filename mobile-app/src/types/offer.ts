@@ -58,6 +58,7 @@ export interface Offer {
   business?: Business | null;
   canClaim?: boolean; // Whether offer can be claimed (false for superadmin demo offers)
   isDemo?: boolean; // Whether this is a demo offer (superadmin created)
+  termsConditions?: string | null;
   // BOGO specific fields
   buyQuantity?: number;
   getQuantity?: number;

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, memo, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Tag, Heart, Bell, BellOff, Store } from 'lucide-react'
@@ -87,18 +87,16 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     }
   }
 
-  const discountBadgeText = getDiscountBadge()
+  const discountBadgeText = useMemo(() => getDiscountBadge(), [discount_type, discount_value, discount, buy_quantity, get_quantity, get_discount_percentage])
 
   // Calculate distance if not provided and we have user location + business coordinates
-  let distance = providedDistance
-  if (!distance && userLocation && latitude && longitude) {
-    distance = calculateDistance(
-      userLocation.lat,
-      userLocation.lng,
-      parseFloat(latitude),
-      parseFloat(longitude)
-    )
-  }
+  const distance = useMemo(() => {
+    if (providedDistance) return providedDistance
+    if (userLocation && latitude && longitude) {
+      return calculateDistance(userLocation.lat, userLocation.lng, parseFloat(latitude), parseFloat(longitude))
+    }
+    return null
+  }, [providedDistance, userLocation, latitude, longitude])
 
   const calculateTimeRemaining = (expiresAt) => {
     if (!expiresAt) return 'No expiry'
@@ -163,7 +161,7 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
 
 
   // Handle favorite toggle
-  const handleFavoriteClick = async (e) => {
+  const handleFavoriteClick = useCallback(async (e) => {
     e.preventDefault() // Prevent navigation to offer details
     e.stopPropagation()
 
@@ -214,10 +212,10 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     } finally {
       setIsTogglingFavorite(false)
     }
-  }
+  }, [user, deal.id, isFavorited, onFavoriteChange])
 
   // Handle claim button click - open modal
-  const handleClaimClick = (e) => {
+  const handleClaimClick = useCallback((e) => {
     e.preventDefault() // Prevent navigation to offer details
     e.stopPropagation()
 
@@ -230,10 +228,10 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
 
     // Open claim modal
     setShowClaimModal(true)
-  }
+  }, [user])
 
   // Handle remind me button click
-  const handleRemindClick = async (e) => {
+  const handleRemindClick = useCallback(async (e) => {
     e.preventDefault() // Prevent navigation to offer details
     e.stopPropagation()
 
@@ -271,7 +269,7 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
     } finally {
       setIsTogglingReminder(false)
     }
-  }
+  }, [user, deal.id, hasReminder])
 
   if (!deal?.id) {
     if (process.env.NODE_ENV === 'development') {
@@ -295,7 +293,7 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
       }}
     >
       {/* Deal Image - Full width, 150px height */}
-      <div className="relative" style={{ width: '100%', height: '150px', overflow: 'hidden' }}>
+      <div className="relative" style={{ width: '100%', height: '150px', minHeight: '150px', flexShrink: 0, overflow: 'hidden' }}>
         {(() => {
           // Check multiple possible image sources
           // Priority: direct image_url (superadmin offers) > images array > products.image_url > product.image_url
@@ -411,14 +409,17 @@ function DealCard({ deal, userLocation = null, className = "", isFavorited: init
         </div>
 
         {/* Product Name */}
-        <div style={{ fontSize: '13px', color: '#333', lineHeight: '1.3', marginBottom: '4px' }}>
+        <div style={{ fontSize: '13px', color: '#333', lineHeight: '1.3', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {title || businessName}
         </div>
 
         {/* Distance */}
-        <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+        <div style={{ fontSize: '11px', color: '#666' }}>
           {distance ? formatDistance(distance) : 'Distance N/A'}
         </div>
+
+        {/* Spacer to push button to bottom */}
+        <div style={{ flexGrow: 1 }} />
 
         {/* Conditional Button: Remind Me for upcoming offers, View Only for demo, Claim for active offers */}
         {isUpcoming ? (

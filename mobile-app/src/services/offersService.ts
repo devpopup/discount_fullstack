@@ -171,6 +171,7 @@ function transformOfferData(apiOffer: any, userLocation?: Location): Offer {
     business: business && Object.keys(business).length > 0 ? business : null,
     canClaim: apiOffer.can_claim === false ? false : true,
     isDemo: apiOffer.is_demo === true ? true : false,
+    termsConditions: apiOffer.terms_conditions || null,
     // BOGO specific fields
     buyQuantity: apiOffer.buy_quantity || null,
     getQuantity: apiOffer.get_quantity || null,

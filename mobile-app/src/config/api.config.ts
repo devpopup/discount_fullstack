@@ -26,7 +26,7 @@ export const PRODUCTION_API_URL = 'https://discount-fullstack.onrender.com/api/v
 export const API_BASE_URL = USE_LOCAL_API ? LOCAL_API_URL : PRODUCTION_API_URL;
 
 // API timeout in milliseconds
-export const API_TIMEOUT = 30000; // 30 seconds
+export const API_TIMEOUT = 15000; // 15 seconds
 
 // Auth token storage key
 export const TOKEN_KEY = '@auth_token';

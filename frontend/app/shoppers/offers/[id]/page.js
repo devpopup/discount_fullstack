@@ -24,12 +24,10 @@ import {
 import { IoGift } from 'react-icons/io5'
 import {
   getOfferById,
-  getFavoritedOfferIds,
   saveOfferToFavorites,
   removeOfferFromFavorites,
   setOfferReminder,
   removeOfferReminder,
-  getMyReminders
 } from '@/lib/offers-api'
 import { useAuth } from '@/context/AuthContext'
 import { useClaims } from '@/context/ClaimContext'
@@ -97,15 +95,10 @@ export default function OfferDetailsPage({ params }) {
       } else if (result.offer) {
         setOffer(result.offer)
 
-        // Check if offer is favorited (if user is logged in)
+        // Use backend-provided status instead of separate API calls
         if (user) {
-          checkIfFavorited()
-
-          // Check if user has a reminder for this offer (if it's upcoming)
-          const isUpcoming = result.offer.start_date && new Date(result.offer.start_date) > new Date()
-          if (isUpcoming) {
-            checkIfReminderSet()
-          }
+          setIsFavorited(result.offer.is_saved || false)
+          setHasReminder(result.offer.has_reminder || false)
         }
       } else {
         setError('Offer not found')
@@ -115,29 +108,6 @@ export default function OfferDetailsPage({ params }) {
       setError('Failed to load offer details')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const checkIfFavorited = async () => {
-    try {
-      const favoritedIds = await getFavoritedOfferIds()
-      setIsFavorited(favoritedIds.has(offerId))
-    } catch (err) {
-      console.error('Error checking favorite status:', err)
-    }
-  }
-
-  const checkIfReminderSet = async () => {
-    try {
-      const result = await getMyReminders()
-      if (result.success && result.reminders) {
-        const hasReminderForOffer = result.reminders.some(
-          reminder => reminder.offer_id === offerId
-        )
-        setHasReminder(hasReminderForOffer)
-      }
-    } catch (err) {
-      console.error('Error checking reminder status:', err)
     }
   }
 
@@ -576,23 +546,14 @@ export default function OfferDetailsPage({ params }) {
               </div>
 
               {/* Terms and Conditions */}
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Terms & Conditions</h2>
-                <ul className="list-disc list-inside space-y-2 text-gray-700">
-                  <li>Offer valid until {new Date(offer.expiresAt).toLocaleDateString()}</li>
-                  {offer.maxClaims && (
-                    <li>Limited to {offer.maxClaims} total claims</li>
-                  )}
-                  {offer.max_claims_per_user && (
-                    <li className="font-medium text-[#e94e1b]">
-                      Quota limit: {offer.max_claims_per_user} per customer
-                    </li>
-                  )}
-                  <li>Must be presented at time of purchase</li>
-                  <li>Cannot be combined with other offers</li>
-                  <li>Subject to availability</li>
-                </ul>
-              </div>
+              {offer.terms_conditions && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-3">Terms & Conditions</h2>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {offer.terms_conditions}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

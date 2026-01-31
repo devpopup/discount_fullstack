@@ -1291,6 +1291,15 @@ async def list_my_offers(
         total = result.count if result.count else 0
         total_pages = (total + limit - 1) // limit
         
+        # Batch fetch claim quantities for all offers in a single query
+        offer_ids = [o['id'] for o in result.data]
+        claims_map = {}
+        if offer_ids:
+            claims_result = supabase_admin.table("claimed_offers").select("offer_id, quantity").in_("offer_id", offer_ids).execute()
+            for claim in (claims_result.data or []):
+                oid = claim["offer_id"]
+                claims_map[oid] = claims_map.get(oid, 0) + claim.get("quantity", 1)
+
         # Convert any Decimal fields to float and fix structure
         offers_data = []
         for offer in result.data:
@@ -1300,10 +1309,7 @@ async def list_my_offers(
                 offer_data['product'] = offer_data['products']
                 del offer_data['products']
 
-            # Calculate total units claimed for this offer
-            claims_result = supabase_admin.table("claimed_offers").select("quantity").eq("offer_id", offer['id']).execute()
-            total_units_claimed = sum(claim.get("quantity", 1) for claim in (claims_result.data or []))
-            offer_data['total_units_claimed'] = total_units_claimed
+            offer_data['total_units_claimed'] = claims_map.get(offer['id'], 0)
 
             offers_data.append(offer_data)
         
@@ -1558,15 +1564,11 @@ async def get_offer(
             offer_data['product'] = offer_data['products']
             del offer_data['products']
 
-        # Calculate total units claimed (sum of quantities from all claims)
-        claims_result = supabase_admin.table("claimed_offers").select("quantity").eq("offer_id", offer_id).execute()
-        total_units_claimed = sum(claim.get("quantity", 1) for claim in (claims_result.data or []))
-        offer_data['total_units_claimed'] = total_units_claimed
-
-        # Calculate total units redeemed (sum of quantities from redeemed claims)
-        redeemed_result = supabase_admin.table("claimed_offers").select("quantity").eq("offer_id", offer_id).eq("is_redeemed", True).execute()
-        total_units_redeemed = sum(claim.get("quantity", 1) for claim in (redeemed_result.data or []))
-        offer_data['total_units_redeemed'] = total_units_redeemed
+        # Calculate total units claimed and redeemed in a single query
+        claims_result = supabase_admin.table("claimed_offers").select("quantity, is_redeemed").eq("offer_id", offer_id).execute()
+        claims_data = claims_result.data or []
+        offer_data['total_units_claimed'] = sum(c.get("quantity", 1) for c in claims_data)
+        offer_data['total_units_redeemed'] = sum(c.get("quantity", 1) for c in claims_data if c.get("is_redeemed"))
 
         return {"offer": offer_data}
         
@@ -2978,27 +2980,40 @@ async def get_offers_analytics_list(
                 }
             }
         
+        # Batch fetch analytics for all offers in 3 queries instead of 3N
+        offer_ids = [o["id"] for o in offers_result.data]
+
+        views_counts = {}
+        clicks_counts = {}
+        claims_counts = {}
+
+        if offer_ids:
+            views_result = supabase_admin.table("offer_views").select(
+                "offer_id"
+            ).in_("offer_id", offer_ids).gte("viewed_at", start_date_str).execute()
+            for row in (views_result.data or []):
+                views_counts[row["offer_id"]] = views_counts.get(row["offer_id"], 0) + 1
+
+            clicks_result = supabase_admin.table("offer_clicks").select(
+                "offer_id"
+            ).in_("offer_id", offer_ids).gte("clicked_at", start_date_str).execute()
+            for row in (clicks_result.data or []):
+                clicks_counts[row["offer_id"]] = clicks_counts.get(row["offer_id"], 0) + 1
+
+            claims_result = supabase_admin.table("claimed_offers").select(
+                "offer_id"
+            ).in_("offer_id", offer_ids).gte("claimed_at", start_date_str).execute()
+            for row in (claims_result.data or []):
+                claims_counts[row["offer_id"]] = claims_counts.get(row["offer_id"], 0) + 1
+
         offers = []
         for offer in offers_result.data:
             offer_id = offer["id"]
-            
-            # Get analytics for each offer
-            views_result = supabase_admin.table("offer_views").select(
-                "id", count="exact"
-            ).eq("offer_id", offer_id).gte("viewed_at", start_date_str).execute()
-            
-            clicks_result = supabase_admin.table("offer_clicks").select(
-                "id", count="exact"
-            ).eq("offer_id", offer_id).gte("clicked_at", start_date_str).execute()
-            
-            claims_result = supabase_admin.table("claimed_offers").select(
-                "id", count="exact"
-            ).eq("offer_id", offer_id).gte("claimed_at", start_date_str).execute()
-            
-            total_views = views_result.count or 0
-            total_clicks = clicks_result.count or 0
-            total_claims = claims_result.count or 0
-            
+
+            total_views = views_counts.get(offer_id, 0)
+            total_clicks = clicks_counts.get(offer_id, 0)
+            total_claims = claims_counts.get(offer_id, 0)
+
             # Calculate time left
             now = datetime.now(timezone.utc)
             expiry_date = datetime.fromisoformat(offer["expiry_date"].replace('Z', '+00:00'))
