@@ -153,7 +153,7 @@ export default function AdminLogin() {
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800 text-center">
                 <Shield className="inline h-4 w-4 mr-1" />
-                Restricted access for authorized superadmins only
+                Restricted access for authorized admins only
               </p>
             </div>
           </CardContent>
