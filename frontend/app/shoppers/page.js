@@ -20,7 +20,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNearbyOffers, useTrendingOffers, useExpiringSoonOffers } from '@/hooks/useOffers'
 
 
-function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange, loading = false, emptyMessage = null }) {
+function DealsSection({ title, description, deals, sectionType, icon: Icon, userLocation = null, favoritedIds = new Set(), claimedIds = new Set(), onFavoriteChange, onClaimChange, loading = false, emptyMessage = null, rows = 1 }) {
   const scrollContainerRef = useRef(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
 
@@ -73,13 +73,9 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
           </div>
         </div>
       ) : deals.length > 0 ? (
-        <div className="relative">
-          {/* Horizontal scrollable container */}
-          <div
-            ref={scrollContainerRef}
-            className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
+        rows > 1 ? (
+          /* Grid layout for multi-row sections */
+          <div className="flex flex-wrap gap-3">
             {deals.map((deal, index) => (
               <DealCard
                 key={deal.id || `deal-${index}`}
@@ -93,18 +89,40 @@ function DealsSection({ title, description, deals, sectionType, icon: Icon, user
               />
             ))}
           </div>
-
-          {/* Chevron button - only show if container is scrollable */}
-          {showScrollButton && (
-            <button
-              onClick={scrollRight}
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
-              aria-label="Scroll right"
+        ) : (
+          <div className="relative">
+            {/* Horizontal scrollable container */}
+            <div
+              ref={scrollContainerRef}
+              className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              <ChevronRight className="w-6 h-6 text-gray-700" />
-            </button>
-          )}
-        </div>
+              {deals.map((deal, index) => (
+                <DealCard
+                  key={deal.id || `deal-${index}`}
+                  deal={deal}
+                  userLocation={userLocation}
+                  isFavorited={favoritedIds.has(deal.id)}
+                  isClaimed={claimedIds.has(deal.id)}
+                  onFavoriteChange={onFavoriteChange}
+                  onClaimChange={onClaimChange}
+                  priority={index === 0}
+                />
+              ))}
+            </div>
+
+            {/* Chevron button - only show if container is scrollable */}
+            {showScrollButton && (
+              <button
+                onClick={scrollRight}
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-700" />
+              </button>
+            )}
+          </div>
+        )
       ) : (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <Icon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -232,7 +250,7 @@ export default function ShoppersHome() {
     const loadAllDeals = async () => {
       setAllDealsLoading(true)
       try {
-        const result = await getAllOffers({ page: 1, size: cardsToShow })
+        const result = await getAllOffers({ page: 1, size: cardsToShow * 2 })
 
         if (result.error) {
           console.error('Error loading all deals:', result.error)
@@ -310,6 +328,24 @@ export default function ShoppersHome() {
         {/* Content */}
         {!error && (
           <>
+            {/* All Deals */}
+            <div id="all-deals">
+              <DealsSection
+                title="All Deals"
+                description="Browse all available offers from local businesses"
+                deals={allDeals}
+                sectionType="all"
+                icon={IoGrid}
+                userLocation={userLocation}
+                favoritedIds={favoritedIds}
+                claimedIds={claimedIds}
+                onFavoriteChange={handleFavoriteChange}
+                onClaimChange={handleClaimChange}
+                loading={allDealsLoading}
+                rows={2}
+              />
+            </div>
+
             {/* Deals Near You */}
             <div id="nearby-deals">
               <DealsSection
@@ -378,24 +414,6 @@ export default function ShoppersHome() {
                 loading={trendingLoading}
               />
             </div>
-
-            {/* All Deals */}
-            <div id="all-deals">
-              <DealsSection
-                title="All Deals"
-                description="Browse all available offers from local businesses"
-                deals={allDeals}
-                sectionType="all"
-                icon={IoGrid}
-                userLocation={userLocation}
-                favoritedIds={favoritedIds}
-                claimedIds={claimedIds}
-                onFavoriteChange={handleFavoriteChange}
-                onClaimChange={handleClaimChange}
-                loading={allDealsLoading}
-              />
-            </div>
-
 
             {/* Call to Action */}
             <section className="bg-gradient-to-r from-[#e94e1b] to-red-600 rounded-2xl p-8 text-center text-white">
