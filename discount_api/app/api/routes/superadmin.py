@@ -154,6 +154,9 @@ async def list_superadmin_businesses(
         # Build query
         query = supabase_admin.table("superadmin_businesses").select("*", count="exact")
 
+        # Filter by the logged-in admin
+        query = query.eq("created_by_admin", str(current_user.id))
+
         # Apply filters
         if is_active is not None:
             query = query.eq("is_active", is_active)
@@ -428,6 +431,9 @@ async def list_superadmin_offers(
             "*, superadmin_businesses(*)",
             count="exact"
         )
+
+        # Filter by the logged-in admin
+        query = query.eq("created_by_admin", str(current_user.id))
 
         # Apply filters
         if is_active is not None:

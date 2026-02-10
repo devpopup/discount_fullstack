@@ -139,9 +139,6 @@ export default function NotificationSettingsScreen() {
             <Text style={styles.settingDescription}>
               Get notified when you're near active offers
             </Text>
-            {geofencingActive && (
-              <Text style={styles.statusText}>✓ Geofencing active</Text>
-            )}
           </View>
           <Switch
             value={settings.proximityAlerts}
@@ -209,7 +206,7 @@ export default function NotificationSettingsScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Status</Text>
         <View style={styles.statusCard}>
           <View style={styles.statusRow}>
@@ -225,7 +222,7 @@ export default function NotificationSettingsScreen() {
             </Text>
           </View>
         </View>
-      </View>
+      </View> */}
 
       <View style={styles.infoSection}>
         <Ionicons name="information-circle-outline" size={24} color="#666" />

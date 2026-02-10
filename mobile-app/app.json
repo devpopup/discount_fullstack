@@ -24,7 +24,8 @@
         ],
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to notify you about nearby offers.",
         "NSLocationWhenInUseUsageDescription": "We need your location to show you nearby offers.",
-        "NSLocationAlwaysUsageDescription": "We need your location even when the app is closed to notify you about nearby offers."
+        "NSLocationAlwaysUsageDescription": "We need your location even when the app is closed to notify you about nearby offers.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -41,10 +42,7 @@
         "ACCESS_BACKGROUND_LOCATION",
         "POST_NOTIFICATIONS",
         "RECEIVE_BOOT_COMPLETED",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "CAMERA"
       ],
       "intentFilters": [
         {

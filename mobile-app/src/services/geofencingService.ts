@@ -102,18 +102,24 @@ function toRad(degrees: number): number {
  */
 export async function requestGeofencingPermissions(): Promise<boolean> {
   try {
-    // Request foreground location permission
-    const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
-    if (foregroundStatus !== 'granted') {
-      console.log('Foreground location permission not granted');
-      return false;
+    // Check if foreground permission is already granted
+    const { status: existingForeground } = await Location.getForegroundPermissionsAsync();
+    if (existingForeground !== 'granted') {
+      const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+      if (foregroundStatus !== 'granted') {
+        console.log('Foreground location permission not granted');
+        return false;
+      }
     }
 
-    // Request background location permission (required for geofencing)
-    const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-    if (backgroundStatus !== 'granted') {
-      console.log('Background location permission not granted');
-      return false;
+    // Check if background permission is already granted
+    const { status: existingBackground } = await Location.getBackgroundPermissionsAsync();
+    if (existingBackground !== 'granted') {
+      const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+      if (backgroundStatus !== 'granted') {
+        console.log('Background location permission not granted');
+        return false;
+      }
     }
 
     return true;
