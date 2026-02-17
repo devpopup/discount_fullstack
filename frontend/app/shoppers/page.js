@@ -242,10 +242,9 @@ export default function ShoppersHome() {
     loadUserData()
   }, [user])
 
-  // Fetch all deals - runs when component mounts or userLocation/cardsToShow changes
+  // Fetch all deals - runs when component mounts or cardsToShow changes
   useEffect(() => {
-    // Only fetch if we have a location and cardsToShow is calculated
-    if (!userLocation || !cardsToShow) return
+    if (!cardsToShow) return
 
     const loadAllDeals = async () => {
       setAllDealsLoading(true)
