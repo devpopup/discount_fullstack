@@ -43,7 +43,7 @@ supabase_admin: Client = create_client(settings.supabase_url, settings.supabase_
 async def check_database_health() -> bool:
     try:
         # Test connection by querying profiles table
-        result = supabase.table("profiles").select("id").limit(1).execute()
+        result = supabase_admin.table("profiles").select("id").limit(1).execute()
         logger.info("✅ Database connection successful")
         return True
     except Exception as e:
@@ -54,11 +54,11 @@ async def init_db():
     """Initialize database connection and verify tables exist"""
     try:
         # Test connection by checking if profiles table exists
-        response = supabase.table("profiles").select("id").limit(1).execute()
+        response = supabase_admin.table("profiles").select("id").limit(1).execute()
         logger.info("✅ Database connection successful")
         
         # Check if sample categories exist
-        categories_response = supabase.table("categories").select("*").execute()
+        categories_response = supabase_admin.table("categories").select("*").execute()
         logger.info(f"✅ Found {len(categories_response.data)} categories")
         
         return True

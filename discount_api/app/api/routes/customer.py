@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional, List
 from datetime import datetime, timezone
-from app.core.database import supabase
+from app.core.database import supabase_admin as supabase
 from app.core.config import settings
 from app.schemas.business import (
     ProductResponse, ProductListResponse,
@@ -21,7 +21,6 @@ from app.schemas.user import UserProfile
 from app.utils.dependencies import get_current_active_user, get_current_user_optional
 import uuid
 from datetime import datetime, timezone
-from app.core.database import supabase, supabase_admin
 
 
 # Add this helper function at the top of your customer.py file (after imports)
@@ -1643,7 +1642,7 @@ from fastapi import APIRouter, Query, HTTPException, status, Depends
 from typing import Optional, Dict, Any
 from datetime import datetime
 
-from app.core.database import supabase, supabase_admin
+from app.core.database import supabase_admin
 from app.schemas.user import UserProfile
 from app.utils.dependencies import get_current_active_user
 from app.utils.offer_calculations import OfferCalculator

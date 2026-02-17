@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 import mimetypes
 
-from app.core.database import supabase, supabase_admin
+from app.core.database import supabase_admin as supabase, supabase_admin
 from app.utils.dependencies import get_current_superadmin_user
 from app.schemas.user import UserProfile
 from app.schemas.superadmin import (

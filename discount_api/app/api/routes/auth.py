@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.core.database import supabase, supabase_admin
+from app.core.database import supabase_admin as supabase, supabase_admin
 from app.schemas.user import (
     UserRegister, 
     UserLogin, 

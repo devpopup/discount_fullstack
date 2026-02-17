@@ -10,7 +10,7 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from datetime import timezone
 
-from app.core.database import supabase, supabase_admin
+from app.core.database import supabase_admin as supabase, supabase_admin
 from app.core.config import settings 
 from app.schemas.business import (
     BusinessCreate, BusinessUpdate, BusinessResponse, BusinessListResponse,
