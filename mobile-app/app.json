@@ -18,13 +18,12 @@
       "bundleIdentifier": "com.popupreach.mobile",
       "infoPlist": {
         "UIBackgroundModes": [
-          "location",
           "fetch",
           "remote-notification"
         ],
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to notify you about nearby offers.",
-        "NSLocationWhenInUseUsageDescription": "We need your location to show you nearby offers.",
-        "NSLocationAlwaysUsageDescription": "We need your location even when the app is closed to notify you about nearby offers.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "PopupReach uses your location to show you deals available near you.",
+        "NSLocationWhenInUseUsageDescription": "PopupReach uses your location to show you deals available near you.",
+        "NSLocationAlwaysUsageDescription": "PopupReach uses your location to show you deals available near you.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -87,9 +86,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow PopupReach to use your location to notify you about nearby offers.",
-          "locationAlwaysPermission": "Allow PopupReach to use your location to notify you about nearby offers even when the app is not in use.",
-          "locationWhenInUsePermission": "Allow PopupReach to use your location to show you nearby offers."
+          "locationAlwaysAndWhenInUsePermission": "Allow PopupReach to use your location to show you deals available near you.",
+          "locationAlwaysPermission": "Allow PopupReach to use your location to show you deals available near you.",
+          "locationWhenInUsePermission": "Allow PopupReach to use your location to show you deals available near you."
         }
       ]
     ],

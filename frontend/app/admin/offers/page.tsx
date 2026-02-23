@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Store, Calendar, Percent, Tag, Loader2, CheckCircle, AlertCircle, Eye, DollarSign, Package, X, ImageIcon } from 'lucide-react'
+import { Plus, Trash2, Store, Calendar, Percent, Tag, Loader2, CheckCircle, AlertCircle, Eye, DollarSign, Package, X, ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import AddressAutocomplete from '@/components/AddressAutocomplete'
 
@@ -21,6 +21,11 @@ export default function AdminOffersPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalOffers, setTotalOffers] = useState(0)
+  const PAGE_SIZE = 12
 
   // Image upload state
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -71,26 +76,42 @@ export default function AdminOffersPage() {
   })
 
   useEffect(() => {
-    loadData()
+    loadOffers(currentPage)
+  }, [currentPage])
+
+  useEffect(() => {
+    loadStaticData()
   }, [])
 
-  const loadData = async () => {
-    setLoading(true)
+  const loadStaticData = async () => {
     try {
-      const [offersData, categoriesData, businessesData] = await Promise.all([
-        getAdminOffers({ page: 1, size: 100 }),
+      const [categoriesData, businessesData] = await Promise.all([
         getCategories(),
         getAdminBusinesses({ page: 1, size: 100 })
       ])
-      setOffers(offersData.offers || [])
       setCategories(categoriesData.categories || [])
       setBusinesses(businessesData.businesses || [])
     } catch (error) {
-      console.error('Error loading data:', error)
-      toast.error('Failed to load data')
+      console.error('Error loading static data:', error)
+    }
+  }
+
+  const loadOffers = async (page: number) => {
+    setLoading(true)
+    try {
+      const offersData = await getAdminOffers({ page, size: PAGE_SIZE })
+      setOffers(offersData.offers || [])
+      setTotalOffers(offersData.total || 0)
+    } catch (error) {
+      console.error('Error loading offers:', error)
+      toast.error('Failed to load offers')
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadData = () => {
+    loadOffers(currentPage)
   }
 
   const handleInputChange = (field: string, value: any) => {
@@ -395,10 +416,14 @@ export default function AdminOffersPage() {
 
       toast.success('Demo offer created successfully!')
 
-      // Reset form and reload offers
+      // Reset form and reload offers (go to page 1 to see the new offer)
       resetForm()
       setShowCreateForm(false)
-      loadData()
+      if (currentPage === 1) {
+        loadData()
+      } else {
+        setCurrentPage(1)
+      }
 
     } catch (error: any) {
       console.error('Error creating offer:', error)
@@ -459,7 +484,13 @@ export default function AdminOffersPage() {
     try {
       await deleteAdminOffer(offerId)
       toast.success('Offer deleted successfully')
-      loadData()
+      // If deleting the last item on a page > 1, go back a page
+      const remainingOnPage = offers.length - 1
+      if (remainingOnPage === 0 && currentPage > 1) {
+        setCurrentPage(p => p - 1)
+      } else {
+        loadData()
+      }
     } catch (error: any) {
       console.error('Error deleting offer:', error)
       toast.error(error.message || 'Failed to delete offer')
@@ -1091,7 +1122,7 @@ export default function AdminOffersPage() {
       {/* Offers List */}
       <div>
         <h2 className="text-xl font-semibold mb-4">
-          Existing Demo Offers ({offers.length})
+          Existing Demo Offers ({totalOffers})
         </h2>
 
         {offers.length === 0 ? (
@@ -1103,53 +1134,87 @@ export default function AdminOffersPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {offers.map((offer) => (
-              <Card key={offer.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <Badge variant="secondary" className="mb-2">
-                      <Eye className="h-3 w-3 mr-1" />
-                      View Only
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(offer.id, offer.title)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 -mt-2 -mr-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <CardTitle className="text-lg line-clamp-2">{offer.title}</CardTitle>
-                  <CardDescription className="flex items-center mt-1">
-                    <Store className="h-3 w-3 mr-1" />
-                    {offer.business?.business_name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Discount:</span>
-                    <Badge variant="outline" className="bg-green-50">
-                      {offer.discount_type === 'percentage' ? `${offer.discount_value}%` : `$${offer.discount_value}`} off
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Expires:</span>
-                    <span className="flex items-center">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {new Date(offer.expiry_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {offer.business?.business_address && (
-                    <p className="text-xs text-gray-500 line-clamp-2 pt-2 border-t">
-                      {offer.business.business_address}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {offers.map((offer) => (
+                <Card key={offer.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <Badge variant="secondary" className="mb-2">
+                        <Eye className="h-3 w-3 mr-1" />
+                        View Only
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(offer.id, offer.title)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 -mt-2 -mr-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <CardTitle className="text-lg line-clamp-2">{offer.title}</CardTitle>
+                    <CardDescription className="flex items-center mt-1">
+                      <Store className="h-3 w-3 mr-1" />
+                      {offer.business?.business_name}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Discount:</span>
+                      <Badge variant="outline" className="bg-green-50">
+                        {offer.discount_type === 'percentage' ? `${offer.discount_value}%` : `$${offer.discount_value}`} off
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Expires:</span>
+                      <span className="flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {new Date(offer.expiry_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {offer.business?.business_address && (
+                      <p className="text-xs text-gray-500 line-clamp-2 pt-2 border-t">
+                        {offer.business.business_address}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalOffers > PAGE_SIZE && (
+              <div className="flex items-center justify-between mt-6">
+                <p className="text-sm text-gray-600">
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalOffers)} of {totalOffers} offers
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {Math.ceil(totalOffers / PAGE_SIZE)}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage >= Math.ceil(totalOffers / PAGE_SIZE)}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
