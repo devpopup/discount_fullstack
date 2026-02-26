@@ -281,6 +281,32 @@ async def update_password_with_token(password_data: dict):
         )
 
 
+@router.delete("/me", response_model=MessageResponse)
+async def delete_account(
+    current_user: UserProfile = Depends(get_current_active_user)
+):
+    """Permanently delete the authenticated user's account and all associated data"""
+
+    try:
+        user_id = str(current_user.id)
+
+        # Delete profile row (cascades to associated data via DB foreign keys)
+        supabase.table("profiles").delete().eq("id", user_id).execute()
+
+        # Delete the auth user from Supabase (requires service role key)
+        supabase_admin.auth.admin.delete_user(user_id)
+
+        return MessageResponse(message="Account deleted successfully")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Account deletion failed: {str(e)}"
+        )
+
+
 @router.put("/change-password", response_model=MessageResponse)
 async def change_password(
     password_data: dict,

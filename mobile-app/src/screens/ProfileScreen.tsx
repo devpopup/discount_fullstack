@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
+import { deleteAccount } from '../services/userService';
 
 type RootStackParamList = {
   SignIn: undefined;
@@ -29,6 +30,7 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const { user, isAuthenticated, signOut } = useAuth();
+  const [deletingAccount, setDeletingAccount] = React.useState(false);
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -54,6 +56,43 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account? All your data including claims, favorites, and redemption history will be removed. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Final Confirmation',
+              'This will permanently delete your account and all associated data. Are you absolutely sure?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Permanently',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setDeletingAccount(true);
+                    try {
+                      await deleteAccount();
+                      await signOut();
+                    } catch (error) {
+                      setDeletingAccount(false);
+                      Alert.alert('Error', 'Failed to delete account. Please try again or contact support at info@popupreach.com');
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const handleHelpSupport = () => {
@@ -179,6 +218,19 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         </TouchableOpacity>
       </View>
 
+      {/* Delete Account */}
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={styles.deleteAccountButton}
+          onPress={handleDeleteAccount}
+          disabled={deletingAccount}
+        >
+          <Text style={styles.deleteAccountText}>
+            {deletingAccount ? 'Deleting Account...' : 'Delete Account'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* App Version */}
       <Text style={styles.version}>Version 1.0.0</Text>
     </ScrollView>
@@ -300,5 +352,15 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
     marginVertical: 20,
+  },
+  deleteAccountButton: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  deleteAccountText: {
+    color: '#cc0000',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

@@ -56,3 +56,12 @@ export async function changePassword(data: PasswordChangeData): Promise<boolean>
     throw error;
   }
 }
+
+export async function deleteAccount(): Promise<void> {
+  try {
+    await apiClient.delete('/auth/me');
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    throw error;
+  }
+}
