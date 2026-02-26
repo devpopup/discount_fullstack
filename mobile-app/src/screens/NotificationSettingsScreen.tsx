@@ -7,6 +7,7 @@ import {
   Switch,
   TouchableOpacity,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -36,6 +37,7 @@ export default function NotificationSettingsScreen() {
   const [loading, setLoading] = useState(true);
   const [geofencingActive, setGeofencingActive] = useState(false);
   const [backgroundCheckActive, setBackgroundCheckActive] = useState(false);
+  const [showLocationDisclosure, setShowLocationDisclosure] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -74,16 +76,10 @@ export default function NotificationSettingsScreen() {
           return;
         }
 
-        // Request geofencing permissions for proximity alerts
+        // Show prominent disclosure before requesting background location
         if (key === 'proximityAlerts') {
-          const hasGeoPermission = await requestGeofencingPermissions();
-          if (!hasGeoPermission) {
-            Alert.alert(
-              'Location Permission Required',
-              'Please enable location permissions (Always) to receive proximity alerts.'
-            );
-            return;
-          }
+          setShowLocationDisclosure(true);
+          return; // Permission request continues after user accepts disclosure
         }
       }
 
@@ -109,6 +105,37 @@ export default function NotificationSettingsScreen() {
       Alert.alert('Success', 'Notification settings updated');
     } catch (error) {
       console.error('Error updating settings:', error);
+      Alert.alert('Error', 'Failed to update notification settings');
+    }
+  };
+
+  const handleLocationDisclosureAccept = async () => {
+    setShowLocationDisclosure(false);
+    try {
+      const hasPermission = await requestNotificationPermissions();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive alerts.'
+        );
+        return;
+      }
+
+      const hasGeoPermission = await requestGeofencingPermissions();
+      if (!hasGeoPermission) {
+        Alert.alert(
+          'Location Permission Required',
+          'Please enable "Allow all the time" location access in your device settings to receive proximity alerts.'
+        );
+        return;
+      }
+
+      const newSettings = { ...settings, proximityAlerts: true };
+      await saveNotificationSettings(newSettings);
+      setSettings(newSettings);
+      Alert.alert('Success', 'Notification settings updated');
+    } catch (error) {
+      console.error('Error enabling proximity alerts:', error);
       Alert.alert('Error', 'Failed to update notification settings');
     }
   };
@@ -227,10 +254,49 @@ export default function NotificationSettingsScreen() {
       <View style={styles.infoSection}>
         <Ionicons name="information-circle-outline" size={24} color="#666" />
         <Text style={styles.infoText}>
-          Background notifications require location permissions and may affect battery life.
-          You can adjust these settings anytime.
+          When enabled, background alerts allow PopupReach to check for offer updates and
+          send notifications even when the app is closed. This may affect battery life.
+          You can turn off any alert type here at any time.
         </Text>
       </View>
+
+      {/* Prominent Background Location Disclosure Modal */}
+      <Modal
+        visible={showLocationDisclosure}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLocationDisclosure(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconRow}>
+              <Ionicons name="location" size={32} color="#e94e1b" />
+            </View>
+            <Text style={styles.modalTitle}>Background Location Access</Text>
+            <Text style={styles.modalBody}>
+              To send you proximity alerts when you're near active deals, <Text style={styles.modalBold}>PopupReach needs access to your location at all times</Text>, including when the app is closed or not in use.
+            </Text>
+            <Text style={styles.modalBody}>
+              Your location is used <Text style={styles.modalBold}>only</Text> to detect when you are near a deal and trigger a notification. It is never sold or shared with third parties.
+            </Text>
+            <Text style={styles.modalNote}>
+              On the next screen, select <Text style={styles.modalBold}>"Allow all the time"</Text> to enable this feature.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalAcceptButton}
+              onPress={handleLocationDisclosureAccept}
+            >
+              <Text style={styles.modalAcceptText}>Continue</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalDeclineButton}
+              onPress={() => setShowLocationDisclosure(false)}
+            >
+              <Text style={styles.modalDeclineText}>No thanks</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -335,5 +401,69 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalIconRow: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalBody: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  modalBold: {
+    fontWeight: '700',
+    color: '#222',
+  },
+  modalNote: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 20,
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+  },
+  modalAcceptButton: {
+    backgroundColor: '#e94e1b',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalAcceptText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalDeclineButton: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  modalDeclineText: {
+    color: '#888',
+    fontSize: 14,
   },
 });

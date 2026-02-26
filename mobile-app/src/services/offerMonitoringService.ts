@@ -210,7 +210,7 @@ export async function registerBackgroundOfferCheck(): Promise<void> {
       await BackgroundFetch.registerTaskAsync(BACKGROUND_OFFER_CHECK_TASK, {
         minimumInterval: 60 * 60, // Check every hour
         stopOnTerminate: false, // Continue after app is closed
-        startOnBoot: true, // Start when device boots
+        startOnBoot: false, // Do not auto-start on device reboot without user action
       });
       console.log('Background offer monitoring registered');
     }

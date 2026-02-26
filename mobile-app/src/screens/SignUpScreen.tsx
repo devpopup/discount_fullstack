@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,6 +19,8 @@ type RootStackParamList = {
   MainTabs: undefined;
   SignIn: undefined;
   SignUp: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
 };
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignUp'>;
@@ -34,6 +37,8 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSignUp = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
@@ -48,6 +53,16 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
 
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (!ageConfirmed) {
+      Alert.alert('Age Requirement', 'You must confirm that you are 18 years of age or older to create an account.');
+      return;
+    }
+
+    if (!termsAccepted) {
+      Alert.alert('Terms Required', 'Please accept the Terms of Service and Privacy Policy to continue.');
       return;
     }
 
@@ -162,10 +177,54 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
               />
             </View>
 
+            {/* Age Verification */}
             <TouchableOpacity
-              style={[styles.signUpButton, loading && styles.signUpButtonDisabled]}
+              style={styles.checkboxRow}
+              onPress={() => setAgeConfirmed(!ageConfirmed)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, ageConfirmed && styles.checkboxChecked]}>
+                {ageConfirmed && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.checkboxLabel}>
+                I confirm that I am <Text style={styles.checkboxBold}>18 years of age or older</Text>
+              </Text>
+            </TouchableOpacity>
+
+            {/* Terms & Privacy Consent */}
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+                {termsAccepted && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.checkboxLabel}>
+                I agree to the{' '}
+                <Text
+                  style={styles.checkboxLink}
+                  onPress={() => navigation.navigate('TermsOfService')}
+                >
+                  Terms of Service
+                </Text>
+                {' '}and{' '}
+                <Text
+                  style={styles.checkboxLink}
+                  onPress={() => navigation.navigate('PrivacyPolicy')}
+                >
+                  Privacy Policy
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.signUpButton,
+                (loading || !ageConfirmed || !termsAccepted) && styles.signUpButtonDisabled,
+              ]}
               onPress={handleSignUp}
-              disabled={loading}
+              disabled={loading || !ageConfirmed || !termsAccepted}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
@@ -264,5 +323,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#e94e1b',
     fontWeight: '600',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+    gap: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  checkboxChecked: {
+    backgroundColor: '#e94e1b',
+    borderColor: '#e94e1b',
+  },
+  checkboxLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 20,
+  },
+  checkboxBold: {
+    fontWeight: '700',
+    color: '#333',
+  },
+  checkboxLink: {
+    color: '#e94e1b',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
