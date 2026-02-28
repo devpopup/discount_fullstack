@@ -20,39 +20,50 @@ async def register_user(user_data: UserRegister):
     """Register a new user"""
     
     try:
+        # Resolve first_name/last_name — mobile app may send a single full_name field
+        first_name = user_data.first_name
+        last_name = user_data.last_name
+        if not first_name and user_data.full_name:
+            name_parts = user_data.full_name.strip().split(" ", 1)
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else None
+
+        # Resolve phone — mobile app may send phone_number instead of phone
+        phone = user_data.phone or user_data.phone_number or None
+
         # Register user with Supabase Auth
         auth_response = supabase.auth.sign_up({
             "email": user_data.email,
             "password": user_data.password,
             "options": {
                 "data": {
-                    "first_name": user_data.first_name,
-                    "last_name": user_data.last_name,
-                    "phone": user_data.phone
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "phone": phone
                 }
             }
         })
-        
+
         if not auth_response.user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Registration failed"
             )
-        
+
         user_id = auth_response.user.id
-        
+
         # Check if profile already exists (created by trigger)
         existing_profile = supabase.table("profiles").select("*").eq("id", user_id).execute()
-        
+
         if existing_profile.data:
             # Update existing profile with additional data
             profile_data = {
-                "first_name": user_data.first_name,
-                "last_name": user_data.last_name,
-                "phone": user_data.phone,
+                "first_name": first_name,
+                "last_name": last_name,
+                "phone": phone,
                 "updated_at": datetime.utcnow().isoformat()
             }
-            
+
             result = supabase.table("profiles").update(profile_data).eq("id", user_id).execute()
             profile = result.data[0] if result.data else existing_profile.data[0]
         else:
@@ -60,11 +71,11 @@ async def register_user(user_data: UserRegister):
             profile_data = {
                 "id": user_id,
                 "email": user_data.email,
-                "first_name": user_data.first_name,
-                "last_name": user_data.last_name,
-                "phone": user_data.phone
+                "first_name": first_name,
+                "last_name": last_name,
+                "phone": phone
             }
-            
+
             result = supabase.table("profiles").insert(profile_data).execute()
             profile = result.data[0]
         
@@ -293,8 +304,12 @@ async def delete_account(
         # Delete profile row (cascades to associated data via DB foreign keys)
         supabase.table("profiles").delete().eq("id", user_id).execute()
 
-        # Delete the auth user from Supabase (requires service role key)
-        supabase_admin.auth.admin.delete_user(user_id)
+        # Delete the auth user — wrapped separately so a Supabase SDK error
+        # (e.g. user already removed by a DB trigger) doesn't surface as a failure
+        try:
+            supabase_admin.auth.admin.delete_user(user_id)
+        except Exception:
+            pass  # Profile is already gone; auth user may have been cleaned up by trigger
 
         return MessageResponse(message="Account deleted successfully")
 

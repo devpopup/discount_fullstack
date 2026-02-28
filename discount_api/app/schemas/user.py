@@ -15,6 +15,8 @@ class UserBase(BaseModel):
 # Request schemas
 class UserRegister(UserBase):
     password: str = Field(..., min_length=6, description="Password must be at least 6 characters")
+    full_name: Optional[str] = None      # Mobile app sends full name as single field
+    phone_number: Optional[str] = None   # Mobile app sends phone as phone_number
 
 
 class UserLogin(BaseModel):
