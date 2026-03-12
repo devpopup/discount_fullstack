@@ -17,6 +17,7 @@ import { saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds } 
 import { Offer } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RootStackParamList = {
   BusinessOffers: { businessId: string };
@@ -43,6 +44,7 @@ interface Business {
 export default function BusinessOffersScreen({ navigation, route }: BusinessOffersScreenProps) {
   const { businessId } = route.params;
   const { isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [business, setBusiness] = useState<Business | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -201,7 +203,7 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color="#e94e1b" />
         <Text style={styles.loadingText}>Loading offers...</Text>
       </View>
@@ -209,7 +211,7 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <FlatList
         data={offers}
         renderItem={renderItem}
