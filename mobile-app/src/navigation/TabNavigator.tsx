@@ -17,14 +17,11 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Custom header component
 interface TabHeaderProps {
-  title: string;
-  showSearch?: boolean;
   showScanner?: boolean;
-  onSearchPress?: () => void;
   onScanPress?: () => void;
 }
 
-function TabHeader({ title, showSearch, showScanner, onSearchPress, onScanPress }: TabHeaderProps) {
+function TabHeader({ showScanner, onScanPress }: TabHeaderProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -37,11 +34,6 @@ function TabHeader({ title, showSearch, showScanner, onSearchPress, onScanPress 
               <Ionicons name="qr-code-outline" size={24} color="#333" />
             </TouchableOpacity>
           )}
-          {showSearch && (
-            <TouchableOpacity style={styles.iconButton} onPress={onSearchPress}>
-              <Ionicons name="search-outline" size={24} color="#333" />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
     </View>
@@ -50,11 +42,6 @@ function TabHeader({ title, showSearch, showScanner, onSearchPress, onScanPress 
 
 export default function TabNavigator() {
   const navigation = useNavigation<NavigationProp>();
-
-  const handleSearchPress = () => {
-    // TODO: Navigate to search screen or open search modal
-    console.log('Search pressed');
-  };
 
   const handleScanPress = () => {
     navigation.navigate('QRScanner');
@@ -82,7 +69,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader showScanner onScanPress={handleScanPress} />,
         }}
       />
       <Tab.Screen
@@ -97,7 +84,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader />,
         }}
       />
       <Tab.Screen
@@ -112,7 +99,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" showSearch onSearchPress={handleSearchPress} />,
+          header: () => <TabHeader />,
         }}
       />
       <Tab.Screen
@@ -127,7 +114,7 @@ export default function TabNavigator() {
               color={color}
             />
           ),
-          header: () => <TabHeader title="PopupReach" />,
+          header: () => <TabHeader />,
         }}
       />
     </Tab.Navigator>

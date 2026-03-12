@@ -146,10 +146,9 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
 
   const discountBadge = getDiscountBadge();
 
-  // Check multiple image sources: image_url (superadmin) > images array > placeholder
+  // Check multiple image sources: image_url (superadmin) > images array
   const imageUrl = deal.image_url ||
-    (deal.images && deal.images.length > 0 ? deal.images[0] : null) ||
-    'https://via.placeholder.com/400x200?text=No+Image';
+    (deal.images && deal.images.length > 0 ? deal.images[0] : null);
 
   // Debug logging for superadmin offers
   if (deal.isDemo && __DEV__) {
@@ -167,7 +166,8 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
       {/* Image Section */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: imageUrl }}
+          source={imageUrl ? { uri: imageUrl } : require('../../assets/icon.png')}
+          placeholder={require('../../assets/icon.png')}
           style={styles.image}
           contentFit="cover"
           transition={200}

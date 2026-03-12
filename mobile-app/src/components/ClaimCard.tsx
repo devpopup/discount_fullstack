@@ -24,7 +24,7 @@ export default function ClaimCard({ claim, onPress, onLocationPress, onUnclaim }
   const product = offer?.product || offer?.products;
 
   // Construct image URL (same logic as web app)
-  let imageUrl = 'https://via.placeholder.com/96x96?text=No+Image';
+  let imageUrl: string | null = null;
 
   if (offer?.image_url) {
     imageUrl = offer.image_url.startsWith('http')
@@ -123,7 +123,7 @@ export default function ClaimCard({ claim, onPress, onLocationPress, onUnclaim }
         {/* Image */}
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: imageUrl }}
+            source={imageUrl ? { uri: imageUrl } : require('../../assets/icon.png')}
             style={styles.image}
             resizeMode="cover"
           />

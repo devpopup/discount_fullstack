@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   Linking,
+  Image,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';

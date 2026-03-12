@@ -11,12 +11,6 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Log API configuration on startup
-console.log('API Configuration:', {
-  baseURL: API_BASE_URL,
-  timeout: API_TIMEOUT,
-});
-
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   async (config) => {

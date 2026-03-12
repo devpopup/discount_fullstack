@@ -50,11 +50,7 @@ function DealsSection({
   useLandscapeCards = false,
 }: DealsSectionProps) {
   const renderDealCard = ({ item }: { item: Offer }) => {
-    // Defensive check - ensure item has required fields
-    if (!item || !item.id) {
-      console.warn('Invalid offer item in DealsSection:', item);
-      return null;
-    }
+    if (!item || !item.id) return null;
 
     if (useLandscapeCards) {
       return (

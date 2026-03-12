@@ -76,10 +76,9 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
     }
   };
 
-  // Check multiple image sources: image_url (superadmin) > images array > placeholder
+  // Check multiple image sources: image_url (superadmin) > images array
   const imageUrl = deal.image_url ||
-    (deal.images && deal.images.length > 0 ? deal.images[0] : null) ||
-    'https://via.placeholder.com/400x200?text=No+Image';
+    (deal.images && deal.images.length > 0 ? deal.images[0] : null);
 
   // Safe price formatting
   const formatPrice = (price: any): string => {
@@ -126,7 +125,8 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
       {/* Image Section */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: imageUrl }}
+          source={imageUrl ? { uri: imageUrl } : require('../../assets/icon.png')}
+          placeholder={require('../../assets/icon.png')}
           style={styles.image}
           contentFit="cover"
           transition={200}

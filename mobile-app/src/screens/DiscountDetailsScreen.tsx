@@ -431,7 +431,7 @@ export default function DiscountDetailsScreen({
     : offer.image_url
     ? [offer.image_url]
     : [];
-  const imageUrl = images.length > 0 ? images[selectedImage] : 'https://via.placeholder.com/400x200?text=No+Image';
+  const imageUrl = images.length > 0 ? images[selectedImage] : null;
   const website = offer.business?.business_website || offer.business?.website;
   const phone = offer.business?.phone_number || offer.business?.phone;
   const hasWebsite = website && typeof website === 'string' && website.trim() !== '';
@@ -456,7 +456,7 @@ export default function DiscountDetailsScreen({
       {/* Image Section */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: imageUrl }}
+          source={imageUrl ? { uri: imageUrl } : require('../../assets/icon.png')}
           style={styles.headerImage}
           resizeMode="cover"
         />

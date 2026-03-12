@@ -72,7 +72,6 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
         setBusiness(response.data.business || null);
       }
     } catch (error: any) {
-      console.error('Error loading business offers:', error);
       const message = error.response?.status === 404
         ? 'This business has no active offers at the moment.'
         : error.response?.data?.detail || 'Unable to load offers. Please try again later.';
@@ -142,7 +141,7 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
       promptSignIn('claim');
       return;
     }
-    console.log('Claim offer:', offerId);
+    navigation.navigate('DiscountDetails', { offerId });
   };
 
   const renderItem = ({ item }: { item: Offer }) => (

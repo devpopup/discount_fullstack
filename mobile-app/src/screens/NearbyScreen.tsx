@@ -75,7 +75,7 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
       const result = await getNearbyOffers(location, 10, LIMIT, currentOffset);
 
       if (result.error) {
-        console.error('Error loading nearby deals:', result.error);
+        // Error already handled by API interceptor
       } else {
         if (append) {
           setDeals(prev => [...prev, ...result.offers]);
@@ -85,8 +85,8 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
         setHasMore(result.hasMore);
         setOffset(currentOffset + LIMIT);
       }
-    } catch (error) {
-      console.error('Error loading nearby deals:', error);
+    } catch (_error) {
+      // Error handled below — loading state cleared in finally
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -210,8 +210,7 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
           Alert.alert('Error', result.error || 'Failed to remove reminder');
         }
       }
-    } catch (error) {
-      console.error('Error toggling reminder:', error);
+    } catch (_error) {
       Alert.alert('Error', 'Failed to update reminder. Please try again.');
     }
   };

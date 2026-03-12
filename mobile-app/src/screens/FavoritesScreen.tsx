@@ -48,20 +48,17 @@ export default function FavoritesScreen({ navigation }: FavoritesScreenProps) {
       let location;
       try {
         location = await getUserLocation();
-      } catch (locationError) {
-        console.log('Using default location:', locationError);
+      } catch (_locationError) {
         location = getDefaultLocation();
       }
 
       const result = await getFavoriteOffers(1, 50, location);
       if (result.error) {
-        console.error('Error loading favorites:', result.error);
         Alert.alert('Error', 'Failed to load your favorite offers');
       } else {
         setFavorites(result.offers);
       }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
+    } catch (_error) {
       Alert.alert('Error', 'Failed to load your favorite offers');
     } finally {
       setLoading(false);
@@ -88,8 +85,7 @@ export default function FavoritesScreen({ navigation }: FavoritesScreenProps) {
       } else {
         Alert.alert('Error', result.error || 'Failed to remove from favorites');
       }
-    } catch (error) {
-      console.error('Error removing favorite:', error);
+    } catch (_error) {
       Alert.alert('Error', 'Failed to remove from favorites');
     }
   };

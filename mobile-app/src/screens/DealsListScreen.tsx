@@ -73,26 +73,13 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
       if (!data?.pages) return [];
 
       const flattenedDeals = data.pages.flatMap(page => {
-        // Ensure page.offers is an array
-        if (!page || !Array.isArray(page.offers)) {
-          console.warn('DealsListScreen: Invalid page structure', page);
-          return [];
-        }
+        if (!page || !Array.isArray(page.offers)) return [];
 
-        // Filter out any invalid offers
-        return page.offers.filter(offer => {
-          const isValid = offer && typeof offer === 'object' && offer.id;
-          if (!isValid) {
-            console.warn('DealsListScreen: Filtered invalid offer', offer);
-          }
-          return isValid;
-        });
+        return page.offers.filter(offer => offer && typeof offer === 'object' && offer.id);
       });
 
-      console.log(`DealsListScreen (${type}): Loaded ${flattenedDeals.length} deals`);
       return flattenedDeals;
-    } catch (error) {
-      console.error('DealsListScreen: Error flattening deals', error);
+    } catch (_error) {
       return [];
     }
   }, [data, type]);
@@ -229,8 +216,7 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
           Alert.alert('Error', result.error || 'Failed to remove reminder');
         }
       }
-    } catch (error) {
-      console.error('Error toggling reminder:', error);
+    } catch (_error) {
       Alert.alert('Error', 'Failed to update reminder. Please try again.');
     }
   }, [isAuthenticated, promptSignIn]);
@@ -251,26 +237,17 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
   };
 
   const renderItem = useCallback(({ item }: { item: Offer }) => {
-    // Defensive check - ensure item has required fields
-    if (!item || !item.id) {
-      console.warn('DealsList renderItem: Invalid offer item:', item);
-      return null;
-    }
+    if (!item || !item.id) return null;
 
-    try {
-      return (
-        <DealCardLandscape
-          deal={item}
-          onPress={() => handleDealPress(item)}
-          onLike={handleLike}
-          isLiked={favoritedIds.has(item.id)}
-          onRemind={handleRemind}
-        />
-      );
-    } catch (error) {
-      console.error('DealsList renderItem error:', error);
-      return null;
-    }
+    return (
+      <DealCardLandscape
+        deal={item}
+        onPress={() => handleDealPress(item)}
+        onLike={handleLike}
+        isLiked={favoritedIds.has(item.id)}
+        onRemind={handleRemind}
+      />
+    );
   }, [handleDealPress, handleLike, handleRemind]);
 
   const renderFooter = () => {
@@ -313,7 +290,6 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
 
   // Defensive check for route params - must be after all hooks
   if (!type) {
-    console.error('DealsListScreen: Missing type parameter');
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
@@ -390,23 +366,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 14,
     color: '#666',
-  },
-  loadMoreButton: {
-    backgroundColor: '#e94e1b',
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  loadMoreButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   emptyContainer: {
     flex: 1,

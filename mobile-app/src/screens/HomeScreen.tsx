@@ -109,14 +109,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       initializeNotifications();
       notificationsInitialized.current = true;
     }
-  }, [nearbyDeals.length > 0]);
+  }, [nearbyDeals.length]);
 
   const initializeLocation = async () => {
     try {
       const location = await getUserLocation();
       setUserLocation(location);
-    } catch (error) {
-      console.error('Error getting location:', error);
+    } catch (_error) {
       const defaultLocation = getDefaultLocation();
       setUserLocation(defaultLocation);
     }
@@ -131,8 +130,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         // Setup notification listeners
         const cleanup = setupNotificationListeners(
           // Handle notification received while app is open
-          (notification) => {
-            console.log('Notification received:', notification);
+          (_notification) => {
+            // notification received while app is foregrounded
           },
           // Handle notification tapped
           (response) => {
@@ -153,8 +152,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
         return cleanup;
       }
-    } catch (error) {
-      console.error('Error initializing notifications:', error);
+    } catch (_error) {
+      // Notification initialization failed — app continues without notifications
     }
   };
 
@@ -273,8 +272,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           Alert.alert('Error', result.error || 'Failed to remove reminder');
         }
       }
-    } catch (error) {
-      console.error('Error toggling reminder:', error);
+    } catch (_error) {
       Alert.alert('Error', 'Failed to update reminder. Please try again.');
     }
   }, [isAuthenticated, promptSignIn]);

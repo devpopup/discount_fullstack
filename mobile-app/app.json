@@ -21,9 +21,9 @@
           "fetch",
           "remote-notification"
         ],
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "PopupReach uses your location to show you deals available near you.",
-        "NSLocationWhenInUseUsageDescription": "PopupReach uses your location to show you deals available near you.",
-        "NSLocationAlwaysUsageDescription": "PopupReach uses your location to show you deals available near you.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "PopupReach uses your location to show nearby deals and send you proximity alerts when you are close to a business with an active offer.",
+        "NSLocationWhenInUseUsageDescription": "PopupReach uses your location to show you deals available near your current location.",
+        "NSLocationAlwaysUsageDescription": "PopupReach uses your location in the background to send proximity alerts when you walk near a business with an active deal.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -85,9 +85,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow PopupReach to use your location to show you deals available near you.",
-          "locationAlwaysPermission": "Allow PopupReach to use your location to show you deals available near you.",
-          "locationWhenInUsePermission": "Allow PopupReach to use your location to show you deals available near you."
+          "locationAlwaysAndWhenInUsePermission": "Allow PopupReach to use your location to show nearby deals and send proximity alerts when you are close to a business with an active offer.",
+          "locationAlwaysPermission": "Allow PopupReach to use your location in the background to send you proximity alerts when you walk near a business with an active deal.",
+          "locationWhenInUsePermission": "Allow PopupReach to use your location to show deals available near you."
         }
       ]
     ],
