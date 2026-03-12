@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,12 +25,15 @@ interface DealCardLandscapeProps {
 function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, isLiked = false, hideBusinessInfo = false }: DealCardLandscapeProps) {
   const [liked, setLiked] = useState(isLiked);
 
+  // Sync when parent loads favorited state asynchronously
+  useEffect(() => {
+    setLiked(isLiked);
+  }, [isLiked]);
+
   const handleLike = (e: any) => {
     e.stopPropagation();
     setLiked(!liked);
-    if (onLike) {
-      onLike(deal.id);
-    }
+    if (onLike) onLike(deal.id);
   };
 
   const handleLocationPress = (e: any) => {
@@ -203,16 +206,8 @@ function DealCardLandscape({ deal, onPress, onLike, onRemind, onLocationPress, i
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleLike}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={liked ? 'heart' : 'heart-outline'}
-              size={18}
-              color={liked ? '#e94e1b' : '#666'}
-            />
+          <TouchableOpacity style={styles.actionButton} onPress={handleLike} activeOpacity={0.7}>
+            <Ionicons name={liked ? 'heart' : 'heart-outline'} size={18} color={liked ? '#e94e1b' : '#666'} />
           </TouchableOpacity>
         </View>
       </View>

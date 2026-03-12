@@ -242,6 +242,22 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const deleteAccount = async () => {
+    const token = localStorage.getItem('auth_token')
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.detail || 'Failed to delete account')
+    }
+    clearAuthData()
+  }
+
   const clearAuthData = () => {
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
@@ -272,6 +288,7 @@ export function AuthProvider({ children }) {
     registerBusiness,
     registerCustomer,
     logout,
+    deleteAccount,
     clearAuthData
   }
 

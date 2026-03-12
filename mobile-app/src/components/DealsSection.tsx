@@ -26,7 +26,8 @@ interface DealsSectionProps {
   iconName: string;
   iconColor?: string;
   onDealPress: (deal: Offer) => void;
-  onLike: (offerId: string) => void;
+  onLike?: (offerId: string) => void;
+  favoritedIds?: Set<string>;
   onClaim: (offerId: string) => void;
   onRemind?: (offerId: string, hasReminder: boolean) => void;
   onViewMore?: () => void;
@@ -42,6 +43,7 @@ function DealsSection({
   iconColor = '#e94e1b',
   onDealPress,
   onLike,
+  favoritedIds,
   onClaim,
   onRemind,
   onViewMore,
@@ -60,7 +62,7 @@ function DealsSection({
           deal={item}
           onPress={() => onDealPress(item)}
           onLike={onLike}
-          onClaim={onClaim}
+          isLiked={favoritedIds ? favoritedIds.has(item.id) : false}
         />
       );
     }
@@ -69,6 +71,7 @@ function DealsSection({
         deal={item}
         onPress={() => onDealPress(item)}
         onLike={onLike}
+        isLiked={favoritedIds ? favoritedIds.has(item.id) : false}
         onClaim={onClaim}
         onRemind={onRemind}
       />

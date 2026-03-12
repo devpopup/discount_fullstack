@@ -78,12 +78,12 @@ export default function FavoritesScreen({ navigation }: FavoritesScreenProps) {
     navigation.navigate('DiscountDetails', { offerId: deal.id });
   };
 
+
   const handleLike = async (offerId: string) => {
-    // Remove from favorites
+    // In favorites screen, tapping the heart removes from favorites
     try {
       const result = await removeOfferFromFavorites(offerId);
       if (result.success) {
-        // Remove from list
         setFavorites(prev => prev.filter(offer => offer.id !== offerId));
       } else {
         Alert.alert('Error', result.error || 'Failed to remove from favorites');
@@ -141,7 +141,6 @@ export default function FavoritesScreen({ navigation }: FavoritesScreenProps) {
       deal={item}
       onPress={() => handleDealPress(item)}
       onLike={handleLike}
-      onClaim={handleClaim}
       isLiked={true}
       hideBusinessInfo={true}
     />

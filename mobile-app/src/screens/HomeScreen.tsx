@@ -18,7 +18,7 @@ import {
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
-import { setOfferReminder, removeOfferReminder, claimOffer, getTotalQuantityClaimed, canClaimMore } from '../services/offersService';
+import { setOfferReminder, removeOfferReminder, claimOffer, getTotalQuantityClaimed, canClaimMore, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds } from '../services/offersService';
 import {
   requestNotificationPermissions,
   setupNotificationListeners,
@@ -46,6 +46,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { isAuthenticated } = useAuth();
   // Initialize with default location immediately so queries can start
   const [userLocation, setUserLocation] = useState<Location>(getDefaultLocation());
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const notificationsInitialized = useRef(false);
 
   // Use React Query hooks for automatic caching - enabled by default to load immediately
@@ -93,6 +94,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   useEffect(() => {
     initializeLocation();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      getFavoritedOfferIds().then(ids => setFavoritedIds(ids));
+    } else {
+      setFavoritedIds(new Set());
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Only initialize notifications once when we have nearby deals
@@ -182,14 +191,25 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     );
   }, [navigation]);
 
-  const handleLike = useCallback((offerId: string) => {
+
+  const handleLike = useCallback(async (offerId: string) => {
     if (!isAuthenticated) {
-      promptSignIn('like');
+      promptSignIn('save to favorites');
       return;
     }
-    // TODO: Implement like API call
-    console.log('Like offer:', offerId);
-  }, [isAuthenticated, promptSignIn]);
+    const isCurrentlyLiked = favoritedIds.has(offerId);
+    setFavoritedIds(prev => {
+      const next = new Set(prev);
+      if (isCurrentlyLiked) next.delete(offerId);
+      else next.add(offerId);
+      return next;
+    });
+    if (isCurrentlyLiked) {
+      await removeOfferFromFavorites(offerId);
+    } else {
+      await saveOfferToFavorites(offerId);
+    }
+  }, [isAuthenticated, promptSignIn, favoritedIds]);
 
   const handleClaim = useCallback(async (offerId: string, offer?: Offer) => {
     if (!isAuthenticated) {
@@ -280,6 +300,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         iconColor="#4CAF50"
         onDealPress={handleDealPress}
         onLike={handleLike}
+        favoritedIds={favoritedIds}
         onClaim={handleClaim}
         onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'nearby' })}
@@ -295,6 +316,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         iconColor="#2196F3"
         onDealPress={handleDealPress}
         onLike={handleLike}
+        favoritedIds={favoritedIds}
         onClaim={handleClaim}
         onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'all' })}
@@ -310,6 +332,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         iconColor="#FF6B6B"
         onDealPress={handleDealPress}
         onLike={handleLike}
+        favoritedIds={favoritedIds}
         onClaim={handleClaim}
         onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'trending' })}
@@ -325,6 +348,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         iconColor="#FFA726"
         onDealPress={handleDealPress}
         onLike={handleLike}
+        favoritedIds={favoritedIds}
         onClaim={handleClaim}
         onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'expiring' })}
@@ -340,6 +364,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         iconColor="#9C27B0"
         onDealPress={handleDealPress}
         onLike={handleLike}
+        favoritedIds={favoritedIds}
         onClaim={handleClaim}
         onRemind={handleRemind}
         onViewMore={() => navigation.navigate('DealsList', { type: 'upcoming' })}

@@ -22,7 +22,7 @@ import {
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
-import { claimOffer, getTotalQuantityClaimed, canClaimMore, setOfferReminder, removeOfferReminder } from '../services/offersService';
+import { claimOffer, getTotalQuantityClaimed, canClaimMore, setOfferReminder, removeOfferReminder, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds } from '../services/offersService';
 
 // Card dimensions for getItemLayout optimization
 const DEAL_CARD_LANDSCAPE_HEIGHT = 155; // Card height (140) + marginBottom (15)
@@ -48,6 +48,7 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
   const type = route?.params?.type;
   const { isAuthenticated } = useAuth();
   const [userLocation, setUserLocation] = useState<Location | null>(null);
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const LIMIT = 20;
 
   // Select the appropriate infinite query hook based on type
@@ -100,6 +101,14 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
     initializeLocation();
   }, []);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      getFavoritedOfferIds().then(ids => setFavoritedIds(ids));
+    } else {
+      setFavoritedIds(new Set());
+    }
+  }, [isAuthenticated]);
+
   const initializeLocation = async () => {
     try {
       const location = await getUserLocation();
@@ -142,14 +151,25 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
     );
   }, [navigation]);
 
-  const handleLike = useCallback((offerId: string) => {
+
+  const handleLike = useCallback(async (offerId: string) => {
     if (!isAuthenticated) {
-      promptSignIn('like');
+      promptSignIn('save to favorites');
       return;
     }
-    // TODO: Implement like API call
-    console.log('Like offer:', offerId);
-  }, [isAuthenticated, promptSignIn]);
+    const isCurrentlyLiked = favoritedIds.has(offerId);
+    setFavoritedIds(prev => {
+      const next = new Set(prev);
+      if (isCurrentlyLiked) next.delete(offerId);
+      else next.add(offerId);
+      return next;
+    });
+    if (isCurrentlyLiked) {
+      await removeOfferFromFavorites(offerId);
+    } else {
+      await saveOfferToFavorites(offerId);
+    }
+  }, [isAuthenticated, promptSignIn, favoritedIds]);
 
   const handleClaim = useCallback(async (offerId: string, offer?: Offer) => {
     if (!isAuthenticated) {
@@ -243,6 +263,7 @@ export default function DealsListScreen({ navigation, route }: DealsListScreenPr
           deal={item}
           onPress={() => handleDealPress(item)}
           onLike={handleLike}
+          isLiked={favoritedIds.has(item.id)}
           onRemind={handleRemind}
         />
       );

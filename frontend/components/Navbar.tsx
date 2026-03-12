@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, ChevronDown, User, Heart, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, User, Heart, LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,7 +19,8 @@ export default function Navbar() {
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
   const [signupDropdownOpen, setSignupDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Close mobile menu when screen size changes to desktop
   useEffect(() => {
@@ -59,6 +60,20 @@ export default function Navbar() {
     closeMobileMenu();
     // Keep shoppers on /shoppers page after logout
     window.location.href = '/shoppers';
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete your account? All your data including claims, favorites, and redemption history will be removed. This cannot be undone.')) return;
+    if (!window.confirm('Final confirmation: this will permanently delete your account. Are you absolutely sure?')) return;
+    setDeletingAccount(true);
+    try {
+      await deleteAccount();
+      closeMobileMenu();
+      window.location.href = '/shoppers';
+    } catch {
+      setDeletingAccount(false);
+      window.alert('Failed to delete account. Please try again or contact support at info@popupreach.com');
+    }
   };
 
   // Get user initials for avatar
@@ -147,6 +162,15 @@ export default function Navbar() {
                   >
                     <LogOut className="h-4 w-4" />
                     Sign Out
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deletingAccount}
+                    className="flex items-center gap-1 text-gray-400 text-xs hover:text-red-500 transition-colors disabled:opacity-50"
+                    title="Delete Account"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    {deletingAccount ? 'Deleting…' : 'Delete account'}
                   </button>
                   {/* Profile Avatar Badge */}
                   <div className="h-10 w-10 rounded-full bg-[#e94e1b] flex items-center justify-center text-white border-2 border-[#d13f16]">
@@ -326,6 +350,14 @@ export default function Navbar() {
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount}
+                  className="flex items-center gap-2 text-gray-400 text-xs py-2 hover:text-red-500 transition-colors w-full text-left disabled:opacity-50"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  {deletingAccount ? 'Deleting…' : 'Delete account'}
                 </button>
               </div>
             </div>

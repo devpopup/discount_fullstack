@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import DealCardLandscape from '../components/DealCardLandscape';
-import { getNearbyOffers, claimOffer, getTotalQuantityClaimed, canClaimMore, setOfferReminder, removeOfferReminder } from '../services/offersService';
+import { getNearbyOffers, claimOffer, getTotalQuantityClaimed, canClaimMore, setOfferReminder, removeOfferReminder, saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds } from '../services/offersService';
 import { getUserLocation, getDefaultLocation } from '../utils/location';
 import { Offer, Location } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
@@ -37,11 +37,20 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const LIMIT = 10;
 
   useEffect(() => {
     initializeLocation();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      getFavoritedOfferIds().then(ids => setFavoritedIds(ids));
+    } else {
+      setFavoritedIds(new Set());
+    }
+  }, [isAuthenticated]);
 
   const initializeLocation = async () => {
     try {
@@ -121,13 +130,24 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
     );
   };
 
-  const handleLike = (offerId: string) => {
+
+  const handleLike = async (offerId: string) => {
     if (!isAuthenticated) {
-      promptSignIn('like');
+      promptSignIn('save to favorites');
       return;
     }
-    // TODO: Implement like API call
-    console.log('Like offer:', offerId);
+    const isCurrentlyLiked = favoritedIds.has(offerId);
+    setFavoritedIds(prev => {
+      const next = new Set(prev);
+      if (isCurrentlyLiked) next.delete(offerId);
+      else next.add(offerId);
+      return next;
+    });
+    if (isCurrentlyLiked) {
+      await removeOfferFromFavorites(offerId);
+    } else {
+      await saveOfferToFavorites(offerId);
+    }
   };
 
   const handleClaim = async (offerId: string, offer?: Offer) => {
@@ -201,6 +221,7 @@ export default function NearbyScreen({ navigation }: NearbyScreenProps) {
       deal={item}
       onPress={() => handleDealPress(item)}
       onLike={handleLike}
+      isLiked={favoritedIds.has(item.id)}
       onRemind={handleRemind}
     />
   );

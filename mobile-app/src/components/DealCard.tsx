@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,17 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
   const [liked, setLiked] = useState(isLiked);
   const [hasReminder, setHasReminder] = useState(deal.hasReminder || false);
 
+  // Sync when parent loads favorited state asynchronously
+  useEffect(() => {
+    setLiked(isLiked);
+  }, [isLiked]);
+
+  const handleLike = (e: any) => {
+    e.stopPropagation();
+    setLiked(!liked);
+    if (onLike) onLike(deal.id);
+  };
+
   // Check if offer is upcoming (hasn't started yet) - with safe date handling
   let isUpcoming = false;
   if (deal.startDate) {
@@ -38,14 +49,6 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
       isUpcoming = false;
     }
   }
-
-  const handleLike = (e: any) => {
-    e.stopPropagation();
-    setLiked(!liked);
-    if (onLike) {
-      onLike(deal.id);
-    }
-  };
 
   const handleClaim = (e: any) => {
     e.stopPropagation();
@@ -196,16 +199,8 @@ function DealCard({ deal, onPress, onLike, onClaim, onRemind, onLocationPress, i
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleLike}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={liked ? 'heart' : 'heart-outline'}
-              size={16}
-              color={liked ? '#e94e1b' : '#fff'}
-            />
+          <TouchableOpacity style={styles.actionButton} onPress={handleLike} activeOpacity={0.7}>
+            <Ionicons name={liked ? 'heart' : 'heart-outline'} size={16} color={liked ? '#e94e1b' : '#fff'} />
           </TouchableOpacity>
           {isUpcoming ? (
             <TouchableOpacity

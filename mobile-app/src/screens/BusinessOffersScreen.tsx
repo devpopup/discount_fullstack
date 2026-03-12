@@ -13,6 +13,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import DealCardLandscape from '../components/DealCardLandscape';
 import apiClient from '../services/api';
+import { saveOfferToFavorites, removeOfferFromFavorites, getFavoritedOfferIds } from '../services/offersService';
 import { Offer } from '../types/offer';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,10 +47,19 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadBusinessOffers();
   }, [businessId]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      getFavoritedOfferIds().then(ids => setFavoritedIds(ids));
+    } else {
+      setFavoritedIds(new Set());
+    }
+  }, [isAuthenticated]);
 
   const loadBusinessOffers = async () => {
     setLoading(true);
@@ -107,12 +117,24 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
     );
   };
 
-  const handleLike = (offerId: string) => {
+
+  const handleLike = async (offerId: string) => {
     if (!isAuthenticated) {
-      promptSignIn('like');
+      promptSignIn('save to favorites');
       return;
     }
-    console.log('Like offer:', offerId);
+    const isCurrentlyLiked = favoritedIds.has(offerId);
+    setFavoritedIds(prev => {
+      const next = new Set(prev);
+      if (isCurrentlyLiked) next.delete(offerId);
+      else next.add(offerId);
+      return next;
+    });
+    if (isCurrentlyLiked) {
+      await removeOfferFromFavorites(offerId);
+    } else {
+      await saveOfferToFavorites(offerId);
+    }
   };
 
   const handleClaim = (offerId: string) => {
@@ -128,6 +150,7 @@ export default function BusinessOffersScreen({ navigation, route }: BusinessOffe
       deal={item}
       onPress={() => handleDealPress(item)}
       onLike={handleLike}
+      isLiked={favoritedIds.has(item.id)}
       hideBusinessInfo={true}
     />
   );

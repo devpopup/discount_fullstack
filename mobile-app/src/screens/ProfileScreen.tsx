@@ -218,21 +218,19 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Delete Account */}
-      <View style={styles.section}>
-        <TouchableOpacity
-          style={styles.deleteAccountButton}
-          onPress={handleDeleteAccount}
-          disabled={deletingAccount}
-        >
-          <Text style={styles.deleteAccountText}>
-            {deletingAccount ? 'Deleting Account...' : 'Delete Account'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       {/* App Version */}
       <Text style={styles.version}>Version 1.0.0</Text>
+
+      {/* Delete Account - subtle link */}
+      <TouchableOpacity
+        style={styles.deleteAccountButton}
+        onPress={handleDeleteAccount}
+        disabled={deletingAccount}
+      >
+        <Text style={styles.deleteAccountText}>
+          {deletingAccount ? 'Deleting…' : 'Delete account'}
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -354,13 +352,14 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   deleteAccountButton: {
-    paddingVertical: 15,
+    alignItems: 'center',
+    paddingVertical: 8,
     paddingHorizontal: 20,
+    marginBottom: 20,
   },
   deleteAccountText: {
-    color: '#cc0000',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    color: '#bbb',
+    fontSize: 12,
+    textDecorationLine: 'underline',
   },
 });
